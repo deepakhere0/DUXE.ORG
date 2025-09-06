@@ -1,0 +1,15 @@
+import React from 'react';
+
+const Blog = () => {
+  return (
+    <div className="min-h-[calc(100vh-64px)] bg-white">
+      <div className="container-custom py-12">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Blog</h1>
+        <p className="text-gray-600">Coming soon. Stay tuned for study tips, platform updates, and success stories.</p>
+      </div>
+    </div>
+  );
+};
+
+export default Blog;
+
