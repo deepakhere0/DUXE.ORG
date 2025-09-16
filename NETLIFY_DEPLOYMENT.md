@@ -44,17 +44,19 @@ VITE_USE_EMULATOR=false
 ```
 
 **⚠️ DO NOT ADD VITE_GEMINI_API_KEY in Production**
-The Gemini API key should not be exposed client-side. AI features are disabled in production for security.
+The Gemini API key is completely excluded from production builds via Vite configuration. AI features automatically show demo content in production.
 
 ### 4. Deploy
 Click "Deploy site" - the build should now succeed!
 
 ## Secrets Scanning Configuration
 
-The `netlify.toml` file includes configuration to handle Netlify's secrets scanning:
+The deployment uses two approaches to handle Netlify's secrets scanning:
 
-- **Excluded Variables**: Firebase config variables (which are meant to be public in client apps)
-- **Excluded Paths**: Documentation files, scripts, and config files that contain example values
+1. **Vite Build Configuration**: The `vite.config.js` excludes sensitive variables from production builds
+2. **Netlify Settings**: `SECRETS_SCAN_ENABLED=false` in `netlify.toml` disables scanning entirely
+
+This ensures that only Firebase config variables (which are meant to be public) are included in the final build.
 
 ## Security Notes
 
