@@ -3,14 +3,24 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AIJobs } from './firestoreData';
 import Toast from '../components/common/Toast';
 
-// Initialize Gemini AI
+// Initialize Gemini AI - ONLY for development
+// NOTE: For production, API calls should go through your backend to keep API keys secure
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const isDevelopment = import.meta.env.DEV || import.meta.env.VITE_USE_EMULATOR === 'true';
 let genAI = null;
 let model = null;
 
-if (apiKey && !apiKey.startsWith('your_')) {
-  genAI = new GoogleGenerativeAI(apiKey);
-  model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+// Only initialize AI in development - production should use backend API
+if (apiKey && !apiKey.startsWith('your_') && isDevelopment) {
+  try {
+    genAI = new GoogleGenerativeAI(apiKey);
+    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    console.log('🤖 Gemini AI initialized for development');
+  } catch (error) {
+    console.warn('⚠️ Gemini AI initialization failed:', error.message);
+  }
+} else if (!isDevelopment) {
+  console.log('🔒 AI features disabled in production for security. Use backend API instead.');
 }
 
 const parseJsonFromResponse = (text) => {
@@ -57,9 +67,9 @@ Provide 3-5 bullet points, a TL;DR, and key terms. Return ONLY valid JSON.`;
         };
       } else {
         output = {
-          bullets: ['Configure Gemini API for real summaries'],
-          tldr: 'Gemini API not configured',
-          keyTerms: ['Setup', 'Required']
+          bullets: ['AI features are disabled in production', 'Configure backend API for AI summaries', 'Using demo content for now'],
+          tldr: 'AI features coming soon - backend integration required',
+          keyTerms: ['Demo', 'Backend', 'Coming Soon']
         };
       }
       
@@ -111,10 +121,10 @@ Generate exactly ${count} questions. Return ONLY valid JSON array.`;
       } else {
         output = Array.from({ length: count }, (_, i) => ({
           id: i + 1,
-          question: `Configure Gemini API for real questions ${i + 1}`,
-          choices: ['A', 'B', 'C', 'D'],
+          question: `Demo Question ${i + 1} - AI features coming soon!`,
+          choices: ['Coming Soon', 'Backend Required', 'Demo Option', 'AI Integration Needed'],
           correctIndex: 0,
-          explanation: 'API not configured'
+          explanation: 'This is a demo question. AI features are disabled in production for security.'
         }));
       }
       
@@ -159,8 +169,8 @@ Generate exactly ${count} flashcards. Return ONLY valid JSON array.`;
         }
       } else {
         output = Array.from({ length: count }, (_, i) => ({
-          front: `Configure API for term ${i + 1}`,
-          back: `Gemini API not configured`
+          front: `Demo Term ${i + 1}`,
+          back: `AI flashcards coming soon! Backend integration required for security.`
         }));
       }
       
