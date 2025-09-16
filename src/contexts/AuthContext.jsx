@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
   sendEmailVerification,
@@ -166,6 +168,52 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Google Sign In function
+  const signInWithGoogle = async () => {
+    if (!auth) {
+      toast.error('Authentication is not configured. Please set Firebase env variables.');
+      return { success: false, error: 'Firebase not configured' };
+    }
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.addScope('email');
+      provider.addScope('profile');
+      
+      const { user } = await signInWithPopup(auth, provider);
+      
+      // Create or update user profile in Firestore
+      await createUserProfile(user, {
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        provider: 'google'
+      });
+      
+      await fetchUserProfile(user.uid);
+      toast.success('Welcome to DUXE!');
+      return { success: true, user };
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      let errorMessage = 'Failed to sign in with Google';
+      
+      switch (error.code) {
+        case 'auth/popup-closed-by-user':
+          errorMessage = 'Sign in was cancelled';
+          break;
+        case 'auth/popup-blocked':
+          errorMessage = 'Popup was blocked. Please allow popups and try again';
+          break;
+        case 'auth/account-exists-with-different-credential':
+          errorMessage = 'An account already exists with the same email address';
+          break;
+        default:
+          errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
   // Sign out function
   const logout = async () => {
     if (!auth) {
@@ -275,6 +323,7 @@ export const AuthProvider = ({ children }) => {
     isStudent: userProfile?.role === 'student',
     signup,
     login,
+    signInWithGoogle,
     logout,
     resetPassword,
     updateUserProfile,

@@ -1,0 +1,330 @@
+# Notes Connector Queries and Mutations
+# This file contains all GraphQL operations for notes management
+
+# Query to fetch approved notes with filters
+query GetApprovedNotes(
+  $universityId: ID
+  $departmentId: ID
+  $semester: String
+  $subject: String
+  $limit: Int = 12
+  $offset: Int = 0
+  $sortBy: String = "downloads"
+) {
+  notes(
+    where: {
+      status: { eq: APPROVED }
+      universityId: { eq: $universityId }
+      departmentId: { eq: $departmentId }
+      semester: { eq: $semester }
+      subject: { contains: $subject }
+    }
+    orderBy: [{ field: $sortBy, direction: DESC }]
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    title
+    description
+    fileURL
+    thumbnailURL
+    fileType
+    fileSize
+    subject
+    courseCode
+    semester
+    downloads
+    views
+    ratingAvg
+    ratingCount
+    createdAt
+    tags
+    university {
+      id
+      name
+    }
+    department {
+      id
+      name
+    }
+    uploader {
+      id
+      displayName
+      photoURL
+    }
+  }
+}
+
+# Query to get a single note by ID
+query GetNoteById($id: ID!) {
+  note(id: $id) {
+    id
+    title
+    description
+    fileURL
+    thumbnailURL
+    fileType
+    fileSize
+    universityId
+    departmentId
+    subject
+    courseCode
+    semester
+    academicYear
+    uploadedBy
+    status
+    downloads
+    views
+    ratingAvg
+    ratingCount
+    createdAt
+    updatedAt
+    tags
+    university {
+      name
+      code
+    }
+    department {
+      name
+      code
+    }
+    uploader {
+      displayName
+      photoURL
+    }
+    ratings(limit: 10, orderBy: [{ field: "createdAt", direction: DESC }]) {
+      id
+      rating
+      comment
+      helpful
+      createdAt
+      user {
+        displayName
+        photoURL
+      }
+    }
+  }
+}
+
+# Query to get notes by a specific user
+query GetUserNotes($userId: ID!, $status: NoteStatus) {
+  notes(
+    where: {
+      uploadedBy: { eq: $userId }
+      status: { eq: $status }
+    }
+    orderBy: [{ field: "createdAt", direction: DESC }]
+  ) {
+    id
+    title
+    status
+    downloads
+    views
+    ratingAvg
+    createdAt
+    university {
+      name
+    }
+    department {
+      name
+    }
+  }
+}
+
+# Query to search notes
+query SearchNotes($searchText: String!, $limit: Int = 20) {
+  notes(
+    where: {
+      status: { eq: APPROVED }
+      _or: [
+        { title: { contains: $searchText } }
+        { description: { contains: $searchText } }
+        { subject: { contains: $searchText } }
+        { courseCode: { contains: $searchText } }
+      ]
+    }
+    limit: $limit
+    orderBy: [{ field: "downloads", direction: DESC }]
+  ) {
+    id
+    title
+    description
+    subject
+    courseCode
+    semester
+    downloads
+    ratingAvg
+    university {
+      name
+    }
+    department {
+      name
+    }
+  }
+}
+
+# Query to get popular notes
+query GetPopularNotes($limit: Int = 10) {
+  notes(
+    where: { status: { eq: APPROVED } }
+    orderBy: [{ field: "downloads", direction: DESC }]
+    limit: $limit
+  ) {
+    id
+    title
+    downloads
+    views
+    ratingAvg
+    thumbnailURL
+    university {
+      name
+    }
+  }
+}
+
+# Query to get recent notes
+query GetRecentNotes($limit: Int = 10) {
+  notes(
+    where: { status: { eq: APPROVED } }
+    orderBy: [{ field: "createdAt", direction: DESC }]
+    limit: $limit
+  ) {
+    id
+    title
+    createdAt
+    thumbnailURL
+    university {
+      name
+    }
+    uploader {
+      displayName
+    }
+  }
+}
+
+# Mutation to create a new note
+mutation CreateNote(
+  $title: String!
+  $description: String
+  $fileURL: String!
+  $thumbnailURL: String
+  $fileType: FileType!
+  $fileSize: Int!
+  $universityId: ID!
+  $departmentId: ID!
+  $subject: String!
+  $courseCode: String
+  $semester: String
+  $academicYear: String
+  $tags: [String!]
+) {
+  createNote(
+    data: {
+      title: $title
+      description: $description
+      fileURL: $fileURL
+      thumbnailURL: $thumbnailURL
+      fileType: $fileType
+      fileSize: $fileSize
+      universityId: $universityId
+      departmentId: $departmentId
+      subject: $subject
+      courseCode: $courseCode
+      semester: $semester
+      academicYear: $academicYear
+      uploadedBy: $auth.uid
+      tags: $tags
+    }
+  ) {
+    id
+    title
+    status
+    createdAt
+  }
+}
+
+# Mutation to update note status (for moderation)
+mutation UpdateNoteStatus(
+  $noteId: ID!
+  $status: NoteStatus!
+  $moderationNotes: String
+) {
+  updateNote(
+    id: $noteId
+    data: {
+      status: $status
+      moderatedBy: $auth.uid
+      moderationNotes: $moderationNotes
+      approvedAt: $status == "APPROVED" ? now() : null
+    }
+  ) {
+    id
+    status
+    moderatedBy
+    approvedAt
+  }
+}
+
+# Mutation to increment downloads
+mutation IncrementDownloads($noteId: ID!) {
+  updateNote(
+    id: $noteId
+    data: {
+      downloads: { increment: 1 }
+    }
+  ) {
+    id
+    downloads
+  }
+}
+
+# Mutation to increment views
+mutation IncrementViews($noteId: ID!) {
+  updateNote(
+    id: $noteId
+    data: {
+      views: { increment: 1 }
+    }
+  ) {
+    id
+    views
+  }
+}
+
+# Mutation to add a rating
+mutation AddRating(
+  $noteId: ID!
+  $rating: Int!
+  $comment: String
+) {
+  createRating(
+    data: {
+      noteId: $noteId
+      userId: $auth.uid
+      rating: $rating
+      comment: $comment
+    }
+  ) {
+    id
+    rating
+    comment
+    createdAt
+  }
+  
+  # Update note's average rating
+  updateNoteRating(noteId: $noteId)
+}
+
+# Custom mutation to update note rating stats
+mutation UpdateNoteRating($noteId: ID!) @custom {
+  # This would be implemented as a custom resolver
+  # that calculates average rating and count
+  updateNoteRatingStats(noteId: $noteId)
+}
+
+# Mutation to delete a note (admin only)
+mutation DeleteNote($noteId: ID!) {
+  deleteNote(id: $noteId) {
+    id
+  }
+}

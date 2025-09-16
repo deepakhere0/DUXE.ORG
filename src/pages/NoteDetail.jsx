@@ -18,11 +18,14 @@ import {
 import { StarIcon as StarIconSolid, BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
 import { AIService } from '../services/aiService';
 import Toast from '../components/common/Toast';
+import AIResultModal from '../components/modals/AIResultModal';
 
 const NoteDetail = () => {
   const { noteId } = useParams();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [activeTab, setActiveTab] = useState('preview');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [aiModal, setAiModal] = useState({ isOpen: false, type: null, data: null, isLoading: false, error: null });
 
   // Mock data - replace with Firebase query
   const note = {
@@ -79,7 +82,7 @@ const NoteDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       {/* Header */}
       <div className="bg-gradient-to-r from-navy-600 to-navy-500 text-white">
         <div className="container-custom py-6">
@@ -191,30 +194,62 @@ const NoteDetail = () => {
                     <div className="bg-white rounded-xl border p-4 flex flex-wrap gap-3">
                       <button
                         className="btn btn-secondary btn-sm"
+                        disabled={isProcessing}
                         onClick={async () => {
-                          await AIService.summarize({ noteId, inputText: note.description, createdBy: 'local' });
-                          Toast.info('Summary job created');
+                          setAiModal({ isOpen: true, type: 'summary', data: null, isLoading: true, error: null });
+                          try {
+                            const result = await AIService.summarize({ 
+                              inputText: note.description, 
+                              createdBy: 'local' 
+                            });
+                            setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
+                          } catch (error) {
+                            setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
+                          }
                         }}
                       >
-                        <ListBulletIcon className="h-4 w-4 mr-1" /> AI Summary
+                        <ListBulletIcon className="h-4 w-4 mr-1" /> 
+                        AI Summary
                       </button>
                       <button
                         className="btn btn-secondary btn-sm"
+                        disabled={isProcessing}
                         onClick={async () => {
-                          await AIService.generateMCQ({ inputText: note.description, createdBy: 'local' });
-                          Toast.info('MCQ job created');
+                          setAiModal({ isOpen: true, type: 'mcq', data: null, isLoading: true, error: null });
+                          try {
+                            const result = await AIService.generateMCQ({ 
+                              inputText: note.description, 
+                              count: 10,
+                              createdBy: 'local' 
+                            });
+                            setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
+                          } catch (error) {
+                            setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
+                          }
                         }}
                       >
-                        <QuestionMarkCircleIcon className="h-4 w-4 mr-1" /> MCQs
+                        <QuestionMarkCircleIcon className="h-4 w-4 mr-1" /> 
+                        MCQs
                       </button>
                       <button
                         className="btn btn-secondary btn-sm"
+                        disabled={isProcessing}
                         onClick={async () => {
-                          await AIService.flashcards({ inputText: note.description, createdBy: 'local' });
-                          Toast.info('Flashcards job created');
+                          setAiModal({ isOpen: true, type: 'flashcard', data: null, isLoading: true, error: null });
+                          try {
+                            const result = await AIService.flashcards({ 
+                              inputText: note.description, 
+                              count: 20,
+                              createdBy: 'local' 
+                            });
+                            setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
+                          } catch (error) {
+                            setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
+                          }
                         }}
                       >
-                        <Square3Stack3DIcon className="h-4 w-4 mr-1" /> Flashcards
+                        <Square3Stack3DIcon className="h-4 w-4 mr-1" /> 
+                        Flashcards
                       </button>
                     </div>
                     <div className="text-center py-8">
@@ -399,7 +434,55 @@ const NoteDetail = () => {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* AI Result Modal */}
+      <AIResultModal
+      isOpen={aiModal.isOpen}
+      onClose={() => setAiModal({ isOpen: false, type: null, data: null, isLoading: false, error: null })}
+      title={
+        aiModal.type === 'summary' ? 'AI Summary' :
+        aiModal.type === 'mcq' ? 'Generated MCQs' :
+        aiModal.type === 'flashcard' ? 'Flashcards' : ''
+      }
+      type={aiModal.type}
+      data={aiModal.data}
+      isLoading={aiModal.isLoading}
+      error={aiModal.error}
+      onRetry={() => {
+        // Retry logic based on type
+        const retryMap = {
+          'summary': async () => {
+            setAiModal(prev => ({ ...prev, isLoading: true, error: null }));
+            try {
+              const result = await AIService.summarize({ inputText: note.description, createdBy: 'local' });
+              setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
+            } catch (error) {
+              setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
+            }
+          },
+          'mcq': async () => {
+            setAiModal(prev => ({ ...prev, isLoading: true, error: null }));
+            try {
+              const result = await AIService.generateMCQ({ inputText: note.description, count: 10, createdBy: 'local' });
+              setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
+            } catch (error) {
+              setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
+            }
+          },
+          'flashcard': async () => {
+            setAiModal(prev => ({ ...prev, isLoading: true, error: null }));
+            try {
+              const result = await AIService.flashcards({ inputText: note.description, count: 20, createdBy: 'local' });
+              setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
+            } catch (error) {
+              setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
+            }
+          }
+        };
+        retryMap[aiModal.type]?.();
+      }}
+      />
+    </>
   );
 };
 

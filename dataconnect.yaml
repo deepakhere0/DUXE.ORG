@@ -1,0 +1,109 @@
+# Firebase Data Connect Configuration
+# This file configures Firebase Data Connect for the student platform
+
+specVersion: "v1"
+serviceId: "student-platform"
+location: "us-central1"
+schema:
+  source: "./dataconnect-schema.gql"
+  
+# Database configuration
+database:
+  instanceId: "student-platform-db"
+  databaseId: "(default)"
+
+# Connector configuration for different services
+connectors:
+  - connector: "notes"
+    source: "./dataconnect/notes.gql"
+  - connector: "users"
+    source: "./dataconnect/users.gql"
+  - connector: "internships"
+    source: "./dataconnect/internships.gql"
+  - connector: "ai-tools"
+    source: "./dataconnect/ai-tools.gql"
+  - connector: "analytics"
+    source: "./dataconnect/analytics.gql"
+
+# Auth configuration
+auth:
+  rules:
+    - resource: "User"
+      allow:
+        - operation: "read"
+          condition: "auth != null"
+        - operation: "create"
+          condition: "auth != null && auth.uid == resource.id"
+        - operation: "update"
+          condition: "auth != null && (auth.uid == resource.id || auth.token.role == 'admin')"
+        - operation: "delete"
+          condition: "auth != null && auth.token.role == 'admin'"
+    
+    - resource: "Note"
+      allow:
+        - operation: "read"
+          condition: "resource.status == 'APPROVED' || (auth != null && auth.uid == resource.uploadedBy)"
+        - operation: "create"
+          condition: "auth != null && auth.token.emailVerified == true"
+        - operation: "update"
+          condition: "auth != null && (auth.uid == resource.uploadedBy || auth.token.role == 'admin')"
+        - operation: "delete"
+          condition: "auth != null && auth.token.role == 'admin'"
+    
+    - resource: "Rating"
+      allow:
+        - operation: "read"
+          condition: "true"
+        - operation: "create"
+          condition: "auth != null && auth.uid == resource.userId"
+        - operation: "update"
+          condition: "auth != null && auth.uid == resource.userId"
+        - operation: "delete"
+          condition: "auth != null && (auth.uid == resource.userId || auth.token.role == 'admin')"
+    
+    - resource: "Internship"
+      allow:
+        - operation: "read"
+          condition: "true"
+        - operation: "create"
+          condition: "auth != null && (auth.token.role == 'admin' || auth.token.role == 'teacher')"
+        - operation: "update"
+          condition: "auth != null && (auth.uid == resource.postedBy || auth.token.role == 'admin')"
+        - operation: "delete"
+          condition: "auth != null && auth.token.role == 'admin'"
+
+# Indexes for optimized queries
+indexes:
+  - collection: "notes"
+    fields:
+      - field: "status"
+      - field: "createdAt"
+        order: "desc"
+  
+  - collection: "notes"
+    fields:
+      - field: "universityId"
+      - field: "departmentId"
+      - field: "semester"
+      - field: "downloads"
+        order: "desc"
+  
+  - collection: "notes"
+    fields:
+      - field: "uploadedBy"
+      - field: "status"
+      - field: "createdAt"
+        order: "desc"
+  
+  - collection: "internships"
+    fields:
+      - field: "status"
+      - field: "postedAt"
+        order: "desc"
+  
+  - collection: "aiJobs"
+    fields:
+      - field: "createdBy"
+      - field: "status"
+      - field: "createdAt"
+        order: "desc"

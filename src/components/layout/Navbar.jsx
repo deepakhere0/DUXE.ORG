@@ -17,7 +17,7 @@ import { ChevronDownIcon } from '@heroicons/react/24/solid';
 import Badge from '../common/Badge';
 
 const Navbar = () => {
-  const { currentUser, userProfile, logout } = useAuth();
+  const { currentUser, userProfile, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -45,8 +45,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <AcademicCapIcon className="h-8 w-8 text-accent-500" />
-            <span className="text-xl font-bold text-gradient">StudyHub</span>
-            <Badge size="sm" className="ml-2">DUXE</Badge>
+            <span className="text-xl font-bold text-gradient">DUXE</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -109,6 +108,15 @@ const Navbar = () => {
                     >
                       Profile Settings
                     </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin/dashboard"
+                        className="block px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
                     <hr className="my-1" />
                     <button
                       onClick={() => {
@@ -204,6 +212,15 @@ const Navbar = () => {
                   >
                     Profile Settings
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin/dashboard"
+                      className="block px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Admin Panel
+                    </Link>
+                  )}
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);

@@ -1,6 +1,13 @@
-# StudyHub — Student Platform
+# DUXE — Student Platform
 
-A premium student learning platform built with React, Vite, Tailwind CSS, React Router, React Query, and Firebase. It provides curated university notes, AI-powered study tools, video lectures, internships, and role-based moderation workflows.
+DUXE is a premium student learning platform built with React, Vite, Tailwind CSS, React Router, React Query, and Firebase. It provides curated university notes, AI-powered study tools (powered by Google Gemini API), video lectures, internships, and role-based moderation workflows.
+
+## 🚀 New Updates
+- **Firestore Integration**: All pages now fetch real data from Firestore
+- **AI-Powered Features**: Google Gemini integration for summaries, MCQs, and flashcards
+- **Admin Moderation**: Complete review queue with approve/reject functionality
+- **Smart Internship Matching**: AI-enhanced skill-based matching
+- **Result Export**: Export AI-generated content as JSON, CSV, or text files
 
 ## Tech stack
 - React 18 + Vite 6
@@ -8,27 +15,41 @@ A premium student learning platform built with React, Vite, Tailwind CSS, React 
 - React Router v6
 - @tanstack/react-query v5
 - Firebase (Auth, Firestore, Storage, Functions, Analytics)
+- Google Gemini API (gemini-1.5-flash model for AI features)
 
 ## Features
-- Reusable UI Components
-  - Navbar (with DUXE badge)
-  - Footer (About, Quick Links, Services, Support, Newsletter)
-  - FilterBar (search + dropdowns; emits filter state)
-  - NoteCard (meta props + preview/download/bookmark callbacks)
-  - ToolCard (title, icon, description, CTA)
-  - MediaViewer (PDF/Image modal)
-  - Badge, Chip, Rating, Progress, Toast wrapper
-- Pages
-  - Home, Notes, Note Detail, Tools, Internships, Videos
-  - Auth: Login, Signup, Forgot Password
-  - Dashboard, Profile, Upload, NotFound
-  - Info: About, Contact, How It Works, Pricing, FAQ, Blog, Privacy, Terms, Cookies, Help, Guidelines, Report, Feedback
-  - Admin (scaffold): Review Queue
-- Services
-  - Firebase bootstrap: `src/services/firebase.js`
-  - Firestore data model helpers: `src/services/firestoreData.js`
-  - AI service stubs (summary, MCQ, flashcards, internship matching): `src/services/aiService.js`
-  - Lightweight analytics: `src/services/analytics.js`
+
+### Core Features
+- **Notes Management**: Upload, browse, and download study materials with Firestore backend
+- **AI Study Tools**: Generate summaries, MCQs, and flashcards using Google Gemini
+- **Internship Matching**: AI-powered skill matching for relevant opportunities
+- **Admin Moderation**: Review queue for approving/rejecting content
+- **Real-time Data**: Live updates from Firestore with caching via React Query
+
+### UI Components
+- **Layout**: Navbar with DUXE badge, Footer with newsletter
+- **Common Components**: 
+  - FilterBar (dynamic filtering with Firestore)
+  - NoteCard (connected to real data)
+  - AIResultModal (display & export AI results)
+  - MediaViewer (PDF/Image preview)
+  - Toast notifications
+  
+### Pages (All Firestore-Connected)
+- **Public**: Home, Notes (paginated), Note Detail (AI actions), Tools, Internships (AI matching), Videos
+- **Auth**: Login, Signup, Forgot Password
+- **User**: Dashboard, Profile, Upload
+- **Admin**: Review Queue (approve/reject pending notes)
+- **Info**: About, Contact, How It Works, Pricing, FAQ, Blog, Privacy, Terms
+### Services
+- **Firebase**: Authentication & database configuration
+- **Firestore Data**: CRUD operations for all collections
+- **AI Service**: Google Gemini integration with:
+  - Smart summarization with key points extraction
+  - MCQ generation with explanations
+  - Flashcard creation for study
+  - Intelligent internship matching
+- **Analytics**: Track downloads and tool usage
 - Auth, roles, and protected routes via `src/contexts/AuthContext.jsx` and `ProtectedRoute`
 
 ## Data model (Firestore collections)
@@ -45,13 +66,20 @@ A premium student learning platform built with React, Vite, Tailwind CSS, React 
 - videos: { id, title, source, url, skillTags[], length, level }
 - analytics: lightweight counters per note/tool
 
-## AI features (service flow)
-- Summarizer: input (noteId or text) → serverless function (placeholder) → store aiJobs.output (bullets, TL;DR, key terms) → display + save
-- MCQ Generator: input text → generate 5–20 MCQs with choices, correct answer, explanation → allow export
-- Flashcards: extract Q/A or term/definition pairs → allow export CSV/Anki
-- Internship Matching: compare users.skills[] with internships.skills[] → score & sort
+## AI Features (Google Gemini Powered)
 
-Current implementation ships with stubs in `aiService.js` that simulate job creation and completion. Swap these with your preferred AI endpoint later (Cloud Functions or any server).
+### Implementation
+- **Model**: Google Gemini 1.5 Flash via `@google/generative-ai`
+- **Features**:
+  - **Smart Summarization**: Extracts key points, TL;DR, and main terms
+  - **MCQ Generation**: Creates 5-20 questions with choices and explanations
+  - **Flashcard Creation**: Generates Q/A pairs for effective studying
+  - **Internship Matching**: AI-scored relevance with match reasons
+- **User Experience**:
+  - Beautiful modal displays for results
+  - Export options (JSON, CSV, TXT)
+  - Copy to clipboard functionality
+  - Graceful fallbacks when API unavailable
 
 ## Getting started
 
@@ -77,6 +105,7 @@ cp .env.example .env.local
 - VITE_FIREBASE_MESSAGING_SENDER_ID
 - VITE_FIREBASE_APP_ID
 - VITE_FIREBASE_MEASUREMENT_ID (optional)
+- VITE_GEMINI_API_KEY (for AI features - get from Google AI Studio)
 
 Run dev server
 ```bash path=null start=null
@@ -157,17 +186,57 @@ src/
   index.css, main.jsx, App.jsx
 ```
 
-## Workflows (high level)
-- Upload & Moderation: Student uploads with metadata → status=pending → Admin review queue → approve to appear on portal
-- Preview/Summary/MCQ: Open Note → Preview modal → AI Summary/MCQ buttons create jobs → show output (stubbed for now)
-- Bookmarks & Library: Toggle bookmark on notes/internships/videos → visible in Dashboard (to wire to Firestore)
-- Internship Match: User selects skills → list sorts by match score (AIService.matchInternships)
+## Key Workflows
+
+### Content Moderation Flow
+1. User uploads note → Status: `pending`
+2. Admin reviews in Review Queue
+3. Admin approves → Status: `approved` → Visible to all
+4. Admin rejects → Status: `rejected` → Only visible to owner
+
+### AI Study Tools Flow
+1. User opens note detail page
+2. Clicks AI action (Summary/MCQ/Flashcards)
+3. Gemini processes content
+4. Results display in modal
+5. User can export or save results
+
+### Internship Matching Flow
+1. User adds their skills
+2. System fetches internships from Firestore
+3. AI scores each internship based on skill match
+4. Results sorted by relevance with match reasons
+
+## Security
+
+### Firestore Rules
+Proper security rules are configured in `firestore.rules`:
+- **Notes**: Only approved notes are public, pending/rejected restricted
+- **Admin**: Only admins can approve/reject content
+- **AI Jobs**: Users can only access their own AI generations
+- **Analytics**: Public read, authenticated write
+
+### Deployment
+```bash
+# Deploy Firestore rules
+firebase deploy --only firestore:rules
+```
+
+## Recent Improvements
+- ✅ Full Firestore integration for all data
+- ✅ Google Gemini AI integration 
+- ✅ Admin moderation workflow
+- ✅ AI result modals with export
+- ✅ Pagination and real-time updates
+- ✅ Secure Firestore rules
 
 ## Roadmap
-- Replace AI stubs with real endpoints (Functions or your API) and stream outputs.
-- Wire Notes/Internships/Videos to Firestore (replace mock data in pages).
-- Implement admin Review Queue route with real Firestore queries.
-- Add E2E/tests and CI, code-splitting to reduce bundle size.
+- [ ] Add user notifications for approval/rejection
+- [ ] Implement rating and comments system
+- [ ] Add file upload to Firebase Storage
+- [ ] Create dashboard analytics charts
+- [ ] Add E2E tests with Cypress
+- [ ] Implement code splitting for performance
 
 ## Scripts
 - dev: start Vite dev server

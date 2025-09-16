@@ -33,6 +33,15 @@ import Guidelines from './pages/Guidelines';
 import Report from './pages/Report';
 import Feedback from './pages/Feedback';
 import ForgotPassword from './pages/ForgotPassword';
+import DataConnectTest from './components/DataConnectTest';
+
+// Admin Components
+import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
+import ReviewQueue from './pages/admin/ReviewQueue';
+import FileManagement from './pages/admin/FileManagement';
+import Analytics from './pages/admin/Analytics';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -76,6 +85,11 @@ function App() {
               <Route path="feedback" element={<Feedback />} />
               <Route path="forgot-password" element={<ForgotPassword />} />
               
+              {/* Data Connect Test Route - Development Only */}
+              {import.meta.env.DEV && (
+                <Route path="test-dataconnect" element={<DataConnectTest />} />
+              )}
+              
               {/* Protected Routes - Require Authentication */}
               <Route
                 path="upload"
@@ -115,12 +129,16 @@ function App() {
                 path="admin/*"
                 element={
                   <ProtectedRoute requireAdmin>
-                    <Routes>
-                      <Route path="users" element={<div>Admin Users</div>} />
-                      <Route path="moderation" element={<div>Admin Moderation</div>} />
-                      <Route path="review" element={<div>Review Queue Coming Soon</div>} />
-                      <Route path="analytics" element={<div>Admin Analytics</div>} />
-                    </Routes>
+                    <AdminLayout>
+                      <Routes>
+                        <Route index element={<AdminDashboard />} />
+                        <Route path="dashboard" element={<AdminDashboard />} />
+                        <Route path="users" element={<UserManagement />} />
+                        <Route path="review-queue" element={<ReviewQueue />} />
+                        <Route path="files" element={<FileManagement />} />
+                        <Route path="analytics" element={<Analytics />} />
+                      </Routes>
+                    </AdminLayout>
                   </ProtectedRoute>
                 }
               />

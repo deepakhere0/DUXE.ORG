@@ -1,0 +1,131 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isModerator() {
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator'];
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId) && 
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || isAdmin());
+      allow delete: if isAdmin();
+    }
+    
+    // Universities collection
+    match /universities/{universityId} {
+      allow read: if true; // Public read
+      allow write: if isAdmin();
+    }
+    
+    // Departments collection
+    match /departments/{departmentId} {
+      allow read: if true; // Public read
+      allow write: if isAdmin();
+    }
+    
+    // Notes collection
+    match /notes/{noteId} {
+      // Anyone can read approved notes
+      // Owners can read their own notes regardless of status
+      // Admins/Moderators can read all notes
+      allow read: if resource.data.status == 'approved' || 
+                     isOwner(resource.data.createdBy) ||
+                     isModerator();
+      
+      // Signed-in users can create notes (default status: pending)
+      allow create: if isSignedIn() && 
+                       request.resource.data.createdBy == request.auth.uid &&
+                       request.resource.data.status == 'pending';
+      
+      // Owners can update their own notes (but not change status)
+      // Admins/Moderators can update any note
+      allow update: if (isOwner(resource.data.createdBy) && 
+                        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'createdBy'])) ||
+                       isModerator();
+      
+      // Owners can delete their own notes
+      // Admins can delete any note
+      allow delete: if isOwner(resource.data.createdBy) || isAdmin();
+    }
+    
+    // AI Jobs collection
+    match /aiJobs/{jobId} {
+      // Users can only read/write their own AI jobs
+      allow read: if isOwner(resource.data.createdBy) || isAdmin();
+      allow create: if isSignedIn() && 
+                       request.resource.data.createdBy == request.auth.uid;
+      allow update: if isOwner(resource.data.createdBy);
+      allow delete: if isOwner(resource.data.createdBy) || isAdmin();
+    }
+    
+    // Internships collection
+    match /internships/{internshipId} {
+      allow read: if true; // Public read
+      allow create: if isModerator();
+      allow update: if isModerator();
+      allow delete: if isAdmin();
+    }
+    
+    // Videos collection
+    match /videos/{videoId} {
+      allow read: if true; // Public read
+      allow create: if isModerator();
+      allow update: if isModerator();
+      allow delete: if isAdmin();
+    }
+    
+    // Analytics collection
+    match /analytics/{docId} {
+      allow read: if true; // Public read for view counts
+      allow create: if isSignedIn();
+      allow update: if isSignedIn(); // Allow increments
+      allow delete: if false; // Never delete analytics
+    }
+    
+    // Bookmarks subcollection under users
+    match /users/{userId}/bookmarks/{bookmarkId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+    
+    // Ratings subcollection under notes
+    match /notes/{noteId}/ratings/{ratingId} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn() && 
+                       request.auth.uid == ratingId && // Rating ID must match user ID
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && 
+                       request.auth.uid == ratingId &&
+                       request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && request.auth.uid == ratingId;
+    }
+    
+    // Comments subcollection under notes
+    match /notes/{noteId}/comments/{commentId} {
+      allow read: if get(/databases/$(database)/documents/notes/$(noteId)).data.status == 'approved';
+      allow create: if isSignedIn() && 
+                       get(/databases/$(database)/documents/notes/$(noteId)).data.status == 'approved' &&
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.userId) || isModerator();
+    }
+  }
+}

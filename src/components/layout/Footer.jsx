@@ -53,10 +53,10 @@ const Footer = () => {
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <AcademicCapIcon className="h-8 w-8 text-accent-500" />
-              <span className="text-xl font-bold">StudyHub</span>
+              <span className="text-xl font-bold">DUXE</span>
             </div>
             <p className="text-sm text-gray-300 mb-4">
-              Empowering students with premium study materials, AI-powered tools, and career opportunities.
+              DUXE - Empowering students with premium study materials, AI-powered tools, and career opportunities.
             </p>
             <div className="flex space-x-3 mb-6">
               {socialLinks.map((social) => (
@@ -123,7 +123,7 @@ const Footer = () => {
         <div className="border-t border-white/10 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-sm text-gray-300">
-              © {currentYear} StudyHub. All rights reserved.
+              © {currentYear} DUXE. All rights reserved.
             </p>
             <div className="flex space-x-6 text-sm">
               <Link to="/privacy" className="text-gray-300 hover:text-white transition-colors duration-200">

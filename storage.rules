@@ -1,0 +1,59 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isValidFile() {
+      // Max file size: 50MB
+      return request.resource.size < 50 * 1024 * 1024 &&
+        // Allowed file types
+        (request.resource.contentType.matches('application/pdf') ||
+         request.resource.contentType.matches('image/.*') ||
+         request.resource.contentType.matches('application/msword') ||
+         request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.*') ||
+         request.resource.contentType.matches('application/vnd.ms-powerpoint'));
+    }
+    
+    // Notes uploads
+    match /notes/{userId}/{noteId}/{fileName} {
+      allow read: if true; // Public read for approved notes (controlled by Firestore)
+      allow write: if isOwner(userId) && isValidFile();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // User profile pictures
+    match /users/{userId}/profile/{fileName} {
+      allow read: if true; // Public read for profile pictures
+      allow write: if isOwner(userId) && 
+        request.resource.size < 5 * 1024 * 1024 && // Max 5MB for profile pics
+        request.resource.contentType.matches('image/.*');
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // Video thumbnails
+    match /videos/thumbnails/{videoId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
+    }
+    
+    // Temporary uploads (for processing)
+    match /temp/{userId}/{fileName} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidFile();
+      allow delete: if isOwner(userId);
+    }
+  }
+}

@@ -1,0 +1,428 @@
+# Firebase Data Connect Schema for Student Platform
+# This schema defines the data structure for Firebase Data Connect
+
+# User type definition
+type User @table {
+  id: ID! @default(expr: "uuid()") 
+  email: String! @unique
+  displayName: String!
+  photoURL: String
+  role: UserRole! @default(value: "STUDENT")
+  emailVerified: Boolean! @default(value: false)
+  bookmarks: [String!] @default(value: "[]")
+  uploadedNotes: [String!] @default(value: "[]")
+  createdAt: DateTime! @default(expr: "now()")
+  updatedAt: DateTime! @default(expr: "now()")
+  
+  # Relationships
+  notes: [Note!] @relationship(fields: ["id"], references: ["uploadedBy"])
+  ratings: [Rating!] @relationship(fields: ["id"], references: ["userId"])
+  aiJobs: [AIJob!] @relationship(fields: ["id"], references: ["createdBy"])
+  bookmarkedNotes: [Note!] @relationship(fields: ["bookmarks"], references: ["id"])
+}
+
+# User role enumeration
+enum UserRole {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+# University type definition
+type University @table {
+  id: ID! @default(expr: "uuid()")
+  name: String! @unique
+  code: String! @unique
+  location: String
+  website: String
+  logoURL: String
+  createdAt: DateTime! @default(expr: "now()")
+  
+  # Relationships
+  departments: [Department!] @relationship(fields: ["id"], references: ["universityId"])
+  notes: [Note!] @relationship(fields: ["id"], references: ["universityId"])
+}
+
+# Department type definition  
+type Department @table {
+  id: ID! @default(expr: "uuid()")
+  name: String!
+  code: String!
+  universityId: ID!
+  description: String
+  createdAt: DateTime! @default(expr: "now()")
+  
+  # Relationships
+  university: University! @relationship(fields: ["universityId"], references: ["id"])
+  notes: [Note!] @relationship(fields: ["id"], references: ["departmentId"])
+}
+
+# Note type definition
+type Note @table {
+  id: ID! @default(expr: "uuid()")
+  title: String! @index
+  description: String
+  fileURL: String!
+  thumbnailURL: String
+  fileType: FileType! @default(value: "PDF")
+  fileSize: Int! # Size in bytes
+  
+  # Academic info
+  universityId: ID! @index
+  departmentId: ID! @index
+  subject: String! @index
+  courseCode: String @index
+  semester: String @index
+  academicYear: String
+  
+  # Metadata
+  uploadedBy: ID! @index
+  status: NoteStatus! @default(value: "PENDING") @index
+  moderatedBy: ID
+  moderationNotes: String
+  
+  # Stats
+  downloads: Int! @default(value: 0)
+  views: Int! @default(value: 0)
+  ratingCount: Int! @default(value: 0)
+  ratingAvg: Float! @default(value: 0.0)
+  
+  # Timestamps
+  createdAt: DateTime! @default(expr: "now()") @index
+  updatedAt: DateTime! @default(expr: "now()")
+  approvedAt: DateTime
+  
+  # Tags and search
+  tags: [String!] @default(value: "[]")
+  
+  # Relationships
+  university: University! @relationship(fields: ["universityId"], references: ["id"])
+  department: Department! @relationship(fields: ["departmentId"], references: ["id"])
+  uploader: User! @relationship(fields: ["uploadedBy"], references: ["id"])
+  moderator: User @relationship(fields: ["moderatedBy"], references: ["id"])
+  ratings: [Rating!] @relationship(fields: ["id"], references: ["noteId"])
+}
+
+# Note status enumeration
+enum NoteStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+# File type enumeration
+enum FileType {
+  PDF
+  IMAGE
+  DOCUMENT
+  PRESENTATION
+}
+
+# Rating type definition
+type Rating @table {
+  id: ID! @default(expr: "uuid()")
+  noteId: ID! @index
+  userId: ID! @index
+  rating: Int! # 1-5 stars
+  comment: String
+  helpful: Int! @default(value: 0)
+  createdAt: DateTime! @default(expr: "now()")
+  
+  # Unique constraint to prevent duplicate ratings
+  @@unique([noteId, userId])
+  
+  # Relationships
+  note: Note! @relationship(fields: ["noteId"], references: ["id"])
+  user: User! @relationship(fields: ["userId"], references: ["id"])
+}
+
+# Video type definition
+type Video @table {
+  id: ID! @default(expr: "uuid()")
+  title: String! @index
+  description: String
+  videoURL: String!
+  thumbnailURL: String
+  duration: Int # Duration in seconds
+  
+  # Academic info
+  subject: String @index
+  topic: String @index
+  difficulty: Difficulty @default(value: "INTERMEDIATE")
+  
+  # Creator info
+  creatorId: ID
+  creatorName: String
+  channelName: String
+  
+  # Stats
+  views: Int! @default(value: 0)
+  likes: Int! @default(value: 0)
+  
+  # Timestamps
+  createdAt: DateTime! @default(expr: "now()") @index
+  publishedAt: DateTime
+  
+  # Tags
+  tags: [String!] @default(value: "[]")
+  
+  # Relationships
+  creator: User @relationship(fields: ["creatorId"], references: ["id"])
+}
+
+# Difficulty enumeration
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+# Internship type definition
+type Internship @table {
+  id: ID! @default(expr: "uuid()")
+  company: String! @index
+  role: String! @index
+  description: String
+  
+  # Details
+  stipend: String
+  location: String @index
+  locationType: LocationType @default(value: "ONSITE")
+  duration: String
+  startDate: DateTime
+  applicationDeadline: DateTime
+  
+  # Requirements
+  skills: [String!] @default(value: "[]")
+  eligibility: String
+  
+  # Application
+  applyURL: String
+  applicationCount: Int! @default(value: 0)
+  
+  # Metadata
+  postedBy: ID
+  status: InternshipStatus! @default(value: "ACTIVE") @index
+  
+  # Timestamps
+  postedAt: DateTime! @default(expr: "now()") @index
+  updatedAt: DateTime! @default(expr: "now()")
+  
+  # Relationships
+  poster: User @relationship(fields: ["postedBy"], references: ["id"])
+}
+
+# Location type enumeration
+enum LocationType {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+# Internship status enumeration
+enum InternshipStatus {
+  ACTIVE
+  CLOSED
+  FILLED
+  CANCELLED
+}
+
+# AI Job type definition for tracking AI tool usage
+type AIJob @table {
+  id: ID! @default(expr: "uuid()")
+  type: AIJobType!
+  status: AIJobStatus! @default(value: "PENDING") @index
+  
+  # Input/Output
+  inputText: String
+  inputFileURL: String
+  outputText: String
+  outputData: String # JSON stringified data
+  
+  # Metadata
+  createdBy: ID! @index
+  parameters: String # JSON stringified parameters
+  error: String
+  
+  # Timestamps
+  createdAt: DateTime! @default(expr: "now()") @index
+  startedAt: DateTime
+  completedAt: DateTime
+  
+  # Relationships
+  user: User! @relationship(fields: ["createdBy"], references: ["id"])
+}
+
+# AI Job type enumeration
+enum AIJobType {
+  SUMMARIZE
+  GENERATE_MCQ
+  GENERATE_FLASHCARDS
+  MATCH_INTERNSHIPS
+}
+
+# AI Job status enumeration
+enum AIJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+# Bookmark type definition (junction table)
+type Bookmark @table {
+  id: ID! @default(expr: "uuid()")
+  userId: ID! @index
+  noteId: ID @index
+  videoId: ID @index
+  internshipId: ID @index
+  createdAt: DateTime! @default(expr: "now()")
+  
+  # Ensure only one resource is bookmarked
+  @check(expr: "(noteId IS NOT NULL AND videoId IS NULL AND internshipId IS NULL) OR (noteId IS NULL AND videoId IS NOT NULL AND internshipId IS NULL) OR (noteId IS NULL AND videoId IS NULL AND internshipId IS NOT NULL)")
+  
+  # Relationships
+  user: User! @relationship(fields: ["userId"], references: ["id"])
+  note: Note @relationship(fields: ["noteId"], references: ["id"])
+  video: Video @relationship(fields: ["videoId"], references: ["id"])
+  internship: Internship @relationship(fields: ["internshipId"], references: ["id"])
+}
+
+# Report type definition for content moderation
+type Report @table {
+  id: ID! @default(expr: "uuid()")
+  reportType: ReportType!
+  resourceId: ID! # ID of the resource being reported
+  resourceType: String! # Type of resource (note, video, etc.)
+  reason: String!
+  description: String
+  
+  # Reporter info
+  reportedBy: ID! @index
+  
+  # Moderation
+  status: ReportStatus! @default(value: "PENDING") @index
+  moderatedBy: ID
+  moderationAction: String
+  
+  # Timestamps
+  createdAt: DateTime! @default(expr: "now()") @index
+  resolvedAt: DateTime
+  
+  # Relationships
+  reporter: User! @relationship(fields: ["reportedBy"], references: ["id"])
+  moderator: User @relationship(fields: ["moderatedBy"], references: ["id"])
+}
+
+# Report type enumeration
+enum ReportType {
+  INAPPROPRIATE_CONTENT
+  COPYRIGHT_VIOLATION
+  SPAM
+  MISLEADING
+  OTHER
+}
+
+# Report status enumeration
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+# Feedback type definition
+type Feedback @table {
+  id: ID! @default(expr: "uuid()")
+  type: FeedbackType!
+  category: String
+  subject: String!
+  message: String!
+  rating: Int # 1-5 rating for the platform
+  
+  # User info
+  userId: ID @index
+  userEmail: String
+  
+  # Status
+  status: FeedbackStatus! @default(value: "NEW") @index
+  priority: Priority @default(value: "MEDIUM")
+  
+  # Response
+  adminResponse: String
+  respondedBy: ID
+  
+  # Timestamps
+  createdAt: DateTime! @default(expr: "now()") @index
+  respondedAt: DateTime
+  
+  # Relationships
+  user: User @relationship(fields: ["userId"], references: ["id"])
+  responder: User @relationship(fields: ["respondedBy"], references: ["id"])
+}
+
+# Feedback type enumeration
+enum FeedbackType {
+  BUG_REPORT
+  FEATURE_REQUEST
+  GENERAL_FEEDBACK
+  COMPLAINT
+  APPRECIATION
+}
+
+# Feedback status enumeration
+enum FeedbackStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+# Priority enumeration
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+# Analytics type definition for tracking platform usage
+type Analytics @table {
+  id: ID! @default(expr: "uuid()")
+  eventType: String! @index
+  eventName: String! @index
+  userId: ID @index
+  sessionId: String @index
+  
+  # Event data
+  data: String # JSON stringified event data
+  userAgent: String
+  ipAddress: String
+  
+  # Timestamps
+  timestamp: DateTime! @default(expr: "now()") @index
+  
+  # Relationships
+  user: User @relationship(fields: ["userId"], references: ["id"])
+}
+
+# Search index for full-text search capabilities
+type SearchIndex @table {
+  id: ID! @default(expr: "uuid()")
+  resourceType: String! @index # note, video, internship
+  resourceId: ID! @index
+  title: String! @index
+  content: String # Combined searchable text
+  tags: [String!] @default(value: "[]")
+  
+  # Metadata for ranking
+  popularity: Int! @default(value: 0)
+  relevance: Float! @default(value: 0.0)
+  
+  # Timestamps
+  indexedAt: DateTime! @default(expr: "now()")
+  updatedAt: DateTime! @default(expr: "now()")
+}

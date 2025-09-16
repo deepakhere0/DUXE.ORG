@@ -1,10 +1,17 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Chip from './Chip';
+import { useDebounce } from '../../hooks/useDebounce';
 
-const Select = ({ label, value, onChange, options, placeholder }) => (
+const Select = ({ label, value, onChange, options, placeholder, id }) => (
   <div>
-    {label && <label className="label">{label}</label>}
-    <select className="input" value={value || ''} onChange={(e) => onChange(e.target.value)}>
+    {label && <label htmlFor={id} className="label">{label}</label>}
+    <select 
+      id={id}
+      className="input min-h-[44px] text-base"
+      value={value || ''} 
+      onChange={(e) => onChange(e.target.value)}
+      aria-label={label}
+    >
       <option value="">{placeholder || 'All'}</option>
       {options.map((opt) => (
         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -21,6 +28,15 @@ const FilterBar = ({
   subjects = [],
   searchPlaceholder = 'Search notes, courses...'
 }) => {
+  const [localSearch, setLocalSearch] = useState(filters.query || '');
+  const debouncedSearch = useDebounce(localSearch, 300);
+  
+  useEffect(() => {
+    if (debouncedSearch !== filters.query) {
+      onChange({ ...filters, query: debouncedSearch });
+    }
+  }, [debouncedSearch]);
+
   const update = (patch) => onChange({ ...filters, ...patch });
 
   const activeChips = useMemo(() => {
@@ -36,19 +52,44 @@ const FilterBar = ({
     <div className="bg-white rounded-2xl shadow-card p-4 md:p-6 mb-6">
       <div className="grid md:grid-cols-5 gap-4">
         <div className="md:col-span-2">
-          <label className="label">Search</label>
+          <label htmlFor="search-input" className="label">Search</label>
           <input
-            className="input"
-            value={filters.query || ''}
-            onChange={(e) => update({ query: e.target.value })}
+            id="search-input"
+            type="search"
+            className="input min-h-[44px] text-base"
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
             placeholder={searchPlaceholder}
+            aria-label="Search notes"
+            autoComplete="off"
           />
         </div>
-        <Select label="University" value={filters.universityId} onChange={(v) => update({ universityId: v })} options={universities} placeholder="All Universities" />
-        <Select label="Department" value={filters.departmentId} onChange={(v) => update({ departmentId: v })} options={departments} placeholder="All Departments" />
+        <Select 
+          id="university-select"
+          label="University" 
+          value={filters.universityId} 
+          onChange={(v) => update({ universityId: v })} 
+          options={universities} 
+          placeholder="All Universities" 
+        />
+        <Select 
+          id="department-select"
+          label="Department" 
+          value={filters.departmentId} 
+          onChange={(v) => update({ departmentId: v })} 
+          options={departments} 
+          placeholder="All Departments" 
+        />
         <div>
-          <label className="label">Semester</label>
-          <input className="input" value={filters.semester || ''} onChange={(e)=>update({ semester: e.target.value })} placeholder="e.g. 5" />
+          <label htmlFor="semester-input" className="label">Semester</label>
+          <input 
+            id="semester-input"
+            className="input min-h-[44px] text-base" 
+            value={filters.semester || ''} 
+            onChange={(e)=>update({ semester: e.target.value })} 
+            placeholder="e.g. 5" 
+            aria-label="Semester"
+          />
         </div>
       </div>
 

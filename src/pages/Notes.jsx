@@ -1,5 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { collection, query, where, orderBy, limit, getDocs, startAfter } from 'firebase/firestore';
+import { db } from '../services/firebase';
+import { Notes as NotesService, Universities, Departments } from '../services/firestoreData';
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -13,119 +17,150 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import FilterBar from '../components/common/FilterBar';
-import NoteCard from '../components/common/NoteCard';
+import LazyNoteCard from '../components/common/LazyNoteCard';
+import { SkeletonCard } from '../components/common/Skeleton';
 
 const Notes = () => {
   const [filters, setFilters] = useState({});
   const [sortBy, setSortBy] = useState('popular');
-
-  // Mock data - replace with Firebase queries
-  const universities = ['MIT', 'Harvard', 'Stanford', 'Yale', 'Princeton'];
-  const departments = ['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Biology'];
-  const subjects = ['Data Structures', 'Algorithms', 'Calculus', 'Linear Algebra', 'Discrete Math'];
+  const [page, setPage] = useState(1);
+  const [lastVisible, setLastVisible] = useState(null);
+  const notesPerPage = 12;
+  
+  // Fetch universities and departments from Firestore
+  const { data: universities = [] } = useQuery({
+    queryKey: ['universities'],
+    queryFn: async () => {
+      const unis = await Universities.list();
+      return unis.map(u => ({ value: u.id, label: u.name }));
+    },
+    staleTime: 30 * 60 * 1000, // Cache for 30 minutes
+  });
+  
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments', filters.universityId],
+    queryFn: async () => {
+      if (!filters.universityId) {
+        const depts = await Departments.list();
+        return depts.map(d => ({ value: d.id, label: d.name }));
+      }
+      const depts = await Departments.getByUniversity(filters.universityId);
+      return depts.map(d => ({ value: d.id, label: d.name }));
+    },
+    staleTime: 30 * 60 * 1000,
+  });
+  
   const semesters = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
 
-  const mockNotes = [
-    {
-      id: 1,
-      title: 'Data Structures Complete Notes',
-      courseCode: 'CS201',
-      university: 'MIT',
-      department: 'Computer Science',
-      subject: 'Data Structures',
-      semester: '3rd',
-      author: 'John Doe',
-      pages: 125,
-      rating: 4.8,
-      downloads: 1520,
-      uploadedDate: '2024-01-15',
-      thumbnail: 'https://via.placeholder.com/200x300',
-      description: 'Comprehensive notes covering all data structures topics'
+
+  // Fetch notes from Firestore with filters and pagination
+  const { data: notesData = { notes: [], hasMore: false }, isLoading, error, refetch } = useQuery({
+    queryKey: ['notes', filters, sortBy, page],
+    queryFn: async () => {
+      try {
+        // Build Firestore query
+        let q = query(collection(db, 'notes'));
+        
+        // Only show approved notes
+        q = query(q, where('status', '==', 'approved'));
+        
+        // Apply filters
+        if (filters.universityId) {
+          q = query(q, where('universityId', '==', filters.universityId));
+        }
+        
+        if (filters.departmentId) {
+          q = query(q, where('departmentId', '==', filters.departmentId));
+        }
+        
+        if (filters.semester) {
+          q = query(q, where('semester', '==', filters.semester));
+        }
+        
+        // Apply sorting
+        switch (sortBy) {
+          case 'popular':
+            q = query(q, orderBy('downloads', 'desc'));
+            break;
+          case 'rating':
+            q = query(q, orderBy('ratingAvg', 'desc'));
+            break;
+          case 'newest':
+            q = query(q, orderBy('createdAt', 'desc'));
+            break;
+          default:
+            q = query(q, orderBy('downloads', 'desc'));
+        }
+        
+        // Apply pagination
+        q = query(q, limit(notesPerPage + 1));
+        
+        if (page > 1 && lastVisible) {
+          q = query(q, startAfter(lastVisible));
+        }
+        
+        const snapshot = await getDocs(q);
+        const notesList = [];
+        
+        snapshot.forEach((doc, index) => {
+          if (index < notesPerPage) {
+            notesList.push({ id: doc.id, ...doc.data() });
+          }
+        });
+        
+        // Set last visible document for pagination
+        if (notesList.length > 0) {
+          setLastVisible(snapshot.docs[Math.min(notesPerPage - 1, snapshot.docs.length - 1)]);
+        }
+        
+        // Check if there are more pages
+        const hasMore = snapshot.docs.length > notesPerPage;
+        
+        // Apply text search client-side (for now)
+        let filtered = notesList;
+        const queryText = filters.query || '';
+        if (queryText) {
+          filtered = notesList.filter(note => 
+            (note.title?.toLowerCase() || '').includes(queryText.toLowerCase()) ||
+            (note.description?.toLowerCase() || '').includes(queryText.toLowerCase()) ||
+            (note.courseCode?.toLowerCase() || '').includes(queryText.toLowerCase()) ||
+            (note.subject?.toLowerCase() || '').includes(queryText.toLowerCase())
+          );
+        }
+        
+        return { notes: filtered, hasMore };
+      } catch (err) {
+        console.error('Error fetching notes:', err);
+        // Return empty array on error
+        return { notes: [], hasMore: false };
+      }
     },
-    {
-      id: 2,
-      title: 'Advanced Algorithms Study Guide',
-      courseCode: 'CS301',
-      university: 'Stanford',
-      department: 'Computer Science',
-      subject: 'Algorithms',
-      semester: '4th',
-      author: 'Jane Smith',
-      pages: 98,
-      rating: 4.9,
-      downloads: 2100,
-      uploadedDate: '2024-01-20',
-      thumbnail: 'https://via.placeholder.com/200x300',
-      description: 'In-depth analysis of advanced algorithmic concepts'
-    },
-    {
-      id: 3,
-      title: 'Calculus III Complete Solutions',
-      courseCode: 'MATH301',
-      university: 'Harvard',
-      department: 'Mathematics',
-      subject: 'Calculus',
-      semester: '3rd',
-      author: 'Mike Johnson',
-      pages: 210,
-      rating: 4.7,
-      downloads: 890,
-      uploadedDate: '2024-01-18',
-      thumbnail: 'https://via.placeholder.com/200x300',
-      description: 'Step-by-step solutions for Calculus III problems'
-    },
-    // Add more mock notes as needed
-  ];
-
-  const [filteredNotes, setFilteredNotes] = useState(mockNotes);
-
-  useEffect(() => {
-    let filtered = [...mockNotes];
-
-    // Apply filters
-    const queryText = filters.query || '';
-    if (queryText) {
-      filtered = filtered.filter(note => 
-        note.title.toLowerCase().includes(queryText.toLowerCase()) ||
-        note.description.toLowerCase().includes(queryText.toLowerCase()) ||
-        note.courseCode.toLowerCase().includes(queryText.toLowerCase())
-      );
-    }
-
-    if (filters.universityId) {
-      filtered = filtered.filter(note => note.university === filters.universityId);
-    }
-
-    if (filters.departmentId) {
-      filtered = filtered.filter(note => note.department === filters.departmentId);
-    }
-
-    if (filters.semester) {
-      filtered = filtered.filter(note => note.semester === filters.semester);
-    }
-
-    // Apply sorting
-    switch (sortBy) {
-      case 'popular':
-        filtered.sort((a, b) => b.downloads - a.downloads);
-        break;
-      case 'rating':
-        filtered.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'newest':
-        filtered.sort((a, b) => new Date(b.uploadedDate) - new Date(a.uploadedDate));
-        break;
-      default:
-        break;
-    }
-
-    setFilteredNotes(filtered);
-  }, [searchQuery, selectedUniversity, selectedDepartment, selectedSubject, selectedSemester, sortBy]);
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    cacheTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  });
+  
+  const filteredNotes = notesData.notes;
 
   const clearFilters = () => {
     setFilters({});
     setSortBy('popular');
+    setPage(1);
+    setLastVisible(null);
   };
+  
+  const handleLoadMore = () => {
+    setPage(prev => prev + 1);
+  };
+  
+  const handlePageReset = () => {
+    setPage(1);
+    setLastVisible(null);
+  };
+  
+  // Reset page when filters or sort changes
+  useEffect(() => {
+    handlePageReset();
+  }, [filters, sortBy]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -144,15 +179,18 @@ const Notes = () => {
         <FilterBar
           filters={filters}
           onChange={setFilters}
-          universities={universities.map((u) => ({ value: u, label: u }))}
-          departments={departments.map((d) => ({ value: d, label: d }))}
+          universities={universities}
+          departments={departments}
         />
         {/* Sort Dropdown */}
         <div className="flex justify-end mb-6">
+          <label htmlFor="sort-select" className="sr-only">Sort by</label>
           <select
+            id="sort-select"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="input w-full md:w-48"
+            className="input w-full md:w-48 min-h-[44px] text-base"
+            aria-label="Sort notes by"
           >
             <option value="popular">Most Popular</option>
             <option value="rating">Highest Rated</option>
@@ -161,49 +199,77 @@ const Notes = () => {
         </div>
 
         {/* Results Count */}
-        <div className="mb-6">
-          <p className="text-gray-600">
-            Found <span className="font-semibold text-gray-900">{filteredNotes.length}</span> notes
-          </p>
-        </div>
+        {!isLoading && (
+          <div className="mb-6" role="status" aria-live="polite">
+            <p className="text-gray-600">
+              {filteredNotes.length > 0 ? (
+                <>Showing <span className="font-semibold text-gray-900">{filteredNotes.length}</span> notes
+                {notesData.hasMore && ' (more available)'}</>
+              ) : (
+                'No notes found'
+              )}
+            </p>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12" role="alert">
+            <p className="text-red-600">Error loading notes. Please try again.</p>
+          </div>
+        )}
 
         {/* Notes Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredNotes.map((note) => (
-            <NoteCard
-              key={note.id}
-              meta={{
-                id: note.id,
-                title: note.title,
-                courseCode: note.courseCode,
-                subject: note.subject,
-                semester: note.semester,
-                universityName: note.university,
-                departmentName: note.department,
-                pages: note.pages,
-                downloads: note.downloads,
-                status: 'approved',
-                authorName: note.author,
-                ratingAvg: note.rating,
-              }}
-              onPreview={() => (window.location.href = `/notes/${note.id}`)}
-              onDownload={() => console.log('download', note.id)}
-              onBookmark={() => console.log('bookmark', note.id)}
-            />
-          ))}
-        </div>
+        {!isLoading && !error && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredNotes.map((note) => (
+              <LazyNoteCard
+                key={note.id}
+                meta={{
+                  id: note.id,
+                  title: note.title || 'Untitled',
+                  courseCode: note.courseCode || 'N/A',
+                  subject: note.subject || '',
+                  semester: note.semester || '',
+                  universityName: note.universityName || note.university || '',
+                  departmentName: note.departmentName || note.department || '',
+                  pages: note.pages || 0,
+                  downloads: note.downloads || 0,
+                  status: note.status || 'approved',
+                  authorName: note.authorName || 'Anonymous',
+                  ratingAvg: note.ratingAvg || note.rating || 0,
+                  fileUrl: note.fileUrl || '',
+                  thumbnailUrl: note.thumbnailUrl || 'https://via.placeholder.com/200x300',
+                }}
+                onPreview={() => (window.location.href = `/notes/${note.id}`)}
+                onDownload={() => console.log('download', note.id)}
+                onBookmark={() => console.log('bookmark', note.id)}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Empty State */}
-        {filteredNotes.length === 0 && (
-          <div className="text-center py-12">
-            <DocumentTextIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+        {!isLoading && filteredNotes.length === 0 && (
+          <div className="text-center py-12" role="status">
+            <DocumentTextIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" aria-hidden="true" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No notes found</h3>
             <p className="text-gray-600 mb-4">
               Try adjusting your filters or search query
             </p>
             <button
               onClick={clearFilters}
-              className="btn btn-primary btn-md"
+              className="btn btn-primary btn-md min-h-[44px]"
+              aria-label="Clear all filters"
             >
               Clear Filters
             </button>
@@ -211,9 +277,13 @@ const Notes = () => {
         )}
 
         {/* Load More Button */}
-        {filteredNotes.length > 0 && (
+        {!isLoading && filteredNotes.length > 0 && notesData.hasMore && (
           <div className="text-center mt-12">
-            <button className="btn btn-secondary btn-lg">
+            <button 
+              onClick={handleLoadMore}
+              className="btn btn-secondary btn-lg min-h-[44px]"
+              aria-label="Load more notes"
+            >
               Load More Notes
             </button>
           </div>
