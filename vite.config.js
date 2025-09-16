@@ -12,5 +12,9 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true
-  }
+  },
+  // Only include specific environment variables in production
+  envPrefix: process.env.NODE_ENV === 'production' 
+    ? ['VITE_FIREBASE_', 'VITE_USE_EMULATOR', 'VITE_DATACONNECT_']
+    : ['VITE_']
 })

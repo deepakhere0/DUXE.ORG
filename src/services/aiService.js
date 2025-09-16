@@ -5,21 +5,28 @@ import Toast from '../components/common/Toast';
 
 // Initialize Gemini AI - ONLY for development
 // NOTE: For production, API calls should go through your backend to keep API keys secure
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-const isDevelopment = import.meta.env.DEV || import.meta.env.VITE_USE_EMULATOR === 'true';
 let genAI = null;
 let model = null;
 
-// Only initialize AI in development - production should use backend API
-if (apiKey && !apiKey.startsWith('your_') && isDevelopment) {
+// AI initialization is completely disabled in production builds
+if (import.meta.env.DEV) {
   try {
-    genAI = new GoogleGenerativeAI(apiKey);
-    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    console.log('🤖 Gemini AI initialized for development');
+    // This code is completely removed from production builds by Vite
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (apiKey && !apiKey.startsWith('your_')) {
+      genAI = new GoogleGenerativeAI(apiKey);
+      model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      console.log('🤖 Gemini AI initialized for development');
+    } else {
+      console.log('🚫 No valid Gemini API key found for development');
+    }
   } catch (error) {
     console.warn('⚠️ Gemini AI initialization failed:', error.message);
   }
-} else if (!isDevelopment) {
+}
+
+// Production builds will have null model, ensuring AI features show fallback content
+if (!import.meta.env.DEV) {
   console.log('🔒 AI features disabled in production for security. Use backend API instead.');
 }
 
