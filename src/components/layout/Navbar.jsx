@@ -11,7 +11,8 @@ import {
   VideoCameraIcon,
   BriefcaseIcon,
   ArrowUpTrayIcon,
-  HomeIcon
+  HomeIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 import { ChevronDownIcon } from '@heroicons/react/24/solid';
 import Badge from '../common/Badge';
@@ -29,6 +30,7 @@ const Navbar = () => {
     { name: 'AI Tools', href: '/tools', icon: BeakerIcon },
     { name: 'Videos', href: '/videos', icon: VideoCameraIcon },
     { name: 'Internships', href: '/internships', icon: BriefcaseIcon },
+    { name: 'Pricing', href: '/pricing', icon: TagIcon },
   ];
 
   const handleLogout = async () => {
