@@ -99,14 +99,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="tools"
-                element={
-                  <ProtectedRoute>
-                    <Tools />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="tools" element={<Tools />} />
               <Route
                 path="dashboard"
                 element={

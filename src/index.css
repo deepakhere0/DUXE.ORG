@@ -146,6 +146,23 @@
     white-space: nowrap;
     border-width: 0;
   }
+  
+  /* AI Tools Page Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-in-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
 }
 
 @layer utilities {
