@@ -138,13 +138,13 @@ const Navbar = () => {
                   to="/login"
                   className="btn btn-secondary btn-sm"
                 >
-                  Sign In
+                  Log In
                 </Link>
                 <Link
                   to="/signup"
                   className="btn btn-primary btn-sm"
                 >
-                  Sign Up
+                  Start for Free
                 </Link>
               </div>
             )}
@@ -240,14 +240,14 @@ const Navbar = () => {
                     className="btn btn-secondary btn-md w-full"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Sign In
+                    Log In
                   </Link>
                   <Link
                     to="/signup"
                     className="btn btn-primary btn-md w-full"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Sign Up
+                    Start for Free
                   </Link>
                 </div>
               )}

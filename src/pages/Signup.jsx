@@ -344,10 +344,10 @@ const Signup = () => {
                 {loading ? (
                   <span className="flex items-center">
                     <span className="spinner mr-2"></span>
-                    Signing up...
+                    Starting...
                   </span>
                 ) : (
-                  'Sign up with Google'
+                  'Start with Google'
                 )}
               </button>
             </div>
@@ -360,7 +360,7 @@ const Signup = () => {
                   to="/login"
                   className="font-medium text-accent-600 hover:text-accent-700"
                 >
-                  Sign in instead
+                  Log in instead
                 </Link>
               </p>
             </div>

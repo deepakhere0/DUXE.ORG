@@ -62,7 +62,7 @@ const ForgotPassword = () => {
               </button>
 
               <div className="text-center text-sm">
-                <Link to="/login" className="text-accent-600 hover:text-accent-700 font-medium">Back to Sign In</Link>
+                <Link to="/login" className="text-accent-600 hover:text-accent-700 font-medium">Back to Log In</Link>
               </div>
             </form>
           </div>

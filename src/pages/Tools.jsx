@@ -34,7 +34,7 @@ const Tools = () => {
 
   const handleProcess = async () => {
     if (!currentUser) {
-      alert('Please sign in to use AI tools');
+      alert('Please log in to use AI tools');
       return;
     }
     
@@ -236,7 +236,7 @@ const Tools = () => {
               <div className="text-center mb-8">
                 <h3 className="text-3xl font-bold text-white mb-4">Try Our AI Tools</h3>
                 <p className="text-gray-300 text-lg">
-                  {currentUser ? 'Start transforming your study materials now' : 'Sign in to access full functionality'}
+                  {currentUser ? 'Start transforming your study materials now' : 'Log in to access full functionality'}
                 </p>
               </div>
               
@@ -276,11 +276,11 @@ const Tools = () => {
                   <div className="bg-navy-900/50 border border-accent-500/20 rounded-2xl p-6 text-center">
                     <p className="text-gray-300 mb-4">Ready to unlock the full potential of AI learning?</p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                      <a href="/signup" className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105">
-                        Sign Up Free
+                      <a href="/signup" className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                        Start for Free
                       </a>
-                      <a href="/login" className="bg-transparent border border-accent-500 text-accent-500 hover:bg-accent-500 hover:text-white font-medium py-3 px-8 rounded-xl transition-all duration-300">
-                        Sign In
+                      <a href="/login" className="bg-transparent border-2 border-accent-500 text-accent-500 hover:bg-accent-500 hover:text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 hover:shadow-lg">
+                        Log In
                       </a>
                     </div>
                   </div>

@@ -189,10 +189,10 @@ const Login = () => {
                 {loading ? (
                   <span className="flex items-center justify-center">
                     <span className="spinner mr-2"></span>
-                    Signing in...
+                    Logging in...
                   </span>
                 ) : (
-                  'Sign In'
+                  'Log In'
                 )}
               </button>
 
@@ -244,7 +244,7 @@ const Login = () => {
                   to="/signup"
                   className="font-medium text-accent-600 hover:text-accent-700"
                 >
-                  Sign up for free
+                  Start for free
                 </Link>
               </p>
             </div>
