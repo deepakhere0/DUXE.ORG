@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  GoogleAuthProvider, 
   signInWithPopup,
-  GoogleAuthProvider,
-  signOut,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged,
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -31,36 +33,55 @@ export const AuthProvider = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isTeacher, setIsTeacher] = useState(false);
 
-  // Create user profile in Firestore
-  const createUserProfile = async (user, additionalData = {}) => {
-    if (!user) return;
+  // Create user profile in Firestore with retry logic
+  const createUserProfile = async (user, additionalData = {}, retries = 3) => {
+    if (!user || !db) return null;
 
     const userRef = doc(db, 'users', user.uid);
-    const snapshot = await getDoc(userRef);
-
-    if (!snapshot.exists()) {
-      const { displayName, email, photoURL } = user;
-      
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        await setDoc(userRef, {
-          displayName,
-          email,
-          photoURL,
-          role: 'student', // Default role
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          emailVerified: user.emailVerified,
-          bookmarks: [],
-          uploadedNotes: [],
-          ...additionalData
-        });
+        const snapshot = await getDoc(userRef);
+
+        if (!snapshot.exists()) {
+          const { displayName, email, photoURL } = user;
+          
+          console.log(`💾 Creating user profile (attempt ${attempt})...`);
+          
+          await setDoc(userRef, {
+            displayName,
+            email,
+            photoURL,
+            role: 'student',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            emailVerified: user.emailVerified,
+            bookmarks: [],
+            uploadedNotes: [],
+            ...additionalData
+          });
+          
+          console.log('✅ User profile created successfully');
+          return userRef;
+        }
+        
+        return userRef;
+        
       } catch (error) {
-        console.error('Error creating user profile:', error);
-        toast.error('Failed to create user profile');
+        console.warn(`❌ Attempt ${attempt} to create user profile failed:`, error);
+        
+        if (attempt === retries) {
+          console.error('Error creating user profile:', error);
+          toast.error('Failed to create user profile. Please try again.');
+          return null;
+        }
+        
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
     
-    return userRef;
+    return null;
   };
 
   // Fetch user profile from Firestore
@@ -83,42 +104,80 @@ export const AuthProvider = ({ children }) => {
     return null;
   };
 
-  // Sign up function
+  // Enhanced sign up function
   const signup = async (email, password, displayName) => {
-    if (!auth) {
-      toast.error('Authentication is not configured. Please set Firebase env variables.');
+    console.log('🚀 Starting signup process...');
+    
+    if (!auth || !db) {
+      const msg = 'Authentication is not configured. Please check your Firebase settings.';
+      console.error(msg);
+      toast.error(msg);
       return { success: false, error: 'Firebase not configured' };
     }
+    
     try {
+      console.log('📝 Creating user with email and password...');
+      
+      // Create the user
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       
+      console.log('✅ User created:', user.email);
+
       // Update display name
-      await updateProfile(user, { displayName });
-      
-      // Create user profile in Firestore
-      await createUserProfile(user, { displayName });
-      
+      if (displayName) {
+        console.log('👤 Updating display name...');
+        await updateProfile(user, { displayName });
+      }
+
+      // Create user profile in Firestore with retries
+      console.log('💾 Creating user profile...');
+      await createUserProfile(user, { 
+        displayName,
+        signupMethod: 'email',
+        signupTimestamp: new Date().toISOString()
+      });
+
       // Send email verification
-      await sendEmailVerification(user);
+      console.log('📧 Sending verification email...');
+      try {
+        await sendEmailVerification(user);
+        console.log('✅ Verification email sent');
+      } catch (verificationError) {
+        console.warn('⚠️ Failed to send verification email:', verificationError);
+        // Don't fail the entire signup if email fails
+      }
+
+      console.log('🎉 Signup completed successfully');
+      toast.success('Account created successfully! Please check your email for verification.');
       
-      toast.success('Account created! Please verify your email.');
       return { success: true, user };
+      
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('❌ Signup error:', error);
       let errorMessage = 'Failed to create account';
       
       switch (error.code) {
         case 'auth/email-already-in-use':
-          errorMessage = 'Email is already registered';
+          errorMessage = 'An account with this email already exists. Try logging in instead.';
           break;
         case 'auth/invalid-email':
-          errorMessage = 'Invalid email address';
+          errorMessage = 'Please enter a valid email address.';
           break;
         case 'auth/weak-password':
-          errorMessage = 'Password should be at least 6 characters';
+          errorMessage = 'Password should be at least 6 characters long.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many failed attempts. Please wait a moment and try again.';
           break;
         default:
-          errorMessage = error.message;
+          if (error.message && error.message.includes('Firebase:')) {
+            errorMessage = error.message.replace('Firebase: Error ', '').replace(/\([^)]*\)/g, '').trim();
+          } else {
+            errorMessage = error.message || errorMessage;
+          }
       }
       
       toast.error(errorMessage);
@@ -168,49 +227,145 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Google Sign In function
+  // Google Sign In function with enhanced error handling
   const signInWithGoogle = async () => {
     if (!auth) {
+      console.error('Firebase auth not initialized');
       toast.error('Authentication is not configured. Please set Firebase env variables.');
       return { success: false, error: 'Firebase not configured' };
     }
+
     try {
+      console.log('🚀 Starting Google authentication...');
+      
       const provider = new GoogleAuthProvider();
+      
+      // Enhanced provider configuration
       provider.addScope('email');
       provider.addScope('profile');
+      provider.setCustomParameters({
+        prompt: 'select_account' // Forces account selection for better UX
+      });
+
+      // Check if we should use redirect flow (mobile or popup blocked)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
-      const { user } = await signInWithPopup(auth, provider);
+      if (isMobile) {
+        console.log('📱 Mobile device detected, using redirect flow...');
+        await signInWithRedirect(auth, provider);
+        // Result will be handled in handleRedirectResult
+        return { success: true, redirect: true };
+      }
       
+      // Test for popup blocker
+      console.log('🧪 Testing popup support...');
+      const testPopup = window.open('', 'test', 'width=1,height=1');
+      if (!testPopup || testPopup.closed) {
+        console.warn('🚫 Popup blocker detected, using redirect flow');
+        testPopup?.close();
+        await signInWithRedirect(auth, provider);
+        return { success: true, redirect: true };
+      }
+      testPopup.close();
+
+      console.log('📱 Opening Google authentication popup...');
+      
+      // Add timeout handling to prevent infinite hangs
+      const authPromise = signInWithPopup(auth, provider);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Authentication timeout')), 45000) // 45 seconds
+      );
+
+      const result = await Promise.race([authPromise, timeoutPromise]);
+      const user = result.user;
+
+      console.log('✅ Google authentication successful:', user.email);
+
       // Create or update user profile in Firestore
+      console.log('💾 Creating/updating user profile...');
       await createUserProfile(user, {
         displayName: user.displayName,
         photoURL: user.photoURL,
-        provider: 'google'
+        provider: 'google',
+        lastLoginAt: new Date().toISOString()
       });
-      
+
       await fetchUserProfile(user.uid);
-      toast.success('Welcome to DUXE!');
-      return { success: true, user };
-    } catch (error) {
-      console.error('Google sign in error:', error);
-      let errorMessage = 'Failed to sign in with Google';
       
+      console.log('🎉 Authentication flow completed successfully');
+      toast.success(`Welcome to DUXE, ${user.displayName || user.email}!`);
+      return { success: true, user };
+
+    } catch (error) {
+      console.error('❌ Google sign in error:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      
+      let errorMessage = 'Failed to sign in with Google';
+      let shouldRetry = false;
+
       switch (error.code) {
         case 'auth/popup-closed-by-user':
-          errorMessage = 'Sign in was cancelled';
+          console.warn('🚫 User closed authentication popup, trying redirect...');
+          // Automatically try redirect flow
+          try {
+            await signInWithRedirect(auth, provider);
+            return { success: true, redirect: true };
+          } catch (redirectError) {
+            errorMessage = 'Authentication was cancelled. Please try again.';
+            shouldRetry = true;
+          }
           break;
+          
         case 'auth/popup-blocked':
-          errorMessage = 'Popup was blocked. Please allow popups and try again';
+          console.warn('🚫 Browser blocked authentication popup, trying redirect...');
+          // Automatically try redirect flow
+          try {
+            await signInWithRedirect(auth, provider);
+            return { success: true, redirect: true };
+          } catch (redirectError) {
+            errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
+            shouldRetry = true;
+          }
           break;
+          
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error occurred. Please check your internet connection and try again.';
+          shouldRetry = true;
+          console.warn('🌐 Network connectivity issue');
+          break;
+          
+        case 'auth/timeout':
+        case 'Authentication timeout':
+          errorMessage = 'Authentication timed out. Please try again.';
+          shouldRetry = true;
+          console.warn('⏱️ Authentication timeout');
+          break;
+          
         case 'auth/account-exists-with-different-credential':
-          errorMessage = 'An account already exists with the same email address';
+          errorMessage = 'An account already exists with this email address using a different sign-in method.';
+          console.warn('👤 Account exists with different credential');
           break;
+          
+        case 'auth/cancelled-popup-request':
+          errorMessage = 'Authentication was cancelled due to another request.';
+          shouldRetry = true;
+          console.warn('🔄 Popup request cancelled');
+          break;
+          
         default:
-          errorMessage = error.message;
+          errorMessage = error.message || 'An unexpected error occurred during authentication.';
+          console.error('🐛 Unexpected error:', error);
       }
-      
+
       toast.error(errorMessage);
-      return { success: false, error: errorMessage };
+      
+      return { 
+        success: false, 
+        error: errorMessage,
+        code: error.code,
+        shouldRetry
+      };
     }
   };
 
@@ -265,6 +420,35 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Handle redirect result from Google Sign In
+  const handleRedirectResult = async () => {
+    try {
+      const result = await getRedirectResult(auth);
+      if (result?.user) {
+        console.log('✅ Redirect authentication successful:', result.user.email);
+        
+        await createUserProfile(result.user, {
+          displayName: result.user.displayName,
+          photoURL: result.user.photoURL,
+          provider: 'google',
+          signupMethod: 'google',
+          lastLoginAt: new Date().toISOString()
+        });
+        
+        await fetchUserProfile(result.user.uid);
+        toast.success(`Welcome to DUXE, ${result.user.displayName || result.user.email}!`);
+        
+        return { success: true, user: result.user };
+      }
+    } catch (error) {
+      // Only log errors, don't show toast as this runs on every page load
+      if (error.code !== 'auth/no-auth-event') {
+        console.error('❌ Redirect result error:', error);
+      }
+    }
+    return null;
+  };
+
   // Update user profile
   const updateUserProfile = async (updates) => {
     if (!currentUser) return { success: false, error: 'No user logged in' };
@@ -288,6 +472,13 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: error.message };
     }
   };
+
+  // Check for redirect result on component mount
+  useEffect(() => {
+    if (auth) {
+      handleRedirectResult();
+    }
+  }, []);
 
   // Listen to auth state changes
   useEffect(() => {

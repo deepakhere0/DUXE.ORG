@@ -34,6 +34,7 @@ import Report from './pages/Report';
 import Feedback from './pages/Feedback';
 import ForgotPassword from './pages/ForgotPassword';
 import DataConnectTest from './components/DataConnectTest';
+import Debug from './pages/Debug';
 
 // Admin Components
 import AdminLayout from './components/admin/AdminLayout';
@@ -88,6 +89,11 @@ function App() {
               {/* Data Connect Test Route - Development Only */}
               {import.meta.env.DEV && (
                 <Route path="test-dataconnect" element={<DataConnectTest />} />
+              )}
+              
+              {/* Debug Route - Development Only */}
+              {import.meta.env.DEV && (
+                <Route path="debug" element={<Debug />} />
               )}
               
               {/* Protected Routes - Require Authentication */}
