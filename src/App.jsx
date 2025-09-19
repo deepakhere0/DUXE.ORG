@@ -37,6 +37,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import DataConnectTest from './components/DataConnectTest';
 import Debug from './pages/Debug';
 import GoogleSignInTest from './components/GoogleSignInTest';
+import GoogleSignInDebug from './pages/GoogleSignInDebug';
 
 // Admin Components
 import AdminLayout from './components/admin/AdminLayout';
@@ -102,6 +103,11 @@ function App() {
               {/* Google Sign-In Test Route - Development Only */}
               {import.meta.env.DEV && (
                 <Route path="test-google-signin" element={<GoogleSignInTest />} />
+              )}
+              
+              {/* Google Sign-In Debug Route - Development Only */}
+              {import.meta.env.DEV && (
+                <Route path="debug-google-signin" element={<GoogleSignInDebug />} />
               )}
               
               {/* Protected Routes - Require Authentication */}

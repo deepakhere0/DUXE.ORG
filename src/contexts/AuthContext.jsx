@@ -237,10 +237,15 @@ export const AuthProvider = ({ children }) => {
 
     try {
       console.log('🚀 Starting Google Sign-In...');
+      console.log('🌐 Current origin:', window.location.origin);
+      console.log('🔧 Firebase Auth Domain:', import.meta.env.VITE_FIREBASE_AUTH_DOMAIN);
       
       const provider = new GoogleAuthProvider();
       provider.addScope('email');
       provider.addScope('profile');
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
       
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
@@ -280,15 +285,24 @@ export const AuthProvider = ({ children }) => {
       
     } catch (error) {
       console.error('❌ Google Sign-In error:', error);
+      console.error('🔍 Error code:', error.code);
+      console.error('📝 Error message:', error.message);
+      console.error('🌐 Current domain:', window.location.origin);
       
       let errorMessage = 'Failed to sign in with Google';
       
       switch (error.code) {
         case 'auth/popup-closed-by-user':
           errorMessage = 'Sign-in was cancelled. Please try again.';
+          console.warn('⚠️ User closed the popup. This might be due to domain mismatch.');
           break;
         case 'auth/popup-blocked':
           errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
+          console.warn('⚠️ Popup blocked by browser.');
+          break;
+        case 'auth/unauthorized-domain':
+          errorMessage = `Domain ${window.location.origin} is not authorized. Please contact support.`;
+          console.error('❌ Unauthorized domain error. Check Google Cloud Console OAuth configuration.');
           break;
         case 'auth/network-request-failed':
           errorMessage = 'Network error. Please check your connection and try again.';
@@ -298,6 +312,7 @@ export const AuthProvider = ({ children }) => {
           break;
         default:
           errorMessage = error.message || 'An unexpected error occurred during sign-in.';
+          console.error('🐛 Unexpected error details:', { code: error.code, message: error.message, stack: error.stack });
       }
       
       toast.error(errorMessage);
