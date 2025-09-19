@@ -6,11 +6,13 @@ import {
   ShareIcon,
   BookmarkIcon
 } from '@heroicons/react/24/outline';
-import { GeminiService } from '../../services/geminiService';
+import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../common/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AISummarizer = () => {
+  const { user } = useAuth();
   const [inputText, setInputText] = useState('');
   const [summary, setSummary] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -31,9 +33,11 @@ const AISummarizer = () => {
     setError(null);
     
     try {
-      const result = await GeminiService.summarize(inputText);
-      setSummary(result);
-      Toast.success('Summary generated successfully!');
+      const result = await AIService.summarize({
+        inputText,
+        createdBy: user?.uid || 'anonymous'
+      });
+      setSummary(result.output);
     } catch (err) {
       setError(err.message);
       Toast.error(err.message);

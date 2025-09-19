@@ -6,13 +6,15 @@ import {
   BeakerIcon,
   PencilSquareIcon,
   DocumentDuplicateIcon,
-  DownloadIcon
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
-import { GeminiService } from '../../services/geminiService';
+import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../common/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const QuestionMaker = () => {
+  const { user } = useAuth();
   const [inputText, setInputText] = useState('');
   const [questions, setQuestions] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -34,9 +36,11 @@ const QuestionMaker = () => {
     setError(null);
     
     try {
-      const result = await GeminiService.generateQuestions(inputText);
-      setQuestions(result);
-      Toast.success('Study questions generated successfully!');
+      const result = await AIService.generateQuestions({
+        inputText,
+        createdBy: user?.uid || 'anonymous'
+      });
+      setQuestions(result.output);
     } catch (err) {
       setError(err.message);
       Toast.error(err.message);
@@ -434,7 +438,7 @@ Generated with DUXE Question Maker
                 onClick={downloadQuestions}
                 className="flex-1 bg-slate-700/50 hover:bg-slate-600/50 text-white py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
               >
-                <DownloadIcon className="h-5 w-5 mr-2" />
+                <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
                 Download
               </button>
             </div>

@@ -12,15 +12,17 @@ import {
   Square3Stack3DIcon,
   ArrowsPointingOutIcon,
   ArrowsPointingInIcon,
-  DownloadIcon,
+  ArrowDownTrayIcon,
   PhotoIcon
 } from '@heroicons/react/24/outline';
-import { GeminiService } from '../../services/geminiService';
+import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../common/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 import html2canvas from 'html2canvas';
 
 const ConceptMap = () => {
+  const { user } = useAuth();
   const [inputText, setInputText] = useState('');
   const [conceptData, setConceptData] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -44,11 +46,14 @@ const ConceptMap = () => {
     setError(null);
     
     try {
-      const result = await GeminiService.generateConceptMap(inputText);
-      setConceptData(result);
+      const result = await AIService.generateConceptMap({
+        inputText,
+        createdBy: user?.uid || 'anonymous'
+      });
+      setConceptData(result.output);
       
       // Convert to React Flow format
-      const flowNodes = result.nodes.map(node => ({
+      const flowNodes = result.output.nodes.map(node => ({
         id: node.id,
         position: node.position || { x: Math.random() * 500, y: Math.random() * 500 },
         data: { 
@@ -61,7 +66,7 @@ const ConceptMap = () => {
         type: 'default'
       }));
 
-      const flowEdges = result.edges.map(edge => ({
+      const flowEdges = result.output.edges.map(edge => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
@@ -280,7 +285,7 @@ const ConceptMap = () => {
                 onClick={downloadData}
                 className="flex-1 bg-slate-700/50 hover:bg-slate-600/50 text-white py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
               >
-                <DownloadIcon className="h-5 w-5 mr-2" />
+                <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
                 Download Data
               </button>
             </div>

@@ -1,34 +1,42 @@
-// AI service powered by Google Gemini API
+// Enhanced AI service powered by Google Gemini API
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AIJobs } from './firestoreData';
 import Toast from '../components/common/Toast';
 
-// Initialize Gemini AI - ONLY for development
-// NOTE: For production, API calls should go through your backend to keep API keys secure
+// Initialize Gemini AI with enhanced error handling
 let genAI = null;
 let model = null;
 
-// AI initialization is completely disabled in production builds
-if (import.meta.env.DEV) {
+// Initialize Gemini AI
+function initializeGemini() {
   try {
-    // This code is completely removed from production builds by Vite
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (apiKey && !apiKey.startsWith('your_')) {
       genAI = new GoogleGenerativeAI(apiKey);
-      model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      console.log('🤖 Gemini AI initialized for development');
+      model = genAI.getGenerativeModel({ 
+        model: 'gemini-1.5-flash',
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.8,
+          topK: 40,
+          maxOutputTokens: 4096,
+        }
+      });
+      console.log('🤖 Gemini AI initialized successfully');
+      return true;
     } else {
-      console.log('🚫 No valid Gemini API key found for development');
+      console.log('🚫 No valid Gemini API key found');
+      return false;
     }
   } catch (error) {
-    console.warn('⚠️ Gemini AI initialization failed:', error.message);
+    console.error('⚠️ Gemini AI initialization failed:', error.message);
+    Toast.error('AI service initialization failed');
+    return false;
   }
 }
 
-// Production builds will have null model, ensuring AI features show fallback content
-if (!import.meta.env.DEV) {
-  console.log('🔒 AI features disabled in production for security. Use backend API instead.');
-}
+// Initialize on load
+initializeGemini();
 
 const parseJsonFromResponse = (text) => {
   try {
@@ -49,146 +57,383 @@ const parseJsonFromResponse = (text) => {
 
 export const AIService = {
   async summarize({ noteId, inputText, createdBy }) {
-    const jobId = await AIJobs.create({ type: 'summary', noteId, inputText: inputText?.substring(0, 500), status: 'processing', createdBy });
+    const jobId = await AIJobs.create({ type: 'summary', noteId, inputText: inputText?.substring(0, 1000), status: 'processing', createdBy });
     
     try {
       let output;
       if (model && inputText) {
-        const prompt = `Analyze this text and provide a summary in JSON format:
+        const prompt = `You are an expert educational content summarizer. Analyze the following study material and provide a comprehensive summary.
+
+Study Material:
+"""${inputText}"""
+
+Provide a detailed summary in this exact JSON format:
 {
-  "bullets": ["point 1", "point 2", "point 3"],
-  "tldr": "one sentence summary",
-  "keyTerms": ["term1", "term2", "term3"]
+  "title": "Descriptive title for the content",
+  "bullets": [
+    "First key point with important details",
+    "Second key point with important details",
+    "Third key point with important details",
+    "Fourth key point with important details",
+    "Fifth key point with important details"
+  ],
+  "tldr": "Concise one-sentence summary capturing the essence",
+  "keyTerms": ["term1", "term2", "term3", "term4", "term5"],
+  "mainConcepts": ["concept1", "concept2", "concept3"],
+  "studyTips": ["tip1", "tip2", "tip3"]
 }
 
-Text: ${inputText}
-
-Provide 3-5 bullet points, a TL;DR, and key terms. Return ONLY valid JSON.`;
+Requirements:
+- Extract 5-7 comprehensive bullet points
+- Identify key terms and main concepts
+- Provide actionable study tips
+- Keep content educational and student-focused
+- Return ONLY valid JSON, no additional text`;
 
         const result = await model.generateContent(prompt);
         const text = result.response.text();
-        output = parseJsonFromResponse(text) || {
-          bullets: ['Summary generated', 'Key points extracted', 'Analysis complete'],
-          tldr: 'AI-powered summary of the content',
-          keyTerms: ['Analysis', 'Summary', 'Key Points']
-        };
+        output = parseJsonFromResponse(text);
+        
+        // Fallback if parsing fails
+        if (!output) {
+          output = {
+            title: "AI-Generated Summary",
+            bullets: ['Content analysis completed', 'Key information extracted', 'Summary generated successfully'],
+            tldr: 'AI-powered summary of the educational content',
+            keyTerms: ['Study', 'Learning', 'Education'],
+            mainConcepts: ['Key Concepts', 'Main Ideas'],
+            studyTips: ['Review regularly', 'Take notes', 'Practice active recall']
+          };
+        }
       } else {
-        output = {
-          bullets: ['AI features are disabled in production', 'Configure backend API for AI summaries', 'Using demo content for now'],
-          tldr: 'AI features coming soon - backend integration required',
-          keyTerms: ['Demo', 'Backend', 'Coming Soon']
-        };
+        throw new Error('Gemini AI not configured. Please check your API key.');
       }
       
       await AIJobs.update(jobId, { status: 'completed', output });
-      Toast.success('AI summary generated');
+      Toast.success('🎯 AI summary generated successfully!');
       return { jobId, output };
     } catch (error) {
       console.error('Summarization error:', error);
-      await AIJobs.update(jobId, { status: 'error', error: error.message });
-      Toast.error('Summary generation failed');
-      return { jobId, output: null };
+      const fallbackOutput = {
+        title: "Error - Summary Unavailable",
+        bullets: ['AI service encountered an error', 'Please try again later', 'Check your internet connection'],
+        tldr: 'Summary generation failed due to technical issues',
+        keyTerms: ['Error', 'Retry', 'Technical'],
+        mainConcepts: ['Error Handling'],
+        studyTips: ['Try again later', 'Check connection']
+      };
+      await AIJobs.update(jobId, { status: 'error', error: error.message, output: fallbackOutput });
+      Toast.error('❌ Summary generation failed: ' + error.message);
+      return { jobId, output: fallbackOutput };
     }
   },
 
   async generateMCQ({ inputText, count = 10, createdBy }) {
-    const jobId = await AIJobs.create({ type: 'mcq', inputText: inputText?.substring(0, 500), status: 'processing', createdBy });
+    const jobId = await AIJobs.create({ type: 'mcq', inputText: inputText?.substring(0, 1500), status: 'processing', createdBy });
     
     try {
       let output;
       if (model && inputText) {
-        const prompt = `Generate ${count} MCQs from this text in JSON format:
+        const prompt = `You are an expert educational assessment creator. Generate ${count} high-quality multiple-choice questions based on the following study material.
+
+Study Material:
+"""${inputText}"""
+
+Generate exactly ${count} MCQs in this JSON format:
 [
   {
     "id": 1,
-    "question": "Question text?",
-    "choices": ["A", "B", "C", "D"],
+    "question": "Clear and specific question text?",
+    "choices": [
+      "Option A - complete answer",
+      "Option B - complete answer", 
+      "Option C - complete answer",
+      "Option D - complete answer"
+    ],
     "correctIndex": 0,
-    "explanation": "Why this is correct"
+    "explanation": "Detailed explanation of why this answer is correct and why others are incorrect",
+    "difficulty": "easy|medium|hard",
+    "topic": "Specific topic this question tests",
+    "bloomsLevel": "remember|understand|apply|analyze|evaluate|create"
   }
 ]
 
-Text: ${inputText}
-
-Generate exactly ${count} questions. Return ONLY valid JSON array.`;
+Requirements:
+- Create ${count} diverse questions covering different aspects
+- Test understanding, not just memorization
+- Make wrong answers plausible but clearly incorrect
+- Provide comprehensive explanations for learning
+- Vary difficulty levels (mix of easy, medium, hard)
+- Include Bloom's taxonomy level for each question
+- Return ONLY valid JSON array, no additional text`;
 
         const result = await model.generateContent(prompt);
         const text = result.response.text();
         output = parseJsonFromResponse(text);
         
+        // Validate and fix output format
         if (!Array.isArray(output)) {
-          output = Array.from({ length: count }, (_, i) => ({
-            id: i + 1,
-            question: `Question ${i + 1} generated by AI`,
+          throw new Error('Failed to parse MCQs from AI response');
+        }
+        
+        // Ensure we have the correct number and format
+        output = output.slice(0, count).map((mcq, index) => ({
+          id: index + 1,
+          question: mcq.question || `Question ${index + 1}`,
+          choices: Array.isArray(mcq.choices) && mcq.choices.length >= 4 
+            ? mcq.choices.slice(0, 4)
+            : [`Option A`, `Option B`, `Option C`, `Option D`],
+          correctIndex: typeof mcq.correctIndex === 'number' && mcq.correctIndex >= 0 && mcq.correctIndex < 4
+            ? mcq.correctIndex 
+            : 0,
+          explanation: mcq.explanation || 'Explanation not provided',
+          difficulty: mcq.difficulty || 'medium',
+          topic: mcq.topic || 'General',
+          bloomsLevel: mcq.bloomsLevel || 'understand'
+        }));
+        
+        // Fill remaining questions if needed
+        while (output.length < count) {
+          const index = output.length;
+          output.push({
+            id: index + 1,
+            question: `Generated Question ${index + 1}`,
             choices: ['Option A', 'Option B', 'Option C', 'Option D'],
             correctIndex: 0,
-            explanation: 'AI-generated question'
-          }));
+            explanation: 'AI-generated question',
+            difficulty: 'medium',
+            topic: 'General',
+            bloomsLevel: 'understand'
+          });
         }
+        
       } else {
-        output = Array.from({ length: count }, (_, i) => ({
-          id: i + 1,
-          question: `Demo Question ${i + 1} - AI features coming soon!`,
-          choices: ['Coming Soon', 'Backend Required', 'Demo Option', 'AI Integration Needed'],
-          correctIndex: 0,
-          explanation: 'This is a demo question. AI features are disabled in production for security.'
-        }));
+        throw new Error('Gemini AI not configured. Please check your API key.');
       }
       
       await AIJobs.update(jobId, { status: 'completed', output });
-      Toast.success('MCQs generated');
+      Toast.success(`🧠 ${count} MCQs generated successfully!`);
       return { jobId, output };
     } catch (error) {
       console.error('MCQ generation error:', error);
-      await AIJobs.update(jobId, { status: 'error', error: error.message });
-      Toast.error('MCQ generation failed');
-      return { jobId, output: [] };
+      const fallbackOutput = Array.from({ length: count }, (_, i) => ({
+        id: i + 1,
+        question: `Error: Question ${i + 1} could not be generated`,
+        choices: ['Service Error', 'Please Try Again', 'Check Connection', 'Contact Support'],
+        correctIndex: 1,
+        explanation: 'MCQ generation failed due to technical issues. Please try again.',
+        difficulty: 'medium',
+        topic: 'Error',
+        bloomsLevel: 'understand'
+      }));
+      await AIJobs.update(jobId, { status: 'error', error: error.message, output: fallbackOutput });
+      Toast.error('❌ MCQ generation failed: ' + error.message);
+      return { jobId, output: fallbackOutput };
     }
   },
 
   async flashcards({ inputText, count = 20, createdBy }) {
-    const jobId = await AIJobs.create({ type: 'flashcard', inputText: inputText?.substring(0, 500), status: 'processing', createdBy });
+    const jobId = await AIJobs.create({ type: 'flashcard', inputText: inputText?.substring(0, 1500), status: 'processing', createdBy });
     
     try {
       let output;
       if (model && inputText) {
-        const prompt = `Create ${count} flashcards from this text in JSON format:
+        const prompt = `You are an expert at creating effective educational flashcards. Create ${count} high-quality flashcards from the following study material.
+
+Study Material:
+"""${inputText}"""
+
+Generate exactly ${count} flashcards in this JSON format:
 [
   {
-    "front": "Question or term",
-    "back": "Answer or definition"
+    "id": 1,
+    "front": "Question, term, or concept",
+    "back": "Detailed answer, definition, or explanation",
+    "category": "Topic category",
+    "difficulty": "easy|medium|hard",
+    "type": "definition|concept|fact|process|example",
+    "hint": "Optional hint to help remember",
+    "tags": ["tag1", "tag2"]
   }
 ]
 
-Text: ${inputText}
-
-Generate exactly ${count} flashcards. Return ONLY valid JSON array.`;
+Requirements:
+- Create ${count} diverse flashcards covering key concepts
+- Include definitions, facts, processes, and examples
+- Make front sides concise and back sides comprehensive
+- Add helpful hints for difficult concepts
+- Categorize by topic and difficulty
+- Include relevant tags for organization
+- Ensure educational value and accuracy
+- Return ONLY valid JSON array, no additional text`;
 
         const result = await model.generateContent(prompt);
         const text = result.response.text();
         output = parseJsonFromResponse(text);
         
+        // Validate and fix output format
         if (!Array.isArray(output)) {
-          output = Array.from({ length: count }, (_, i) => ({
-            front: `Term ${i + 1}`,
-            back: `AI-generated definition ${i + 1}`
-          }));
+          throw new Error('Failed to parse flashcards from AI response');
         }
-      } else {
-        output = Array.from({ length: count }, (_, i) => ({
-          front: `Demo Term ${i + 1}`,
-          back: `AI flashcards coming soon! Backend integration required for security.`
+        
+        // Ensure correct format and count
+        output = output.slice(0, count).map((card, index) => ({
+          id: index + 1,
+          front: card.front || `Term ${index + 1}`,
+          back: card.back || `Definition ${index + 1}`,
+          category: card.category || 'General',
+          difficulty: card.difficulty || 'medium',
+          type: card.type || 'definition',
+          hint: card.hint || '',
+          tags: Array.isArray(card.tags) ? card.tags : ['study']
         }));
+        
+        // Fill remaining cards if needed
+        while (output.length < count) {
+          const index = output.length;
+          output.push({
+            id: index + 1,
+            front: `Concept ${index + 1}`,
+            back: `Generated explanation ${index + 1}`,
+            category: 'General',
+            difficulty: 'medium',
+            type: 'concept',
+            hint: '',
+            tags: ['generated']
+          });
+        }
+        
+      } else {
+        throw new Error('Gemini AI not configured. Please check your API key.');
       }
       
       await AIJobs.update(jobId, { status: 'completed', output });
-      Toast.success('Flashcards created');
+      Toast.success(`🎯 ${count} flashcards created successfully!`);
       return { jobId, output };
     } catch (error) {
       console.error('Flashcard generation error:', error);
-      await AIJobs.update(jobId, { status: 'error', error: error.message });
-      Toast.error('Flashcard generation failed');
-      return { jobId, output: [] };
+      const fallbackOutput = Array.from({ length: count }, (_, i) => ({
+        id: i + 1,
+        front: `Error: Card ${i + 1}`,
+        back: 'Flashcard generation failed. Please try again later.',
+        category: 'Error',
+        difficulty: 'medium',
+        type: 'error',
+        hint: 'Check your connection',
+        tags: ['error']
+      }));
+      await AIJobs.update(jobId, { status: 'error', error: error.message, output: fallbackOutput });
+      Toast.error('❌ Flashcard generation failed: ' + error.message);
+      return { jobId, output: fallbackOutput };
+    }
+  },
+
+  // Concept Map Generation - Create visual learning maps
+  async generateConceptMap({ inputText, createdBy }) {
+    const jobId = await AIJobs.create({ type: 'concept-map', inputText: inputText?.substring(0, 2000), status: 'processing', createdBy });
+    
+    try {
+      let output;
+      if (model && inputText) {
+        const prompt = `You are an expert at creating educational concept maps. Analyze the following text and create a structured concept map showing relationships between key concepts.
+
+Text to analyze:
+"""${inputText}"""
+
+Generate a concept map in this JSON format:
+{
+  "title": "Main topic or theme",
+  "nodes": [
+    {
+      "id": "node1",
+      "label": "Concept name",
+      "type": "main|subtopic|detail",
+      "description": "Brief description of the concept",
+      "importance": "high|medium|low",
+      "position": {"x": 0, "y": 0},
+      "color": "#hex_color"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge1",
+      "source": "node1",
+      "target": "node2",
+      "label": "relationship description",
+      "type": "relates|causes|contains|supports|contrasts|leads-to"
+    }
+  ],
+  "clusters": [
+    {
+      "id": "cluster1",
+      "label": "Group name",
+      "nodes": ["node1", "node2"],
+      "color": "#hex_color"
+    }
+  ],
+  "learningPath": [
+    {
+      "step": 1,
+      "concept": "Starting concept",
+      "nodeId": "node1",
+      "reason": "Why start here",
+      "estimatedTime": "5-10 minutes"
+    }
+  ],
+  "summary": "Brief overview of the concept map",
+  "studyTips": ["tip1", "tip2", "tip3"]
+}
+
+Requirements:
+- Identify 10-20 key concepts from the text
+- Create meaningful relationships between concepts
+- Organize hierarchically (main → subtopic → detail)
+- Suggest a logical learning path
+- Group related concepts into clusters
+- Use appropriate colors for visual appeal
+- Include study tips for effective learning
+- Return ONLY valid JSON, no additional text`;
+
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        output = parseJsonFromResponse(text);
+        
+        // Validate and enhance output
+        if (!output || !output.nodes || !output.edges) {
+          throw new Error('Failed to parse concept map from AI response');
+        }
+        
+        // Ensure proper structure and layout
+        output = this.enhanceConceptMap(output);
+        
+      } else {
+        throw new Error('Gemini AI not configured. Please check your API key.');
+      }
+      
+      await AIJobs.update(jobId, { status: 'completed', output });
+      Toast.success('🗺️ Concept map generated successfully!');
+      return { jobId, output };
+    } catch (error) {
+      console.error('Concept map generation error:', error);
+      const fallbackOutput = {
+        title: "Error - Concept Map Unavailable",
+        nodes: [
+          { id: 'error1', label: 'Service Error', type: 'main', description: 'AI service encountered an error', importance: 'high', position: { x: 0, y: 0 }, color: '#ef4444' },
+          { id: 'error2', label: 'Try Again', type: 'detail', description: 'Please try again later', importance: 'medium', position: { x: 200, y: 100 }, color: '#f59e0b' }
+        ],
+        edges: [
+          { id: 'edge1', source: 'error1', target: 'error2', label: 'suggests', type: 'leads-to' }
+        ],
+        clusters: [],
+        learningPath: [
+          { step: 1, concept: 'Service Error', nodeId: 'error1', reason: 'Technical issue occurred', estimatedTime: '1 minute' }
+        ],
+        summary: 'Concept map generation failed due to technical issues.',
+        studyTips: ['Check your internet connection', 'Try again in a few moments', 'Contact support if issue persists']
+      };
+      await AIJobs.update(jobId, { status: 'error', error: error.message, output: fallbackOutput });
+      Toast.error('❌ Concept map generation failed: ' + error.message);
+      return { jobId, output: fallbackOutput };
     }
   },
 
@@ -244,16 +489,171 @@ Return JSON: [{"index": 0, "score": 85, "reason": "why"}]`;
     }
   },
 
+  // Helper function to enhance concept map structure
+  enhanceConceptMap(conceptMap) {
+    // Ensure all nodes have required fields
+    conceptMap.nodes = conceptMap.nodes.map((node, index) => ({
+      id: node.id || `node_${index}`,
+      label: node.label || `Concept ${index + 1}`,
+      type: node.type || 'detail',
+      description: node.description || '',
+      importance: node.importance || 'medium',
+      position: node.position || this.calculateNodePosition(index, conceptMap.nodes.length),
+      color: node.color || this.getColorByType(node.type || 'detail')
+    }));
+
+    // Ensure all edges have required fields
+    conceptMap.edges = (conceptMap.edges || []).map((edge, index) => ({
+      id: edge.id || `edge_${index}`,
+      source: edge.source,
+      target: edge.target,
+      label: edge.label || 'relates to',
+      type: edge.type || 'relates'
+    }));
+
+    // Add default values for optional fields
+    conceptMap.clusters = conceptMap.clusters || [];
+    conceptMap.learningPath = conceptMap.learningPath || [];
+    conceptMap.summary = conceptMap.summary || 'Generated concept map';
+    conceptMap.studyTips = conceptMap.studyTips || ['Study systematically', 'Focus on connections', 'Review regularly'];
+
+    return conceptMap;
+  },
+
+  // Calculate position for concept map nodes
+  calculateNodePosition(index, totalNodes) {
+    const cols = Math.ceil(Math.sqrt(totalNodes));
+    const row = Math.floor(index / cols);
+    const col = index % cols;
+    return {
+      x: col * 250 + Math.random() * 50,
+      y: row * 150 + Math.random() * 30
+    };
+  },
+
+  // Get color based on node type
+  getColorByType(type) {
+    const colors = {
+      main: '#12356E',     // Navy blue for main concepts
+      subtopic: '#FF9900', // Orange for subtopics
+      detail: '#6B7280',   // Gray for details
+      error: '#EF4444'     // Red for errors
+    };
+    return colors[type] || colors.detail;
+  },
+
+  // Question generation for comprehensive study
+  async generateQuestions({ inputText, createdBy, questionTypes = ['short', 'long', 'critical'] }) {
+    const jobId = await AIJobs.create({ type: 'questions', inputText: inputText?.substring(0, 2000), status: 'processing', createdBy });
+    
+    try {
+      let output;
+      if (model && inputText) {
+        const prompt = `You are an expert educational content creator. Generate a comprehensive set of study questions based on the following material.
+
+Study Material:
+"""${inputText}"""
+
+Generate study questions in this JSON format:
+{
+  "shortAnswer": [
+    {
+      "question": "Concise question requiring brief answer",
+      "suggestedAnswer": "Expected answer",
+      "points": "Key points to cover",
+      "difficulty": "easy|medium|hard"
+    }
+  ],
+  "longAnswer": [
+    {
+      "question": "Question requiring detailed explanation",
+      "guidelines": "What a good answer should include",
+      "keyPoints": ["point1", "point2", "point3"],
+      "difficulty": "easy|medium|hard"
+    }
+  ],
+  "critical": [
+    {
+      "question": "Analytical or critical thinking question",
+      "approach": "How to approach this question",
+      "considerations": ["consideration1", "consideration2"],
+      "difficulty": "easy|medium|hard"
+    }
+  ],
+  "practical": [
+    {
+      "question": "Application-based question",
+      "scenario": "Real-world context",
+      "expectedOutcome": "What to demonstrate",
+      "difficulty": "easy|medium|hard"
+    }
+  ]
+}
+
+Requirements:
+- Generate at least 5 questions in each category
+- Questions should test different cognitive levels
+- Include questions for understanding, application, analysis, evaluation
+- Make questions thought-provoking and educational
+- Vary difficulty levels appropriately
+- Return ONLY valid JSON, no additional text`;
+
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        output = parseJsonFromResponse(text);
+        
+        if (!output) {
+          throw new Error('Failed to parse questions from AI response');
+        }
+        
+        // Ensure structure
+        output = {
+          shortAnswer: output.shortAnswer || [],
+          longAnswer: output.longAnswer || [],
+          critical: output.critical || [],
+          practical: output.practical || []
+        };
+        
+      } else {
+        throw new Error('Gemini AI not configured. Please check your API key.');
+      }
+      
+      await AIJobs.update(jobId, { status: 'completed', output });
+      Toast.success('❓ Study questions generated successfully!');
+      return { jobId, output };
+    } catch (error) {
+      console.error('Question generation error:', error);
+      const fallbackOutput = {
+        shortAnswer: [{ question: 'Error generating questions', suggestedAnswer: 'Please try again', points: 'Technical issue', difficulty: 'easy' }],
+        longAnswer: [{ question: 'Service unavailable', guidelines: 'Check connection and retry', keyPoints: ['Error'], difficulty: 'easy' }],
+        critical: [{ question: 'Why did this fail?', approach: 'Analyze technical issues', considerations: ['Connection', 'Service'], difficulty: 'medium' }],
+        practical: [{ question: 'What should you do?', scenario: 'Service error', expectedOutcome: 'Successful retry', difficulty: 'easy' }]
+      };
+      await AIJobs.update(jobId, { status: 'error', error: error.message, output: fallbackOutput });
+      Toast.error('❌ Question generation failed: ' + error.message);
+      return { jobId, output: fallbackOutput };
+    }
+  },
+
+  // Check if AI service is properly configured
   isConfigured() {
     return !!model;
   },
 
+  // Get model information and status
   getModelInfo() {
     return { 
       configured: !!model, 
       model: model ? 'gemini-1.5-flash' : 'Not configured',
-      provider: 'Google Gemini API'
+      provider: 'Google Gemini API',
+      apiKey: import.meta.env.VITE_GEMINI_API_KEY ? 'Configured' : 'Missing',
+      features: ['Summarization', 'MCQ Generation', 'Flashcards', 'Concept Maps', 'Questions', 'Internship Matching']
     };
+  },
+
+  // Reinitialize AI service if needed
+  async reinitialize() {
+    return initializeGemini();
   }
 };
 

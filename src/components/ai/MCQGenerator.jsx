@@ -7,11 +7,13 @@ import {
   ArrowDownTrayIcon,
   AcademicCapIcon
 } from '@heroicons/react/24/outline';
-import { GeminiService } from '../../services/geminiService';
+import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../common/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const MCQGenerator = () => {
+  const { user } = useAuth();
   const [inputText, setInputText] = useState('');
   const [mcqs, setMcqs] = useState([]);
   const [questionCount, setQuestionCount] = useState(20);
@@ -40,9 +42,12 @@ const MCQGenerator = () => {
     setScore(null);
     
     try {
-      const result = await GeminiService.generateMCQ(inputText, questionCount);
-      setMcqs(result);
-      Toast.success(`Generated ${result.length} MCQs successfully!`);
+      const result = await AIService.generateMCQ({
+        inputText,
+        count: questionCount,
+        createdBy: user?.uid || 'anonymous'
+      });
+      setMcqs(result.output);
     } catch (err) {
       setError(err.message);
       Toast.error(err.message);
@@ -339,7 +344,7 @@ Generated with DUXE MCQ Generator
               onClick={downloadMCQs}
               className="flex-1 bg-slate-700/50 hover:bg-slate-600/50 text-white py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center"
             >
-              <DownloadIcon className="h-5 w-5 mr-2" />
+              <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
               Download
             </button>
           </div>

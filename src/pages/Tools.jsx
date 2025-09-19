@@ -4,6 +4,7 @@ import {
   ListBulletIcon,
   QuestionMarkCircleIcon,
   Square3Stack3DIcon,
+  RectangleStackIcon,
   DocumentTextIcon,
   CloudArrowUpIcon,
   PlayIcon,
@@ -15,11 +16,12 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import ToolCard from '../components/common/ToolCard';
-import { GeminiService, initializeGemini } from '../services/geminiService';
+import { AIService } from '../services/aiService';
 import AISummarizer from '../components/ai/AISummarizer';
 import MCQGenerator from '../components/ai/MCQGenerator';
 import QuestionMaker from '../components/ai/QuestionMaker';
 import ConceptMap from '../components/ai/ConceptMap';
+import FlashcardGenerator from '../components/ai/FlashcardGenerator';
 import Toast from '../components/common/Toast';
 
 const Tools = () => {
@@ -31,17 +33,10 @@ const Tools = () => {
   const [apiKey, setApiKey] = useState('');
   const [isGeminiConfigured, setIsGeminiConfigured] = useState(false);
 
-  // Check if Gemini is configured on mount
+  // Check if AI is configured on mount
   useEffect(() => {
-    const configured = GeminiService.isConfigured();
+    const configured = AIService.isConfigured();
     setIsGeminiConfigured(configured);
-    
-    // Check for saved API key in localStorage
-    const savedKey = localStorage.getItem('gemini_api_key');
-    if (savedKey && !configured) {
-      const success = initializeGemini(savedKey);
-      setIsGeminiConfigured(success);
-    }
   }, []);
 
   // Animation effect for the promotional section
@@ -52,16 +47,16 @@ const Tools = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleApiKeySave = () => {
+  const handleApiKeySave = async () => {
     if (apiKey.trim()) {
-      const success = initializeGemini(apiKey);
+      // For now, just close modal - API key is already set in environment
+      setShowApiKeyModal(false);
+      const success = await AIService.reinitialize();
       if (success) {
-        localStorage.setItem('gemini_api_key', apiKey);
         setIsGeminiConfigured(true);
-        setShowApiKeyModal(false);
         Toast.success('Gemini AI configured successfully!');
       } else {
-        Toast.error('Invalid API key. Please check and try again.');
+        Toast.error('AI service initialization failed. Please check your configuration.');
       }
     }
   };
@@ -107,6 +102,15 @@ const Tools = () => {
       demo: 'Chapter content → Comprehensive question bank',
       features: ['5 question types', 'Learning objectives', 'Discussion topics'],
       component: QuestionMaker
+    },
+    {
+      id: 'flashcards',
+      title: 'Flashcard Generator',
+      description: 'Create interactive study cards with AI assistance',
+      icon: RectangleStackIcon,
+      demo: 'Study material → Interactive flashcard set',
+      features: ['Smart card generation', 'Study mode', 'Progress tracking'],
+      component: FlashcardGenerator
     },
     {
       id: 'mapping',

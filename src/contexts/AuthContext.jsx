@@ -229,10 +229,21 @@ export const AuthProvider = ({ children }) => {
 
   // Google Sign In function with enhanced error handling
   const signInWithGoogle = async () => {
+    console.log('🔍 Google Sign-In Debug Info:');
+    console.log('- Firebase Auth:', !!auth);
+    console.log('- Firebase Config:', !!isFirebaseConfigured);
+    console.log('- Environment:', import.meta.env.MODE);
+    
     if (!auth) {
-      console.error('Firebase auth not initialized');
-      toast.error('Authentication is not configured. Please set Firebase env variables.');
-      return { success: false, error: 'Firebase not configured' };
+      console.error('❌ Firebase auth not initialized');
+      toast.error('Authentication service is not available. Please refresh the page and try again.');
+      return { success: false, error: 'Authentication service not available' };
+    }
+    
+    if (!isFirebaseConfigured) {
+      console.error('❌ Firebase not properly configured');
+      toast.error('Authentication is not properly configured.');
+      return { success: false, error: 'Firebase configuration incomplete' };
     }
 
     try {
@@ -309,7 +320,10 @@ export const AuthProvider = ({ children }) => {
           console.warn('🚫 User closed authentication popup, trying redirect...');
           // Automatically try redirect flow
           try {
-            await signInWithRedirect(auth, provider);
+            const redirectProvider = new GoogleAuthProvider();
+            redirectProvider.addScope('email');
+            redirectProvider.addScope('profile');
+            await signInWithRedirect(auth, redirectProvider);
             return { success: true, redirect: true };
           } catch (redirectError) {
             errorMessage = 'Authentication was cancelled. Please try again.';
@@ -321,7 +335,10 @@ export const AuthProvider = ({ children }) => {
           console.warn('🚫 Browser blocked authentication popup, trying redirect...');
           // Automatically try redirect flow
           try {
-            await signInWithRedirect(auth, provider);
+            const redirectProvider = new GoogleAuthProvider();
+            redirectProvider.addScope('email');
+            redirectProvider.addScope('profile');
+            await signInWithRedirect(auth, redirectProvider);
             return { success: true, redirect: true };
           } catch (redirectError) {
             errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
