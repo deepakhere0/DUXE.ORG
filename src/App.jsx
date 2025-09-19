@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import AuthRedirectHandler from './components/auth/AuthRedirectHandler';
 
 // Pages (we'll create these next)
 import Home from './pages/Home';
@@ -35,6 +36,7 @@ import Feedback from './pages/Feedback';
 import ForgotPassword from './pages/ForgotPassword';
 import DataConnectTest from './components/DataConnectTest';
 import Debug from './pages/Debug';
+import GoogleSignInTest from './components/GoogleSignInTest';
 
 // Admin Components
 import AdminLayout from './components/admin/AdminLayout';
@@ -61,6 +63,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
+          <AuthRedirectHandler />
           <Routes>
             <Route path="/" element={<Layout />}>
               {/* Public Routes */}
@@ -94,6 +97,11 @@ function App() {
               {/* Debug Route - Development Only */}
               {import.meta.env.DEV && (
                 <Route path="debug" element={<Debug />} />
+              )}
+              
+              {/* Google Sign-In Test Route - Development Only */}
+              {import.meta.env.DEV && (
+                <Route path="test-google-signin" element={<GoogleSignInTest />} />
               )}
               
               {/* Protected Routes - Require Authentication */}

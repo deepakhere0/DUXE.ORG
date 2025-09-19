@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AcademicCapIcon, EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
@@ -11,11 +11,19 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   
-  const { login, signInWithGoogle } = useAuth();
+  const { login, signInWithGoogle, currentUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   const from = location.state?.from?.pathname || '/dashboard';
+
+  // Redirect authenticated users away from login page
+  useEffect(() => {
+    if (!authLoading && currentUser) {
+      console.log('🔄 User already authenticated, redirecting to dashboard...');
+      navigate(from, { replace: true });
+    }
+  }, [currentUser, authLoading, navigate, from]);
 
   const validateForm = () => {
     const newErrors = {};

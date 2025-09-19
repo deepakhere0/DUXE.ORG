@@ -490,12 +490,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Check for redirect result on component mount
-  useEffect(() => {
-    if (auth) {
-      handleRedirectResult();
-    }
-  }, []);
+  // Redirect result is now handled by AuthRedirectHandler component
 
   // Listen to auth state changes
   useEffect(() => {
