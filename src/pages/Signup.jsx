@@ -28,7 +28,7 @@ const Signup = () => {
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   
-  const { signup, signInWithGoogle, currentUser, loading: authLoading } = useAuth();
+  const { signup, googleSignIn, currentUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   // Redirect authenticated users away from signup page
@@ -110,39 +110,22 @@ const Signup = () => {
     setErrors({});
     
     try {
-      const result = await signInWithGoogle();
+      const result = await googleSignIn();
       
       if (result.success) {
-        if (result.redirect) {
-          // For redirect flow, show success message and DON'T set loading to false
-          // The page will redirect, so we keep loading state
-          console.log('✅ Starting redirect flow to Google...');
-          setErrors({ general: 'Redirecting to Google Sign-In...' });
-          // Don't clear loading states - page will redirect
-          return;
-        }
-        // For popup flow, navigate immediately
-        console.log('✅ Popup authentication successful, navigating...');
+        console.log('✅ Google Sign-Up successful, redirecting to dashboard...');
         navigate('/dashboard');
       } else {
-        // Handle error cases
         setGoogleLoading(false);
         setLoading(false);
-        
-        if (result.shouldRetry) {
-          setErrors({ general: `${result.error} Click to try again.` });
-        } else {
-          setErrors({ general: result.error || 'Failed to sign in with Google' });
-        }
+        setErrors({ general: result.error || 'Failed to sign up with Google' });
       }
     } catch (error) {
       setGoogleLoading(false);
       setLoading(false);
-      console.error('Google sign-in error:', error);
+      console.error('Google sign-up error:', error);
       setErrors({ general: 'An unexpected error occurred. Please try again.' });
     }
-    
-    // Note: Loading states are handled individually in each case above
   };
 
   if (signupSuccess) {

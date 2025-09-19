@@ -11,7 +11,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   
-  const { login, signInWithGoogle, currentUser, loading: authLoading } = useAuth();
+  const { login, googleSignIn, currentUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -70,36 +70,20 @@ const Login = () => {
     setErrors({});
     
     try {
-      const result = await signInWithGoogle();
+      const result = await googleSignIn();
       
       if (result.success) {
-        if (result.redirect) {
-          // For redirect flow, show success message and keep loading state
-          console.log('✅ Starting redirect flow to Google...');
-          setErrors({ general: 'Redirecting to Google Sign-In...' });
-          // Don't clear loading state - page will redirect
-          return;
-        }
-        // For popup flow, navigate immediately
-        console.log('✅ Popup authentication successful, navigating...');
+        console.log('✅ Google Sign-In successful, redirecting to dashboard...');
         navigate(from, { replace: true });
       } else {
-        // Handle error cases
         setLoading(false);
-        
-        if (result.shouldRetry) {
-          setErrors({ general: `${result.error} Click to try again.` });
-        } else {
-          setErrors({ general: result.error || 'Failed to sign in with Google' });
-        }
+        setErrors({ general: result.error || 'Failed to sign in with Google' });
       }
     } catch (error) {
       setLoading(false);
       console.error('Google sign-in error:', error);
       setErrors({ general: 'An unexpected error occurred. Please try again.' });
     }
-    
-    // Note: Loading state is handled individually in each case above
   };
 
   const handleGitHubSignIn = async () => {

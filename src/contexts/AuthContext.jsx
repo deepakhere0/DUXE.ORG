@@ -227,162 +227,81 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Google Sign In function with enhanced error handling
-  const signInWithGoogle = async () => {
-    console.log('🔍 Google Sign-In Debug Info:');
-    console.log('- Firebase Auth:', !!auth);
-    console.log('- Firebase Config:', !!isFirebaseConfigured);
-    console.log('- Environment:', import.meta.env.MODE);
-    
-    if (!auth) {
-      console.error('❌ Firebase auth not initialized');
-      toast.error('Authentication service is not available. Please refresh the page and try again.');
-      return { success: false, error: 'Authentication service not available' };
-    }
-    
-    if (!isFirebaseConfigured) {
-      console.error('❌ Firebase not properly configured');
-      toast.error('Authentication is not properly configured.');
-      return { success: false, error: 'Firebase configuration incomplete' };
+  // Google Sign In function following the requirements
+  const googleSignIn = async () => {
+    if (!auth || !db) {
+      console.error('❌ Firebase not initialized');
+      toast.error('Authentication service is not available.');
+      return { success: false, error: 'Firebase not configured' };
     }
 
     try {
-      console.log('🚀 Starting Google authentication...');
+      console.log('🚀 Starting Google Sign-In...');
       
       const provider = new GoogleAuthProvider();
-      
-      // Enhanced provider configuration
       provider.addScope('email');
       provider.addScope('profile');
-      provider.setCustomParameters({
-        prompt: 'select_account' // Forces account selection for better UX
-      });
-
-      // Check if we should use redirect flow (mobile or popup blocked)
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
-      if (isMobile) {
-        console.log('📱 Mobile device detected, using redirect flow...');
-        await signInWithRedirect(auth, provider);
-        // Result will be handled in handleRedirectResult
-        return { success: true, redirect: true };
-      }
-      
-      // Test for popup blocker
-      console.log('🧪 Testing popup support...');
-      const testPopup = window.open('', 'test', 'width=1,height=1');
-      if (!testPopup || testPopup.closed) {
-        console.warn('🚫 Popup blocker detected, using redirect flow');
-        testPopup?.close();
-        await signInWithRedirect(auth, provider);
-        return { success: true, redirect: true };
-      }
-      testPopup.close();
-
-      console.log('📱 Opening Google authentication popup...');
-      
-      // Add timeout handling to prevent infinite hangs
-      const authPromise = signInWithPopup(auth, provider);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Authentication timeout')), 45000) // 45 seconds
-      );
-
-      const result = await Promise.race([authPromise, timeoutPromise]);
+      const result = await signInWithPopup(auth, provider);
       const user = result.user;
-
+      
       console.log('✅ Google authentication successful:', user.email);
 
-      // Create or update user profile in Firestore
-      console.log('💾 Creating/updating user profile...');
-      await createUserProfile(user, {
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        provider: 'google',
-        lastLoginAt: new Date().toISOString()
-      });
-
+      // Check if user exists in Firestore
+      const userRef = doc(db, 'users', user.uid);
+      const userSnapshot = await getDoc(userRef);
+      
+      if (!userSnapshot.exists()) {
+        // Create new user document on first login
+        console.log('💾 Creating new user profile in Firestore...');
+        const userData = {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          role: 'student',
+          createdAt: serverTimestamp(),
+          provider: 'google',
+          bookmarks: [],
+          uploadedNotes: []
+        };
+        
+        await setDoc(userRef, userData);
+        console.log('✅ New user profile created');
+      } else {
+        console.log('👤 Existing user profile found');
+      }
+      
+      // Fetch user profile to update local state
       await fetchUserProfile(user.uid);
       
-      console.log('🎉 Authentication flow completed successfully');
       toast.success(`Welcome to DUXE, ${user.displayName || user.email}!`);
       return { success: true, user };
-
+      
     } catch (error) {
-      console.error('❌ Google sign in error:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
+      console.error('❌ Google Sign-In error:', error);
       
       let errorMessage = 'Failed to sign in with Google';
-      let shouldRetry = false;
-
+      
       switch (error.code) {
         case 'auth/popup-closed-by-user':
-          console.warn('🚫 User closed authentication popup, trying redirect...');
-          // Automatically try redirect flow
-          try {
-            const redirectProvider = new GoogleAuthProvider();
-            redirectProvider.addScope('email');
-            redirectProvider.addScope('profile');
-            await signInWithRedirect(auth, redirectProvider);
-            return { success: true, redirect: true };
-          } catch (redirectError) {
-            errorMessage = 'Authentication was cancelled. Please try again.';
-            shouldRetry = true;
-          }
+          errorMessage = 'Sign-in was cancelled. Please try again.';
           break;
-          
         case 'auth/popup-blocked':
-          console.warn('🚫 Browser blocked authentication popup, trying redirect...');
-          // Automatically try redirect flow
-          try {
-            const redirectProvider = new GoogleAuthProvider();
-            redirectProvider.addScope('email');
-            redirectProvider.addScope('profile');
-            await signInWithRedirect(auth, redirectProvider);
-            return { success: true, redirect: true };
-          } catch (redirectError) {
-            errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
-            shouldRetry = true;
-          }
+          errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
           break;
-          
         case 'auth/network-request-failed':
-          errorMessage = 'Network error occurred. Please check your internet connection and try again.';
-          shouldRetry = true;
-          console.warn('🌐 Network connectivity issue');
+          errorMessage = 'Network error. Please check your connection and try again.';
           break;
-          
-        case 'auth/timeout':
-        case 'Authentication timeout':
-          errorMessage = 'Authentication timed out. Please try again.';
-          shouldRetry = true;
-          console.warn('⏱️ Authentication timeout');
-          break;
-          
         case 'auth/account-exists-with-different-credential':
-          errorMessage = 'An account already exists with this email address using a different sign-in method.';
-          console.warn('👤 Account exists with different credential');
+          errorMessage = 'An account with this email already exists using a different sign-in method.';
           break;
-          
-        case 'auth/cancelled-popup-request':
-          errorMessage = 'Authentication was cancelled due to another request.';
-          shouldRetry = true;
-          console.warn('🔄 Popup request cancelled');
-          break;
-          
         default:
-          errorMessage = error.message || 'An unexpected error occurred during authentication.';
-          console.error('🐛 Unexpected error:', error);
+          errorMessage = error.message || 'An unexpected error occurred during sign-in.';
       }
-
-      toast.error(errorMessage);
       
-      return { 
-        success: false, 
-        error: errorMessage,
-        code: error.code,
-        shouldRetry
-      };
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -526,7 +445,8 @@ export const AuthProvider = ({ children }) => {
     isStudent: userProfile?.role === 'student',
     signup,
     login,
-    signInWithGoogle,
+    googleSignIn,
+    signInWithGoogle: googleSignIn, // Alias for backward compatibility
     logout,
     resetPassword,
     updateUserProfile,
