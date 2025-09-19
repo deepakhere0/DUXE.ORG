@@ -108,26 +108,26 @@ const Signup = () => {
     setLoading(true);
     setErrors({});
     
-    // Set a timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      setGoogleLoading(false);
-      setLoading(false);
-      setErrors({ general: 'Sign-in is taking too long. Please try again.' });
-    }, 30000); // 30 seconds timeout
-    
     try {
       const result = await signInWithGoogle();
-      clearTimeout(timeout);
       
       if (result.success) {
         if (result.redirect) {
-          // For redirect flow, keep loading state as page will change
+          // For redirect flow, show success message and DON'T set loading to false
+          // The page will redirect, so we keep loading state
+          console.log('✅ Starting redirect flow to Google...');
           setErrors({ general: 'Redirecting to Google Sign-In...' });
+          // Don't clear loading states - page will redirect
           return;
         }
+        // For popup flow, navigate immediately
+        console.log('✅ Popup authentication successful, navigating...');
         navigate('/dashboard');
       } else {
-        // Handle specific error cases
+        // Handle error cases
+        setGoogleLoading(false);
+        setLoading(false);
+        
         if (result.shouldRetry) {
           setErrors({ general: `${result.error} Click to try again.` });
         } else {
@@ -135,13 +135,13 @@ const Signup = () => {
         }
       }
     } catch (error) {
-      clearTimeout(timeout);
-      console.error('Google sign-in error:', error);
-      setErrors({ general: 'An unexpected error occurred. Please try again.' });
-    } finally {
       setGoogleLoading(false);
       setLoading(false);
+      console.error('Google sign-in error:', error);
+      setErrors({ general: 'An unexpected error occurred. Please try again.' });
     }
+    
+    // Note: Loading states are handled individually in each case above
   };
 
   if (signupSuccess) {

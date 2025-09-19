@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { AcademicCapIcon, EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import Toast from '../components/common/Toast';
 
 const Login = () => {
@@ -67,16 +67,39 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
+    setErrors({});
+    
     try {
       const result = await signInWithGoogle();
+      
       if (result.success) {
+        if (result.redirect) {
+          // For redirect flow, show success message and keep loading state
+          console.log('✅ Starting redirect flow to Google...');
+          setErrors({ general: 'Redirecting to Google Sign-In...' });
+          // Don't clear loading state - page will redirect
+          return;
+        }
+        // For popup flow, navigate immediately
+        console.log('✅ Popup authentication successful, navigating...');
         navigate(from, { replace: true });
+      } else {
+        // Handle error cases
+        setLoading(false);
+        
+        if (result.shouldRetry) {
+          setErrors({ general: `${result.error} Click to try again.` });
+        } else {
+          setErrors({ general: result.error || 'Failed to sign in with Google' });
+        }
       }
     } catch (error) {
-      console.error('Google sign-in error:', error);
-    } finally {
       setLoading(false);
+      console.error('Google sign-in error:', error);
+      setErrors({ general: 'An unexpected error occurred. Please try again.' });
     }
+    
+    // Note: Loading state is handled individually in each case above
   };
 
   const handleGitHubSignIn = async () => {
@@ -243,6 +266,16 @@ const Login = () => {
                 </button>
               </div>
             </form>
+
+            {/* General Error Display */}
+            {errors.general && (
+              <div className="mt-4 p-3 bg-red-500/10 border border-red-500 rounded-lg">
+                <p className="text-red-400 text-sm flex items-center justify-center">
+                  <ExclamationCircleIcon className="h-5 w-5 mr-2" />
+                  {errors.general}
+                </p>
+              </div>
+            )}
 
             {/* Sign Up Link */}
             <div className="mt-6 text-center">
