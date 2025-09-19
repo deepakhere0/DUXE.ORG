@@ -9,20 +9,40 @@ import {
   PlayIcon,
   CheckIcon,
   ShareIcon,
-  StarIcon
+  StarIcon,
+  KeyIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import ToolCard from '../components/common/ToolCard';
-import { AIService } from '../services/aiService';
+import { GeminiService, initializeGemini } from '../services/geminiService';
+import AISummarizer from '../components/ai/AISummarizer';
+import MCQGenerator from '../components/ai/MCQGenerator';
+import QuestionMaker from '../components/ai/QuestionMaker';
+import ConceptMap from '../components/ai/ConceptMap';
+import Toast from '../components/common/Toast';
 
 const Tools = () => {
   const { currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('summarize');
-  const [inputText, setInputText] = useState('');
-  const [result, setResult] = useState('');
-  const [processing, setProcessing] = useState(false);
+  const [activeTool, setActiveTool] = useState(null);
   const [showVideo, setShowVideo] = useState(false);
   const [animationStep, setAnimationStep] = useState(0);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [isGeminiConfigured, setIsGeminiConfigured] = useState(false);
+
+  // Check if Gemini is configured on mount
+  useEffect(() => {
+    const configured = GeminiService.isConfigured();
+    setIsGeminiConfigured(configured);
+    
+    // Check for saved API key in localStorage
+    const savedKey = localStorage.getItem('gemini_api_key');
+    if (savedKey && !configured) {
+      const success = initializeGemini(savedKey);
+      setIsGeminiConfigured(success);
+    }
+  }, []);
 
   // Animation effect for the promotional section
   useEffect(() => {
@@ -32,27 +52,32 @@ const Tools = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleProcess = async () => {
+  const handleApiKeySave = () => {
+    if (apiKey.trim()) {
+      const success = initializeGemini(apiKey);
+      if (success) {
+        localStorage.setItem('gemini_api_key', apiKey);
+        setIsGeminiConfigured(true);
+        setShowApiKeyModal(false);
+        Toast.success('Gemini AI configured successfully!');
+      } else {
+        Toast.error('Invalid API key. Please check and try again.');
+      }
+    }
+  };
+
+  const handleToolClick = (toolId) => {
     if (!currentUser) {
-      alert('Please log in to use AI tools');
+      Toast.error('Please log in to use AI tools');
       return;
     }
     
-    setProcessing(true);
-    try {
-      if (activeTab === 'summarize') {
-        await AIService.summarize({ inputText, createdBy: 'local' });
-        setResult('Summary requested. Check AI Jobs for output.');
-      } else if (activeTab === 'mcq') {
-        await AIService.generateMCQ({ inputText, count: 10, createdBy: 'local' });
-        setResult('MCQ generation requested.');
-      } else {
-        await AIService.flashcards({ inputText, count: 20, createdBy: 'local' });
-        setResult('Flashcards generation requested.');
-      }
-    } finally {
-      setProcessing(false);
+    if (!isGeminiConfigured) {
+      setShowApiKeyModal(true);
+      return;
     }
+    
+    setActiveTool(toolId);
   };
 
   const aiTools = [
@@ -62,7 +87,8 @@ const Tools = () => {
       description: 'Transform lengthy documents into concise, digestible summaries',
       icon: ListBulletIcon,
       demo: 'Converts 10-page research paper → 5 bullet points',
-      features: ['Instant processing', 'Key points extraction', 'Multiple formats']
+      features: ['PDF/DOCX/TXT support', 'Key points extraction', 'Study tips included'],
+      component: AISummarizer
     },
     {
       id: 'mcq',
@@ -70,15 +96,17 @@ const Tools = () => {
       description: 'Create practice questions with multiple-choice answers automatically',
       icon: QuestionMarkCircleIcon,
       demo: 'Study material → 20 MCQs with correct answers',
-      features: ['Auto-generation', 'Difficulty levels', 'Answer explanations']
+      features: ['Auto-generation', 'Interactive quiz mode', 'Answer explanations'],
+      component: MCQGenerator
     },
     {
       id: 'questions',
       title: 'Question Maker',
-      description: 'Generate smart study questions from your notes',
+      description: 'Generate comprehensive study questions from your notes',
       icon: DocumentTextIcon,
       demo: 'Chapter content → Comprehensive question bank',
-      features: ['Smart analysis', 'Question variety', 'Study guides']
+      features: ['5 question types', 'Learning objectives', 'Discussion topics'],
+      component: QuestionMaker
     },
     {
       id: 'mapping',
@@ -86,7 +114,8 @@ const Tools = () => {
       description: 'Visualize concepts with intelligent mind maps',
       icon: Square3Stack3DIcon,
       demo: 'Topic input → Interactive concept map',
-      features: ['Visual learning', 'Connection mapping', 'Export options']
+      features: ['Visual learning', 'Interactive nodes', 'Export to image'],
+      component: ConceptMap
     }
   ];
 
@@ -219,7 +248,7 @@ const Tools = () => {
                 </div>
                 
                 <button 
-                  onClick={() => setActiveTab(tool.id)}
+                  onClick={() => handleToolClick(tool.id)}
                   className="w-full bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105"
                 >
                   Try {tool.title}
@@ -229,52 +258,47 @@ const Tools = () => {
           </div>
         </div>
 
-        {/* Interactive Tool Interface */}
-        <div className="container-custom py-20">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-gradient-to-br from-slate-800/90 to-slate-700/90 backdrop-blur-sm rounded-3xl border border-accent-500/30 p-8 shadow-2xl">
-              <div className="text-center mb-8">
-                <h3 className="text-3xl font-bold text-white mb-4">Try Our AI Tools</h3>
-                <p className="text-gray-300 text-lg">
-                  {currentUser ? 'Start transforming your study materials now' : 'Log in to access full functionality'}
-                </p>
+        {/* Active Tool Interface */}
+        {activeTool && (
+          <div className="container-custom py-20">
+            <div className="max-w-6xl mx-auto">
+              <div className="bg-gradient-to-br from-slate-800/90 to-slate-700/90 backdrop-blur-sm rounded-3xl border border-accent-500/30 p-8 shadow-2xl relative">
+                {/* Close Button */}
+                <button
+                  onClick={() => setActiveTool(null)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+                
+                {/* Render the selected tool component */}
+                {aiTools.map(tool => {
+                  if (tool.id === activeTool) {
+                    const ToolComponent = tool.component;
+                    return <ToolComponent key={tool.id} />;
+                  }
+                  return null;
+                })}
               </div>
-              
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-white font-medium mb-3 text-lg">Input your study material</label>
-                  <textarea
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    className="w-full h-48 bg-slate-900/50 border border-accent-500/30 rounded-2xl px-6 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 transition-all duration-300"
-                    placeholder="Paste your notes, documents, or study material here to see AI in action..."
-                  />
-                </div>
-                
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button className="flex-1 bg-slate-700/50 hover:bg-slate-600/50 text-white font-medium py-4 px-6 rounded-xl border border-accent-500/20 hover:border-accent-500/40 transition-all duration-300 flex items-center justify-center">
-                    <CloudArrowUpIcon className="h-6 w-6 mr-2" />
-                    Upload Document
-                  </button>
-                  <button
-                    onClick={handleProcess}
-                    disabled={!inputText || processing}
-                    className="flex-1 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center"
-                  >
-                    {processing ? (
-                      <>
-                        <div className="spinner mr-2"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      <>Generate AI Content</>
-                    )}
-                  </button>
-                </div>
-                
-                {!currentUser && (
-                  <div className="bg-navy-900/50 border border-accent-500/20 rounded-2xl p-6 text-center">
-                    <p className="text-gray-300 mb-4">Ready to unlock the full potential of AI learning?</p>
+            </div>
+          </div>
+        )}
+
+        {/* Call to Action when no tool is selected */}
+        {!activeTool && (
+          <div className="container-custom py-20">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-gradient-to-br from-slate-800/90 to-slate-700/90 backdrop-blur-sm rounded-3xl border border-accent-500/30 p-8 shadow-2xl">
+                <div className="text-center">
+                  <h3 className="text-3xl font-bold text-white mb-4">Ready to Transform Your Learning?</h3>
+                  <p className="text-gray-300 text-lg mb-8">
+                    {currentUser ? 
+                      'Select any AI tool above to start processing your study materials' : 
+                      'Log in to access the full power of AI-assisted learning'
+                    }
+                  </p>
+                  
+                  {!currentUser ? (
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                       <a href="/signup" className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
                         Start for Free
@@ -283,32 +307,80 @@ const Tools = () => {
                         Log In
                       </a>
                     </div>
-                  </div>
-                )}
-
-                {result && (
-                  <div className="border-t border-accent-500/20 pt-8">
-                    <h3 className="text-2xl font-bold text-white mb-4">AI Generated Result:</h3>
-                    <div className="bg-slate-900/50 rounded-2xl p-6 border border-accent-500/20">
-                      <pre className="whitespace-pre-wrap text-gray-300 text-lg">{result}</pre>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {aiTools.map(tool => {
+                        const Icon = tool.icon;
+                        return (
+                          <button
+                            key={tool.id}
+                            onClick={() => handleToolClick(tool.id)}
+                            className="bg-slate-700/50 hover:bg-slate-600/50 border border-accent-500/20 hover:border-accent-500 rounded-xl p-4 transition-all duration-300"
+                          >
+                            <Icon className="h-8 w-8 text-accent-500 mx-auto mb-2" />
+                            <p className="text-white text-sm font-medium">{tool.title}</p>
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="mt-6 flex flex-wrap gap-4">
-                      <button className="bg-slate-700/50 hover:bg-slate-600/50 text-white py-2 px-4 rounded-lg transition-all duration-300">
-                        Copy Result
-                      </button>
-                      <button className="bg-slate-700/50 hover:bg-slate-600/50 text-white py-2 px-4 rounded-lg transition-all duration-300">
-                        Download PDF
-                      </button>
-                      <button className="bg-slate-700/50 hover:bg-slate-600/50 text-white py-2 px-4 rounded-lg transition-all duration-300">
-                        Save to Library
+                  )}
+                  
+                  {/* API Key Configuration */}
+                  {currentUser && !isGeminiConfigured && (
+                    <div className="mt-8 p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                      <p className="text-yellow-400 mb-3">
+                        <KeyIcon className="inline h-5 w-5 mr-2" />
+                        Gemini AI is not configured. Add your API key to enable AI features.
+                      </p>
+                      <button
+                        onClick={() => setShowApiKeyModal(true)}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-black font-medium py-2 px-6 rounded-lg transition-all duration-300"
+                      >
+                        Configure API Key
                       </button>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* API Key Modal */}
+        {showApiKeyModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 rounded-2xl border border-accent-500/30 p-6 max-w-md w-full">
+              <h3 className="text-xl font-bold text-white mb-4">Configure Gemini API Key</h3>
+              <p className="text-gray-400 mb-4">
+                Enter your Google Gemini API key to enable AI features. 
+                <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent-500 hover:underline">
+                  Get your API key here
+                </a>
+              </p>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Enter your Gemini API key"
+                className="w-full bg-slate-900/50 border border-accent-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-accent-500 mb-4"
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={handleApiKeySave}
+                  className="flex-1 bg-accent-500 hover:bg-accent-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"
+                >
+                  Save Key
+                </button>
+                <button
+                  onClick={() => setShowApiKeyModal(false)}
+                  className="flex-1 bg-slate-700/50 hover:bg-slate-600/50 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
