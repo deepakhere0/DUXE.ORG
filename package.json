@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:prod": "NODE_ENV=production vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "db:init": "node scripts/run-init.js",
@@ -13,6 +14,7 @@
     "create-admin": "node scripts/create-admin-manual.js",
     "create-admin:auto": "node scripts/create-admin-cli.js",
     "create-admin:emulator": "node scripts/create-admin-cli.js --emulator",
+    "check-env": "node scripts/check-env.js",
     "emulator:start": "firebase emulators:start --only firestore,auth",
     "emulator:setup": "firebase emulators:start --only firestore,auth --import ./firebase-export --export-on-exit ./firebase-export"
   },
