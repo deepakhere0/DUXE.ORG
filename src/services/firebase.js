@@ -56,6 +56,18 @@ export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
 export const storage = app ? getStorage(app) : null;
 export const functions = app ? getFunctions(app) : null;
-export const analytics = app && typeof window !== 'undefined' ? getAnalytics(app) : null;
+// Initialize Analytics with error handling for CSP issues
+let analytics = null;
+try {
+  if (app && typeof window !== 'undefined') {
+    analytics = getAnalytics(app);
+    console.log('✅ Firebase Analytics initialized successfully');
+  }
+} catch (error) {
+  console.warn('⚠️ Firebase Analytics initialization failed (likely due to CSP or ad blockers):', error.message);
+  analytics = null;
+}
+
+export { analytics };
 
 export default app;
