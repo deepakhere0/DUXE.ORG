@@ -1,0 +1,87 @@
+# Internships connector for Firebase Data Connect
+
+# Query to get all active internships
+query GetActiveInternships($limit: Int = 20) {
+  internships(where: { status: ACTIVE }, orderBy: { postedAt: DESC }, limit: $limit) {
+    id
+    company
+    role
+    description
+    stipend
+    location
+    locationType
+    duration
+    startDate
+    applicationDeadline
+    skills
+    eligibility
+    applyURL
+    applicationCount
+    postedAt
+  }
+}
+
+# Query to get internship by ID
+query GetInternshipById($id: ID!) {
+  internship(id: $id) {
+    id
+    company
+    role
+    description
+    stipend
+    location
+    locationType
+    duration
+    startDate
+    applicationDeadline
+    skills
+    eligibility
+    applyURL
+    applicationCount
+    status
+    postedAt
+    updatedAt
+    poster {
+      id
+      displayName
+    }
+  }
+}
+
+# Mutation to create internship
+mutation CreateInternship(
+  $company: String!,
+  $role: String!,
+  $description: String,
+  $stipend: String,
+  $location: String,
+  $locationType: LocationType,
+  $duration: String,
+  $startDate: DateTime,
+  $applicationDeadline: DateTime,
+  $skills: [String!],
+  $eligibility: String,
+  $applyURL: String,
+  $postedBy: ID
+) {
+  internship_insert(data: {
+    company: $company,
+    role: $role,
+    description: $description,
+    stipend: $stipend,
+    location: $location,
+    locationType: $locationType,
+    duration: $duration,
+    startDate: $startDate,
+    applicationDeadline: $applicationDeadline,
+    skills: $skills,
+    eligibility: $eligibility,
+    applyURL: $applyURL,
+    postedBy: $postedBy
+  }) {
+    id
+    company
+    role
+    postedAt
+  }
+}

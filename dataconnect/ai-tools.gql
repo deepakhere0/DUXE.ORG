@@ -1,0 +1,85 @@
+# AI Tools connector for Firebase Data Connect
+
+# Query to get AI jobs for a user
+query GetUserAIJobs($userId: ID!, $limit: Int = 10) {
+  aiJobs(
+    where: { createdBy: $userId },
+    orderBy: { createdAt: DESC },
+    limit: $limit
+  ) {
+    id
+    type
+    status
+    inputText
+    outputText
+    error
+    createdAt
+    startedAt
+    completedAt
+  }
+}
+
+# Query to get AI job by ID
+query GetAIJobById($id: ID!) {
+  aiJob(id: $id) {
+    id
+    type
+    status
+    inputText
+    inputFileURL
+    outputText
+    outputData
+    parameters
+    error
+    createdAt
+    startedAt
+    completedAt
+    user {
+      id
+      displayName
+    }
+  }
+}
+
+# Mutation to create AI job
+mutation CreateAIJob(
+  $type: AIJobType!,
+  $inputText: String,
+  $inputFileURL: String,
+  $parameters: String,
+  $createdBy: ID!
+) {
+  aiJob_insert(data: {
+    type: $type,
+    inputText: $inputText,
+    inputFileURL: $inputFileURL,
+    parameters: $parameters,
+    createdBy: $createdBy
+  }) {
+    id
+    type
+    status
+    createdAt
+  }
+}
+
+# Mutation to update AI job status
+mutation UpdateAIJobStatus(
+  $id: ID!,
+  $status: AIJobStatus!,
+  $outputText: String,
+  $outputData: String,
+  $error: String
+) {
+  aiJob_update(id: $id, data: {
+    status: $status,
+    outputText: $outputText,
+    outputData: $outputData,
+    error: $error,
+    completedAt: "now()"
+  }) {
+    id
+    status
+    completedAt
+  }
+}

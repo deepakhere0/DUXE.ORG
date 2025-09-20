@@ -1,0 +1,78 @@
+# Users connector for Firebase Data Connect
+# Handles user-related operations
+
+# Query to get user by ID
+query GetUserById($userId: ID!) {
+  user(id: $userId) {
+    id
+    email
+    displayName
+    photoURL
+    role
+    emailVerified
+    createdAt
+    updatedAt
+  }
+}
+
+# Query to get user profile with relationships
+query GetUserProfile($userId: ID!) {
+  user(id: $userId) {
+    id
+    email
+    displayName
+    photoURL
+    role
+    emailVerified
+    bookmarks
+    uploadedNotes
+    createdAt
+    updatedAt
+    notes {
+      id
+      title
+      status
+      createdAt
+    }
+  }
+}
+
+# Mutation to create user
+mutation CreateUser(
+  $id: ID!,
+  $email: String!,
+  $displayName: String!,
+  $photoURL: String,
+  $role: UserRole
+) {
+  user_insert(data: {
+    id: $id,
+    email: $email,
+    displayName: $displayName,
+    photoURL: $photoURL,
+    role: $role
+  }) {
+    id
+    email
+    displayName
+    role
+  }
+}
+
+# Mutation to update user profile
+mutation UpdateUserProfile(
+  $userId: ID!,
+  $displayName: String,
+  $photoURL: String
+) {
+  user_update(id: $userId, data: {
+    displayName: $displayName,
+    photoURL: $photoURL,
+    updatedAt: "now()"
+  }) {
+    id
+    displayName
+    photoURL
+    updatedAt
+  }
+}

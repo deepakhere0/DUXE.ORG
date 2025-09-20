@@ -1,0 +1,83 @@
+# Analytics connector for Firebase Data Connect
+
+# Query to get analytics events
+query GetAnalyticsEvents($limit: Int = 100) {
+  analytics(
+    orderBy: { timestamp: DESC },
+    limit: $limit
+  ) {
+    id
+    eventType
+    eventName
+    userId
+    sessionId
+    data
+    timestamp
+    user {
+      id
+      displayName
+    }
+  }
+}
+
+# Query to get analytics by event type
+query GetAnalyticsByEventType($eventType: String!, $limit: Int = 50) {
+  analytics(
+    where: { eventType: $eventType },
+    orderBy: { timestamp: DESC },
+    limit: $limit
+  ) {
+    id
+    eventName
+    userId
+    sessionId
+    data
+    timestamp
+    user {
+      id
+      displayName
+    }
+  }
+}
+
+# Query to get user analytics
+query GetUserAnalytics($userId: ID!, $limit: Int = 50) {
+  analytics(
+    where: { userId: $userId },
+    orderBy: { timestamp: DESC },
+    limit: $limit
+  ) {
+    id
+    eventType
+    eventName
+    sessionId
+    data
+    timestamp
+  }
+}
+
+# Mutation to track analytics event
+mutation TrackAnalyticsEvent(
+  $eventType: String!,
+  $eventName: String!,
+  $userId: ID,
+  $sessionId: String,
+  $data: String,
+  $userAgent: String,
+  $ipAddress: String
+) {
+  analytics_insert(data: {
+    eventType: $eventType,
+    eventName: $eventName,
+    userId: $userId,
+    sessionId: $sessionId,
+    data: $data,
+    userAgent: $userAgent,
+    ipAddress: $ipAddress
+  }) {
+    id
+    eventType
+    eventName
+    timestamp
+  }
+}
