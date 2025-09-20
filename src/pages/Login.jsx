@@ -11,7 +11,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   
-  const { login, googleSignIn, currentUser, loading: authLoading } = useAuth();
+  const { login, smartGoogleSignIn, currentUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -70,7 +70,8 @@ const Login = () => {
     setErrors({});
     
     try {
-      const result = await googleSignIn();
+      console.log('🧠 Starting smart Google Sign-In...');
+      const result = await smartGoogleSignIn();
       
       if (result.success) {
         if (result.redirecting) {
@@ -78,13 +79,14 @@ const Login = () => {
           console.log('🔄 Redirecting to Google for authentication...');
           // Don't set loading to false - user is being redirected
         } else {
-          // Direct success (shouldn't happen with redirect method)
+          // Direct success (popup method succeeded)
           console.log('✅ Google Sign-In successful, redirecting to dashboard...');
           navigate(from, { replace: true });
           setLoading(false);
         }
       } else {
         setLoading(false);
+        console.error('❌ Smart Google Sign-In failed:', result.error);
         setErrors({ general: result.error || 'Failed to sign in with Google' });
       }
     } catch (error) {

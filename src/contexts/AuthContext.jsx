@@ -314,23 +314,83 @@ export const AuthProvider = ({ children }) => {
       
     } catch (error) {
       console.error('❌ Google Sign-In popup error:', error);
+      console.error('🔍 Error code:', error.code);
+      console.error('📝 Error message:', error.message);
+      console.error('🌐 Current domain:', window.location.origin);
       
       let errorMessage = 'Failed to sign in with Google';
+      let shouldFallbackToRedirect = false;
       
       switch (error.code) {
         case 'auth/popup-closed-by-user':
-          errorMessage = 'Sign-in was cancelled. Please try the redirect method instead.';
+          errorMessage = '⚠️ User closed the popup. This might be due to domain mismatch.';
+          console.warn('⚠️ User closed the popup. This might be due to domain mismatch.');
+          shouldFallbackToRedirect = true;
           break;
         case 'auth/popup-blocked':
-          errorMessage = 'Popup was blocked. Please allow popups or use redirect method.';
+          errorMessage = 'Popup was blocked. Please allow popups or try redirect method.';
+          shouldFallbackToRedirect = true;
+          break;
+        case 'auth/unauthorized-domain':
+          errorMessage = `Domain ${window.location.origin} is not authorized. Check Firebase Console.`;
+          console.error('❌ Unauthorized domain. Please add this domain to Firebase Auth settings.');
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your connection and try again.';
           break;
         default:
           errorMessage = error.message || 'Popup authentication failed. Try redirect method.';
+          shouldFallbackToRedirect = true;
       }
       
-      toast.error(errorMessage);
-      return { success: false, error: errorMessage };
+      // Don't show toast for popup closed by user - it's expected behavior
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast.error(errorMessage);
+      }
+      
+      return { 
+        success: false, 
+        error: errorMessage, 
+        shouldFallbackToRedirect,
+        errorCode: error.code 
+      };
     }
+  };
+
+  // Smart Google Sign-In with automatic fallback
+  const smartGoogleSignIn = async () => {
+    if (!auth || !db) {
+      console.error('❌ Firebase not initialized');
+      toast.error('Authentication service is not available.');
+      return { success: false, error: 'Firebase not configured' };
+    }
+
+    // For production domains with COOP policies, use redirect directly
+    const isProduction = window.location.origin.includes('duxe.org') || 
+                        window.location.protocol === 'https:';
+    
+    if (isProduction) {
+      console.log('🏢 Production environment detected, using redirect method...');
+      return await googleSignIn();
+    }
+    
+    // For local development, try popup first for better UX
+    console.log('🚀 Local development detected, attempting popup sign-in first...');
+    const popupResult = await googleSignInPopup();
+    
+    if (popupResult.success) {
+      return popupResult;
+    }
+    
+    // If popup failed due to COOP/domain issues, fallback to redirect
+    if (popupResult.shouldFallbackToRedirect) {
+      console.log('🔄 Popup failed, falling back to redirect method...');
+      toast.info('Redirecting to Google for secure authentication...');
+      return await googleSignIn();
+    }
+    
+    // If it's a different error, don't fallback
+    return popupResult;
   };
 
   // Helper function to process Google user data
@@ -505,9 +565,10 @@ export const AuthProvider = ({ children }) => {
     isStudent: userProfile?.role === 'student',
     signup,
     login,
-    googleSignIn, // Now uses redirect method
-    googleSignInPopup, // Alternative popup method for local dev
-    signInWithGoogle: googleSignIn, // Alias for backward compatibility
+    googleSignIn, // Redirect method (COOP-friendly)
+    googleSignInPopup, // Popup method for local dev
+    smartGoogleSignIn, // Intelligent method with fallback
+    signInWithGoogle: smartGoogleSignIn, // Updated to use smart method
     logout,
     resetPassword,
     updateUserProfile,
