@@ -26,7 +26,9 @@ const requiredKeys = [
 ];
 
 const missing = requiredKeys.filter(
-  (k) => !import.meta.env[k] || String(import.meta.env[k]).startsWith('your_')
+  (k) => !import.meta.env[k] || 
+         String(import.meta.env[k]).startsWith('your_') ||
+         String(import.meta.env[k]).trim() === ''
 );
 
 export const isFirebaseConfigured = missing.length === 0;

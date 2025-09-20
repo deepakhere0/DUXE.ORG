@@ -31,7 +31,7 @@
           },
           {
             "key": "Access-Control-Allow-Credentials",
-            "value": "true"
+            "value": "false"
           },
           {
             "key": "Access-Control-Max-Age",
@@ -47,15 +47,15 @@
         },
         {
           "key": "Cross-Origin-Opener-Policy",
-          "value": "same-origin-allow-popups"
-        },
-        {
-          "key": "Cross-Origin-Embedder-Policy",
-          "value": "credentialless"
+          "value": "unsafe-none"
         },
         {
           "key": "Permissions-Policy",
-          "value": "identity-credentials-get=*, publickey-credentials-get=*, clipboard-read=*, clipboard-write=*"
+          "value": "identity-credentials-get=*, publickey-credentials-get=*"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer-when-downgrade"
         }
         ]
       },

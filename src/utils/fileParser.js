@@ -1,9 +1,36 @@
 // File parsing utilities for extracting text from various file formats
-import * as pdfjsLib from 'pdfjs-dist';
-import mammoth from 'mammoth';
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Dynamic imports to avoid module resolution issues
+let pdfjsLib = null;
+let mammoth = null;
+
+// Initialize PDF.js dynamically
+async function initPdfJs() {
+  if (!pdfjsLib) {
+    try {
+      pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    } catch (error) {
+      console.error('Failed to load PDF.js:', error);
+      throw new Error('PDF processing is not available. Please try a different file format.');
+    }
+  }
+  return pdfjsLib;
+}
+
+// Initialize Mammoth dynamically
+async function initMammoth() {
+  if (!mammoth) {
+    try {
+      mammoth = await import('mammoth');
+      mammoth = mammoth.default || mammoth;
+    } catch (error) {
+      console.error('Failed to load Mammoth:', error);
+      throw new Error('DOCX processing is not available. Please try a different file format.');
+    }
+  }
+  return mammoth;
+}
 
 /**
  * Parse PDF file and extract text content
@@ -12,8 +39,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.j
  */
 export async function parsePDF(file) {
   try {
+    const pdfLib = await initPdfJs();
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pdf = await pdfLib.getDocument({ data: arrayBuffer }).promise;
     let fullText = '';
 
     for (let i = 1; i <= pdf.numPages; i++) {
@@ -39,8 +67,9 @@ export async function parsePDF(file) {
  */
 export async function parseDOCX(file) {
   try {
+    const mammothLib = await initMammoth();
     const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({ arrayBuffer });
+    const result = await mammothLib.extractRawText({ arrayBuffer });
     
     if (result.messages.length > 0) {
       console.warn('DOCX parsing warnings:', result.messages);

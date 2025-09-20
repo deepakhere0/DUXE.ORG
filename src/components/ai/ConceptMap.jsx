@@ -19,7 +19,6 @@ import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../common/Toast';
 import { useAuth } from '../../contexts/AuthContext';
-import html2canvas from 'html2canvas';
 
 const ConceptMap = () => {
   const { user } = useAuth();
@@ -145,14 +144,19 @@ const ConceptMap = () => {
     const flowElement = document.querySelector('.react-flow');
     if (flowElement) {
       try {
-        const canvas = await html2canvas(flowElement);
+        // Dynamic import to avoid module resolution issues
+        const html2canvas = await import('html2canvas');
+        const html2canvasFunc = html2canvas.default || html2canvas;
+        
+        const canvas = await html2canvasFunc(flowElement);
         const link = document.createElement('a');
         link.download = 'concept-map.png';
         link.href = canvas.toDataURL();
         link.click();
         Toast.success('Concept map downloaded as image!');
       } catch (err) {
-        Toast.error('Failed to download map');
+        console.error('Failed to download map:', err);
+        Toast.error('Download feature is currently unavailable. Please try again later.');
       }
     }
   };
