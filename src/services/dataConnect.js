@@ -14,9 +14,11 @@ const DATA_CONNECT_CONFIG = {
 
 // Initialize Data Connect instance
 let dataConnect = null;
+let dataConnectInitialized = false;
 
-if (isFirebaseConfigured && app) {
+if (isFirebaseConfigured && app && !dataConnectInitialized) {
   try {
+    dataConnectInitialized = true;
     dataConnect = getDataConnect(app, DATA_CONNECT_CONFIG);
     
     // Connect to emulator in development
@@ -33,7 +35,7 @@ if (isFirebaseConfigured && app) {
     // Set dataConnect to null to prevent errors in queries
     dataConnect = null;
   }
-} else {
+} else if (!dataConnectInitialized) {
   console.warn('🤖 DataConnect - Firebase not configured. Please set up Firebase configuration.');
 }
 

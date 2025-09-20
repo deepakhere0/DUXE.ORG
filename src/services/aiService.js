@@ -6,12 +6,35 @@ import Toast from '../components/common/Toast';
 // Initialize Gemini AI with enhanced error handling
 let genAI = null;
 let model = null;
+let aiInitialized = false;
+
+// Check if already initialized from geminiService
+try {
+  // Try to import the model from geminiService
+  import('./geminiService').then(geminiService => {
+    if (geminiService.default.isConfigured()) {
+      console.log('🤖 Using existing Gemini AI instance from geminiService');
+      aiInitialized = true;
+    } else {
+      initializeGemini();
+    }
+  }).catch(() => {
+    // If import fails, initialize our own
+    initializeGemini();
+  });
+} catch (error) {
+  // Fallback initialization
+  initializeGemini();
+}
 
 // Initialize Gemini AI
 function initializeGemini() {
+  if (aiInitialized) return true; // Prevent multiple initializations
+
   try {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (apiKey && !apiKey.startsWith('your_')) {
+      aiInitialized = true;
       genAI = new GoogleGenerativeAI(apiKey);
       model = genAI.getGenerativeModel({ 
         model: 'gemini-1.5-flash',
@@ -22,21 +45,18 @@ function initializeGemini() {
           maxOutputTokens: 4096,
         }
       });
-      console.log('🤖 Gemini AI initialized successfully');
+      console.log('🤖 Gemini AI initialized successfully (aiService)');
       return true;
     } else {
-      console.log('🚫 No valid Gemini API key found');
+      console.log('🚫 No valid Gemini API key found (aiService)');
       return false;
     }
   } catch (error) {
-    console.error('⚠️ Gemini AI initialization failed:', error.message);
+    console.error('⚠️ Gemini AI initialization failed (aiService):', error.message);
     Toast.error('AI service initialization failed');
     return false;
   }
 }
-
-// Initialize on load
-initializeGemini();
 
 const parseJsonFromResponse = (text) => {
   try {

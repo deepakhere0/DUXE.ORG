@@ -34,21 +34,25 @@ const missing = requiredKeys.filter(
 export const isFirebaseConfigured = missing.length === 0;
 
 let app = null;
+let initializationAttempted = false;
+
 try {
-  if (isFirebaseConfigured) {
+  if (isFirebaseConfigured && !initializationAttempted) {
+    initializationAttempted = true;
     app = initializeApp(firebaseConfig);
-  } else {
+    console.log('✅ Firebase App initialized successfully');
+  } else if (!isFirebaseConfigured) {
     if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
       console.warn(
-        '[Firebase] Missing or placeholder env vars. Create .env.local using .env.example and restart the dev server. Missing:',
+        '⚠️ [Firebase] Missing or placeholder env vars. Create .env.local using .env.example and restart the dev server. Missing:',
         missing
       );
     }
   }
 } catch (e) {
   // eslint-disable-next-line no-console
-  console.error('[Firebase] Initialization failed:', e);
+  console.error('❌ [Firebase] Initialization failed:', e);
 }
 
 // Initialize Firebase services only if app is initialized
@@ -58,8 +62,11 @@ export const storage = app ? getStorage(app) : null;
 export const functions = app ? getFunctions(app) : null;
 // Initialize Analytics with error handling for CSP issues
 let analytics = null;
+let analyticsInitialized = false;
+
 try {
-  if (app && typeof window !== 'undefined') {
+  if (app && typeof window !== 'undefined' && !analyticsInitialized) {
+    analyticsInitialized = true;
     analytics = getAnalytics(app);
     console.log('✅ Firebase Analytics initialized successfully');
   }

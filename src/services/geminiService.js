@@ -5,27 +5,31 @@ import Toast from '../components/common/Toast';
 // Initialize Gemini AI
 let genAI = null;
 let model = null;
+let initialized = false;
 
 // Initialize Gemini with API key
 export const initializeGemini = (apiKey) => {
+  if (initialized) return true; // Prevent multiple initializations
+  
   try {
     if (apiKey && !apiKey.startsWith('your_')) {
+      initialized = true;
       genAI = new GoogleGenerativeAI(apiKey);
       model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      console.log('🤖 Gemini AI initialized successfully');
+      console.log('🤖 Gemini AI initialized successfully (geminiService)');
       return true;
     } else {
-      console.warn('⚠️ Invalid Gemini API key');
+      console.warn('⚠️ Invalid Gemini API key (geminiService)');
       return false;
     }
   } catch (error) {
-    console.error('❌ Gemini AI initialization failed:', error);
+    console.error('❌ Gemini AI initialization failed (geminiService):', error);
     return false;
   }
 };
 
 // Auto-initialize from environment variable
-if (import.meta.env.VITE_GEMINI_API_KEY) {
+if (import.meta.env.VITE_GEMINI_API_KEY && !initialized) {
   initializeGemini(import.meta.env.VITE_GEMINI_API_KEY);
 }
 
