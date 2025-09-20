@@ -25,7 +25,22 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: false, // Disabled temporarily to reduce memory usage
+    minify: 'esbuild', // Use esbuild for faster, less memory-intensive builds
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      external: ['mammoth', 'pdfjs-dist', 'html2canvas'], // Externalize heavy deps
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          'heavy-deps': ['@tanstack/react-query', 'reactflow'],
+        },
+        chunkFileNames: '[name]-[hash].js',
+        entryFileNames: '[name]-[hash].js',
+        assetFileNames: '[name]-[hash].[ext]',
+      },
+    },
   },
   // Only include specific environment variables in production
   envPrefix: process.env.NODE_ENV === 'production' 

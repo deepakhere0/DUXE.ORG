@@ -227,7 +227,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Google Sign In function following the requirements
+  // Google Sign In function using redirect (COOP-friendly)
   const googleSignIn = async () => {
     if (!auth || !db) {
       console.error('❌ Firebase not initialized');
@@ -236,7 +236,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      console.log('🚀 Starting Google Sign-In...');
+      console.log('🚀 Starting Google Sign-In with redirect...');
       console.log('🌐 Current origin:', window.location.origin);
       console.log('🔧 Firebase Auth Domain:', import.meta.env.VITE_FIREBASE_AUTH_DOMAIN);
       
@@ -247,41 +247,12 @@ export const AuthProvider = ({ children }) => {
         prompt: 'select_account'
       });
       
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      // Use redirect instead of popup to avoid COOP issues
+      await signInWithRedirect(auth, provider);
+      // Note: This will redirect the user away from the current page
+      // The result will be handled by handleRedirectResult on page load
       
-      console.log('✅ Google authentication successful:', user.email);
-
-      // Check if user exists in Firestore
-      const userRef = doc(db, 'users', user.uid);
-      const userSnapshot = await getDoc(userRef);
-      
-      if (!userSnapshot.exists()) {
-        // Create new user document on first login
-        console.log('💾 Creating new user profile in Firestore...');
-        const userData = {
-          uid: user.uid,
-          displayName: user.displayName,
-          email: user.email,
-          photoURL: user.photoURL,
-          role: 'student',
-          createdAt: serverTimestamp(),
-          provider: 'google',
-          bookmarks: [],
-          uploadedNotes: []
-        };
-        
-        await setDoc(userRef, userData);
-        console.log('✅ New user profile created');
-      } else {
-        console.log('👤 Existing user profile found');
-      }
-      
-      // Fetch user profile to update local state
-      await fetchUserProfile(user.uid);
-      
-      toast.success(`Welcome to DUXE, ${user.displayName || user.email}!`);
-      return { success: true, user };
+      return { success: true, redirecting: true };
       
     } catch (error) {
       console.error('❌ Google Sign-In error:', error);
@@ -292,17 +263,9 @@ export const AuthProvider = ({ children }) => {
       let errorMessage = 'Failed to sign in with Google';
       
       switch (error.code) {
-        case 'auth/popup-closed-by-user':
-          errorMessage = 'Sign-in was cancelled. Please try again.';
-          console.warn('⚠️ User closed the popup. This might be due to domain mismatch.');
-          break;
-        case 'auth/popup-blocked':
-          errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
-          console.warn('⚠️ Popup blocked by browser.');
-          break;
         case 'auth/unauthorized-domain':
           errorMessage = `Domain ${window.location.origin} is not authorized. Please contact support.`;
-          console.error('❌ Unauthorized domain error. Check Google Cloud Console OAuth configuration.');
+          console.error('❌ Unauthorized domain error. Check Firebase Console Auth settings.');
           break;
         case 'auth/network-request-failed':
           errorMessage = 'Network error. Please check your connection and try again.';
@@ -318,6 +281,87 @@ export const AuthProvider = ({ children }) => {
       toast.error(errorMessage);
       return { success: false, error: errorMessage };
     }
+  };
+
+  // Alternative popup method for local development
+  const googleSignInPopup = async () => {
+    if (!auth || !db) {
+      console.error('❌ Firebase not initialized');
+      toast.error('Authentication service is not available.');
+      return { success: false, error: 'Firebase not configured' };
+    }
+
+    try {
+      console.log('🚀 Starting Google Sign-In with popup...');
+      
+      const provider = new GoogleAuthProvider();
+      provider.addScope('email');
+      provider.addScope('profile');
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      console.log('✅ Google authentication successful:', user.email);
+
+      // Process user data
+      await processGoogleUser(user);
+      
+      toast.success(`Welcome to DUXE, ${user.displayName || user.email}!`);
+      return { success: true, user };
+      
+    } catch (error) {
+      console.error('❌ Google Sign-In popup error:', error);
+      
+      let errorMessage = 'Failed to sign in with Google';
+      
+      switch (error.code) {
+        case 'auth/popup-closed-by-user':
+          errorMessage = 'Sign-in was cancelled. Please try the redirect method instead.';
+          break;
+        case 'auth/popup-blocked':
+          errorMessage = 'Popup was blocked. Please allow popups or use redirect method.';
+          break;
+        default:
+          errorMessage = error.message || 'Popup authentication failed. Try redirect method.';
+      }
+      
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // Helper function to process Google user data
+  const processGoogleUser = async (user) => {
+    // Check if user exists in Firestore
+    const userRef = doc(db, 'users', user.uid);
+    const userSnapshot = await getDoc(userRef);
+    
+    if (!userSnapshot.exists()) {
+      // Create new user document on first login
+      console.log('💾 Creating new user profile in Firestore...');
+      const userData = {
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        role: 'student',
+        createdAt: serverTimestamp(),
+        provider: 'google',
+        bookmarks: [],
+        uploadedNotes: []
+      };
+      
+      await setDoc(userRef, userData);
+      console.log('✅ New user profile created');
+    } else {
+      console.log('👤 Existing user profile found');
+    }
+    
+    // Fetch user profile to update local state
+    await fetchUserProfile(user.uid);
   };
 
   // Sign out function
@@ -373,20 +417,18 @@ export const AuthProvider = ({ children }) => {
 
   // Handle redirect result from Google Sign In
   const handleRedirectResult = async () => {
+    if (!auth || !db) {
+      return;
+    }
+    
     try {
       const result = await getRedirectResult(auth);
       if (result?.user) {
         console.log('✅ Redirect authentication successful:', result.user.email);
         
-        await createUserProfile(result.user, {
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          provider: 'google',
-          signupMethod: 'google',
-          lastLoginAt: new Date().toISOString()
-        });
+        // Process Google user data (same as popup method)
+        await processGoogleUser(result.user);
         
-        await fetchUserProfile(result.user.uid);
         toast.success(`Welcome to DUXE, ${result.user.displayName || result.user.email}!`);
         
         return { success: true, user: result.user };
@@ -426,13 +468,16 @@ export const AuthProvider = ({ children }) => {
 
   // Redirect result is now handled by AuthRedirectHandler component
 
-  // Listen to auth state changes
+  // Handle redirect result and listen to auth state changes
   useEffect(() => {
     if (!auth) {
       // If Firebase isn't configured, skip auth listener
       setLoading(false);
       return;
     }
+
+    // Handle any pending redirect result first
+    handleRedirectResult();
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
@@ -460,12 +505,14 @@ export const AuthProvider = ({ children }) => {
     isStudent: userProfile?.role === 'student',
     signup,
     login,
-    googleSignIn,
+    googleSignIn, // Now uses redirect method
+    googleSignInPopup, // Alternative popup method for local dev
     signInWithGoogle: googleSignIn, // Alias for backward compatibility
     logout,
     resetPassword,
     updateUserProfile,
-    fetchUserProfile
+    fetchUserProfile,
+    handleRedirectResult
   };
 
   return (

@@ -73,8 +73,16 @@ const Login = () => {
       const result = await googleSignIn();
       
       if (result.success) {
-        console.log('✅ Google Sign-In successful, redirecting to dashboard...');
-        navigate(from, { replace: true });
+        if (result.redirecting) {
+          // User will be redirected to Google, no need to navigate here
+          console.log('🔄 Redirecting to Google for authentication...');
+          // Don't set loading to false - user is being redirected
+        } else {
+          // Direct success (shouldn't happen with redirect method)
+          console.log('✅ Google Sign-In successful, redirecting to dashboard...');
+          navigate(from, { replace: true });
+          setLoading(false);
+        }
       } else {
         setLoading(false);
         setErrors({ general: result.error || 'Failed to sign in with Google' });
