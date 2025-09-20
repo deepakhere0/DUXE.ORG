@@ -24,15 +24,17 @@ if (isFirebaseConfigured && app) {
       const emulatorHost = import.meta.env.VITE_DATACONNECT_EMULATOR_HOST || 'localhost';
       const emulatorPort = parseInt(import.meta.env.VITE_DATACONNECT_EMULATOR_PORT || '9399');
       connectDataConnectEmulator(dataConnect, emulatorHost, emulatorPort);
-      console.log(`[DataConnect] Connected to emulator at ${emulatorHost}:${emulatorPort}`);
+      console.log(`🤖 DataConnect connected to emulator at ${emulatorHost}:${emulatorPort}`);
     }
     
-    console.log('[DataConnect] Initialized successfully');
+    console.log('🤖 DataConnect initialized successfully');
   } catch (error) {
-    console.error('[DataConnect] Initialization failed:', error);
+    console.error('🤖 DataConnect initialization failed:', error);
+    // Set dataConnect to null to prevent errors in queries
+    dataConnect = null;
   }
 } else {
-  console.warn('[DataConnect] Firebase not configured. Please set up Firebase configuration.');
+  console.warn('🤖 DataConnect - Firebase not configured. Please set up Firebase configuration.');
 }
 
 // Query executor with error handling
