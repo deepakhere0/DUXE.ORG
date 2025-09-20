@@ -56,6 +56,14 @@
     @apply bg-glass-white backdrop-blur-sm text-navy-600 hover:bg-white/20 focus:ring-white/30;
   }
 
+  .btn-success {
+    @apply bg-green-500 text-white hover:bg-green-600 focus:ring-green-500;
+  }
+
+  .btn-danger {
+    @apply bg-red-500 text-white hover:bg-red-600 focus:ring-red-500;
+  }
+
   .btn-sm {
     @apply px-3 py-1.5 text-sm;
   }

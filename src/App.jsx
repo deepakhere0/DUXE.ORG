@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
 import AuthRedirectHandler from './components/auth/AuthRedirectHandler';
 
 // Pages (we'll create these next)
@@ -12,6 +13,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Notes from './pages/Notes';
+import NotesPortal from './pages/NotesPortal';
 import NoteDetail from './pages/NoteDetail';
 import Upload from './pages/Upload';
 import Tools from './pages/Tools';
@@ -41,7 +43,7 @@ import GoogleSignInDebug from './pages/GoogleSignInDebug';
 
 // Admin Components
 import AdminLayout from './components/admin/AdminLayout';
-import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import ReviewQueue from './pages/admin/ReviewQueue';
 import FileManagement from './pages/admin/FileManagement';
@@ -71,7 +73,8 @@ function App() {
               <Route index element={<Home />} />
               <Route path="login" element={<Login />} />
               <Route path="signup" element={<Signup />} />
-              <Route path="notes" element={<Notes />} />
+              <Route path="notes" element={<NotesPortal />} />
+              <Route path="notes-old" element={<Notes />} />
               <Route path="notes/:noteId" element={<NoteDetail />} />
               <Route path="videos" element={<Videos />} />
               <Route path="internships" element={<Internships />} />
@@ -138,6 +141,14 @@ function App() {
               />
               
               {/* Admin Routes */}
+              <Route
+                path="admin"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
               <Route
                 path="admin/*"
                 element={

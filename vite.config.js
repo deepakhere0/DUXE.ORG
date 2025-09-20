@@ -7,7 +7,21 @@ export default defineConfig({
   server: {
     port: 5000,
     open: false,
-    host: true
+    host: true,
+    cors: {
+      origin: true, // Allow all origins
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+      allowedHeaders: [
+        'Origin',
+        'Content-Type', 
+        'Accept',
+        'Authorization',
+        'X-Requested-With',
+        'X-Auth-Token',
+        'X-HTTP-Method-Override'
+      ]
+    }
   },
   build: {
     outDir: 'dist',

@@ -10,6 +10,23 @@
 import {setGlobalOptions} from "firebase-functions";
 import {onRequest} from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
+import * as cors from "cors";
+
+// Configure CORS for all origins dynamically
+const corsHandler = cors({
+  origin: true, // Allow all origins dynamically
+  credentials: true, // Allow credentials
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Origin', 
+    'Content-Type', 
+    'Accept', 
+    'Authorization', 
+    'X-Requested-With', 
+    'X-Auth-Token',
+    'X-HTTP-Method-Override'
+  ]
+});
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -26,7 +43,31 @@ import * as logger from "firebase-functions/logger";
 // this will be the maximum concurrent request count.
 setGlobalOptions({ maxInstances: 10 });
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// Sample API endpoint with dynamic CORS enabled for all origins
+export const api = onRequest((request, response) => {
+  corsHandler(request, response, () => {
+    logger.info("API called", {
+      structuredData: true,
+      origin: request.get('origin'),
+      method: request.method
+    });
+    
+    // Handle preflight requests
+    if (request.method === 'OPTIONS') {
+      response.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+      response.set('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept, Authorization, X-Requested-With, X-Auth-Token');
+      response.set('Access-Control-Max-Age', '86400');
+      response.status(204).send('');
+      return;
+    }
+    
+    // Your API logic here
+    response.json({
+      message: "Hello from Firebase API! CORS enabled for all origins.",
+      timestamp: new Date().toISOString(),
+      method: request.method,
+      origin: request.get('origin') || 'No origin header',
+      userAgent: request.get('user-agent')
+    });
+  });
+});

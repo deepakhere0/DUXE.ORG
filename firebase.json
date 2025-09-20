@@ -13,6 +13,58 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          },
+          {
+            "key": "Access-Control-Allow-Methods",
+            "value": "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+          },
+          {
+            "key": "Access-Control-Allow-Headers",
+            "value": "Origin, Content-Type, Accept, Authorization, X-Requested-With, X-Auth-Token, X-HTTP-Method-Override"
+          },
+          {
+            "key": "Access-Control-Allow-Credentials",
+            "value": "true"
+          },
+          {
+            "key": "Access-Control-Max-Age",
+            "value": "86400"
+          },
+          {
+            "key": "Vary",
+            "value": "Origin, Access-Control-Request-Headers"
+          }
+        ]
+      },
+      {
+        "source": "/api/**",
+        "headers": [
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          },
+          {
+            "key": "Access-Control-Allow-Methods",
+            "value": "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+          },
+          {
+            "key": "Access-Control-Allow-Headers",
+            "value": "Origin, Content-Type, Accept, Authorization, X-Requested-With, X-Auth-Token, X-HTTP-Method-Override"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      }
+    ],
     "rewrites": [
       {
         "source": "**",

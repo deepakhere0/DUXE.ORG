@@ -21,8 +21,8 @@ const SearchBar = ({
 
   // Debounced search function
   const debouncedSearch = useCallback(
-    debounce(async (query) => {
-      if (!query.trim() || query.length < 2) {
+    debounce(async (searchQuery) => {
+      if (!searchQuery.trim() || searchQuery.length < 2) {
         setSuggestions([]);
         setShowSuggestions(false);
         return;
@@ -31,9 +31,9 @@ const SearchBar = ({
       setLoading(true);
       try {
         const searchSuggestions = await Promise.all([
-          searchUniversities(query),
-          searchDepartments(query),
-          searchNotes(query)
+          searchUniversities(searchQuery),
+          searchDepartments(searchQuery),
+          searchNotes(searchQuery)
         ]);
 
         const combinedSuggestions = [
@@ -55,9 +55,9 @@ const SearchBar = ({
   );
 
   // Search universities
-  const searchUniversities = async (query) => {
+  const searchUniversities = async (searchQuery) => {
     try {
-      const normalizedQuery = query.toLowerCase();
+      const normalizedQuery = searchQuery.toLowerCase();
       const q = query(
         collection(db, 'universities'),
         where('active', '==', true),
@@ -93,9 +93,9 @@ const SearchBar = ({
   };
 
   // Search departments
-  const searchDepartments = async (query) => {
+  const searchDepartments = async (searchQuery) => {
     try {
-      const normalizedQuery = query.toLowerCase();
+      const normalizedQuery = searchQuery.toLowerCase();
       const q = query(
         collection(db, 'departments'),
         where('active', '==', true),
@@ -132,17 +132,17 @@ const SearchBar = ({
   };
 
   // Search notes
-  const searchNotes = async (query) => {
+  const searchNotes = async (searchQuery) => {
     try {
-      const normalizedQuery = query.toLowerCase();
+      const normalizedQuery = searchQuery.toLowerCase();
       
       // Search by title and course code
       const titleQuery = query(
         collection(db, 'notes'),
         where('status', '==', 'approved'),
         orderBy('title'),
-        startAt(query),
-        endAt(query + '\uf8ff'),
+        startAt(searchQuery),
+        endAt(searchQuery + '\uf8ff'),
         limit(4)
       );
 
