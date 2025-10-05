@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AcademicCapIcon, EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
-import Toast from '../components/common/Toast';
+import Toast from '../components/common/Toast.js';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -53,7 +53,7 @@ const Login = () => {
     try {
       const result = await login(email, password);
       if (result.success) {
-        Toast.success('Welcome back!');
+        
         navigate(from, { replace: true });
       } else {
         Toast.error(result.error || 'Login failed');
