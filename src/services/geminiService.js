@@ -15,7 +15,7 @@ export const initializeGemini = (apiKey) => {
     if (apiKey && !apiKey.startsWith('your_')) {
       initialized = true;
       genAI = new GoogleGenerativeAI(apiKey);
-      model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       console.log('🤖 Gemini AI initialized successfully (geminiService)');
       return true;
     } else {
@@ -365,7 +365,7 @@ Requirements:
   getModelInfo() {
     return {
       configured: !!model,
-      model: model ? 'gemini-pro' : 'Not configured',
+      model: model ? 'gemini-1.5-flash' : 'Not configured',
       provider: 'Google Gemini API'
     };
   }

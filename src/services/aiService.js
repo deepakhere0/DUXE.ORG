@@ -37,7 +37,7 @@ function initializeGemini() {
       aiInitialized = true;
       genAI = new GoogleGenerativeAI(apiKey);
       model = genAI.getGenerativeModel({ 
-        model: 'gemini-pro',
+        model: 'gemini-1.5-flash',
         generationConfig: {
           temperature: 0.7,
           topP: 0.8,
@@ -664,7 +664,7 @@ Requirements:
   getModelInfo() {
     return { 
       configured: !!model, 
-      model: model ? 'gemini-pro' : 'Not configured',
+      model: model ? 'gemini-1.5-flash' : 'Not configured',
       provider: 'Google Gemini API',
       apiKey: import.meta.env.VITE_GEMINI_API_KEY ? 'Configured' : 'Missing',
       features: ['Summarization', 'MCQ Generation', 'Flashcards', 'Concept Maps', 'Questions', 'Internship Matching']
@@ -685,14 +685,24 @@ Requirements:
     try {
       // Initialize with the provided API key
       genAI = new GoogleGenerativeAI(apiKey);
-      model = genAI.getGenerativeModel({ 
-        model: 'gemini-pro',
+      model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
         generationConfig: {
           temperature: 0.7,
           topP: 0.8,
           topK: 40,
           maxOutputTokens: 4096,
-        }
+        },
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+          },
+        ],
       });
       
       // Test the connection with a simple request
@@ -713,10 +723,14 @@ Requirements:
       model = null;
       aiInitialized = false;
       
-      if (error.message.includes('API_KEY_INVALID')) {
+      if (error.message.includes('API_KEY_INVALID') || error.message.includes('Invalid API key')) {
         throw new Error('Invalid API key. Please check your Gemini API key.');
-      } else if (error.message.includes('PERMISSION_DENIED')) {
+      } else if (error.message.includes('PERMISSION_DENIED') || error.message.includes('Permission denied')) {
         throw new Error('API key does not have permission. Please check your Google Cloud settings.');
+      } else if (error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('Quota exceeded')) {
+        throw new Error('API quota exceeded. Please check your usage limits.');
+      } else if (error.message.includes('404') || error.message.includes('model not found')) {
+        throw new Error('Model not available. The service may be temporarily unavailable.');
       } else {
         throw new Error(`Configuration failed: ${error.message}`);
       }
