@@ -9,10 +9,8 @@ import {
 import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../common/Toast';
-import { useAuth } from '../../contexts/AuthContext';
 
 const AISummarizer = () => {
-  const { user } = useAuth();
   const [inputText, setInputText] = useState('');
   const [summary, setSummary] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);

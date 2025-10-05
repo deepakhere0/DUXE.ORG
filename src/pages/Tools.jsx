@@ -14,7 +14,6 @@ import {
   KeyIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { useAuth } from '../contexts/AuthContext';
 import ToolCard from '../components/common/ToolCard';
 import { AIService } from '../services/aiService';
 import AISummarizer from '../components/ai/AISummarizer';
@@ -25,7 +24,6 @@ import FlashcardGenerator from '../components/ai/FlashcardGenerator';
 import Toast from '../components/common/Toast';
 
 const Tools = () => {
-  const { currentUser } = useAuth();
   const [activeTool, setActiveTool] = useState(null);
   const [showVideo, setShowVideo] = useState(false);
   const [animationStep, setAnimationStep] = useState(0);
@@ -62,11 +60,6 @@ const Tools = () => {
   };
 
   const handleToolClick = (toolId) => {
-    if (!currentUser) {
-      Toast.error('Please log in to use AI tools');
-      return;
-    }
-    
     if (!isGeminiConfigured) {
       setShowApiKeyModal(true);
       return;

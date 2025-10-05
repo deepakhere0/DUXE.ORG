@@ -10,10 +10,10 @@ import {
 import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../common/Toast';
-import { useAuth } from '../../contexts/AuthContext';
+
 
 const MCQGenerator = () => {
-  const { user } = useAuth();
+  
   const [inputText, setInputText] = useState('');
   const [mcqs, setMcqs] = useState([]);
   const [questionCount, setQuestionCount] = useState(20);

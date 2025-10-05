@@ -11,10 +11,10 @@ import {
 import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../common/Toast';
-import { useAuth } from '../../contexts/AuthContext';
+
 
 const QuestionMaker = () => {
-  const { user } = useAuth();
+  
   const [inputText, setInputText] = useState('');
   const [questions, setQuestions] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);

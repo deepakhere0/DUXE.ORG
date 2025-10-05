@@ -1,6 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { Link } from 'react-router-dom';
 import { 
   AcademicCapIcon,
   BookOpenIcon,
@@ -25,8 +24,6 @@ import {
 } from '@heroicons/react/24/solid';
 
 const Home = () => {
-  const { currentUser } = useAuth();
-  const navigate = useNavigate();
 
   const quickLinks = [
     {
@@ -54,7 +51,7 @@ const Home = () => {
       title: 'Upload',
       description: 'Share your notes and earn rewards',
       icon: ArrowUpTrayIcon,
-      href: currentUser ? '/upload' : '/login',
+      href: '/upload',
       color: 'bg-purple-100 text-purple-600'
     }
   ];
@@ -147,14 +144,12 @@ const Home = () => {
                   Explore Notes
                   <ArrowRightIcon className="ml-2 h-5 w-5" />
                 </Link>
-                {!currentUser && (
-                  <Link
-                    to="/signup"
-                    className="btn btn-subtle btn-lg"
-                  >
-                    Get Started Free
-                  </Link>
-                )}
+                <Link
+                  to="/tools"
+                  className="btn btn-subtle btn-lg"
+                >
+                  Try AI Tools
+                </Link>
               </div>
             </div>
             

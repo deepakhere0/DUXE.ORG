@@ -2,16 +2,10 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/layout/Layout';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import AdminRoute from './components/auth/AdminRoute';
-import AuthRedirectHandler from './components/auth/AuthRedirectHandler';
 
 // Pages (we'll create these next)
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
 import Notes from './pages/Notes';
 import NotesPortal from './pages/NotesPortal';
 import NoteDetail from './pages/NoteDetail';
@@ -19,8 +13,6 @@ import Upload from './pages/Upload';
 import Tools from './pages/Tools';
 import Videos from './pages/Videos';
 import Internships from './pages/Internships';
-import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import HowItWorks from './pages/HowItWorks';
 import Pricing from './pages/Pricing';
@@ -35,19 +27,9 @@ import Help from './pages/Help';
 import Guidelines from './pages/Guidelines';
 import Report from './pages/Report';
 import Feedback from './pages/Feedback';
-import ForgotPassword from './pages/ForgotPassword';
 import DataConnectTest from './components/DataConnectTest';
 import Debug from './pages/Debug';
-import GoogleSignInTest from './components/GoogleSignInTest';
-import GoogleSignInDebug from './pages/GoogleSignInDebug';
 
-// Admin Components
-import AdminLayout from './components/admin/AdminLayout';
-import AdminDashboard from './pages/AdminDashboard';
-import UserManagement from './pages/admin/UserManagement';
-import ReviewQueue from './pages/admin/ReviewQueue';
-import FileManagement from './pages/admin/FileManagement';
-import Analytics from './pages/admin/Analytics';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -64,15 +46,11 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
         <Router>
-          <AuthRedirectHandler />
           <Routes>
             <Route path="/" element={<Layout />}>
               {/* Public Routes */}
               <Route index element={<Home />} />
-              <Route path="login" element={<Login />} />
-              <Route path="signup" element={<Signup />} />
               <Route path="notes" element={<NotesPortal />} />
               <Route path="notes-old" element={<Notes />} />
               <Route path="notes/:noteId" element={<NoteDetail />} />
@@ -91,7 +69,6 @@ function App() {
               <Route path="guidelines" element={<Guidelines />} />
               <Route path="report" element={<Report />} />
               <Route path="feedback" element={<Feedback />} />
-              <Route path="forgot-password" element={<ForgotPassword />} />
               
               {/* Data Connect Test Route - Development Only */}
               {import.meta.env.DEV && (
@@ -103,69 +80,10 @@ function App() {
                 <Route path="debug" element={<Debug />} />
               )}
               
-              {/* Google Sign-In Test Route - Development Only */}
-              {import.meta.env.DEV && (
-                <Route path="test-google-signin" element={<GoogleSignInTest />} />
-              )}
               
-              {/* Google Sign-In Debug Route - Development Only */}
-              {import.meta.env.DEV && (
-                <Route path="debug-google-signin" element={<GoogleSignInDebug />} />
-              )}
-              
-              {/* Protected Routes - Require Authentication */}
-              <Route
-                path="upload"
-                element={
-                  <ProtectedRoute requireVerified>
-                    <Upload />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Public Routes */}
+              <Route path="upload" element={<Upload />} />
               <Route path="tools" element={<Tools />} />
-              <Route
-                path="dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-              
-              {/* Admin Routes */}
-              <Route
-                path="admin"
-                element={
-                  <AdminRoute>
-                    <AdminDashboard />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="admin/*"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminLayout>
-                      <Routes>
-                        <Route index element={<AdminDashboard />} />
-                        <Route path="dashboard" element={<AdminDashboard />} />
-                        <Route path="users" element={<UserManagement />} />
-                        <Route path="review-queue" element={<ReviewQueue />} />
-                        <Route path="files" element={<FileManagement />} />
-                        <Route path="analytics" element={<Analytics />} />
-                      </Routes>
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
               
               {/* Catch all - 404 */}
               <Route path="*" element={<NotFound />} />
@@ -197,7 +115,6 @@ function App() {
             },
           }}
         />
-      </AuthProvider>
     </QueryClientProvider>
   );
 }

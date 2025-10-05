@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { 
   CloudArrowUpIcon,
   DocumentTextIcon,
@@ -10,7 +9,6 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Upload = () => {
-  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -52,8 +50,8 @@ const Upload = () => {
           <CheckCircleIcon className="h-24 w-24 text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Upload Successful!</h2>
           <p className="text-gray-600 mb-6">Your notes are under review and will be available soon.</p>
-          <button onClick={() => navigate('/dashboard')} className="btn btn-primary btn-md">
-            Go to Dashboard
+          <button onClick={() => navigate('/')} className="btn btn-primary btn-md">
+            Back to Home
           </button>
         </div>
       </div>

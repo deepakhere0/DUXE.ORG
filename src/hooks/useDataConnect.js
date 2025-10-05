@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import dataConnect from '../services/dataConnect';
-import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 // Hook for fetching notes with Data Connect
@@ -126,7 +125,7 @@ export const useUserAIJobs = (userId, status = null, options = {}) => {
 // Hook for creating a note
 export const useCreateNote = () => {
   const queryClient = useQueryClient();
-  const { currentUser } = useAuth();
+  
   
   return useMutation({
     mutationFn: (noteData) => {
@@ -150,7 +149,7 @@ export const useCreateNote = () => {
 // Hook for updating note status (admin/moderator)
 export const useUpdateNoteStatus = () => {
   const queryClient = useQueryClient();
-  const { currentUser } = useAuth();
+  
   
   return useMutation({
     mutationFn: ({ noteId, status, moderationNotes }) => {
@@ -200,7 +199,7 @@ export const useIncrementViews = () => {
 // Hook for adding a rating
 export const useAddRating = () => {
   const queryClient = useQueryClient();
-  const { currentUser } = useAuth();
+  
   
   return useMutation({
     mutationFn: ({ noteId, rating, comment }) => {
@@ -248,7 +247,7 @@ export const useCreateOrUpdateUser = () => {
 // Hook for creating AI jobs
 export const useCreateAIJob = () => {
   const queryClient = useQueryClient();
-  const { currentUser } = useAuth();
+  
   
   return useMutation({
     mutationFn: (jobData) => {
@@ -271,7 +270,7 @@ export const useCreateAIJob = () => {
 // Hook for bookmarks
 export const useBookmarks = () => {
   const queryClient = useQueryClient();
-  const { currentUser } = useAuth();
+  
   
   const addBookmark = useMutation({
     mutationFn: ({ resourceId, resourceType }) => {

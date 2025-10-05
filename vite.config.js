@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     port: 5173,
     open: false,
-    host: true,
+    host: true, // Allow network access
     cors: {
       origin: '*', // Allow all origins
       credentials: true,

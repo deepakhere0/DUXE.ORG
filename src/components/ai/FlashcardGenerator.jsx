@@ -12,10 +12,10 @@ import {
 import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../common/Toast';
-import { useAuth } from '../../contexts/AuthContext';
+
 
 const FlashcardGenerator = () => {
-  const { user } = useAuth();
+  
   const [inputText, setInputText] = useState('');
   const [flashcards, setFlashcards] = useState([]);
   const [cardCount, setCardCount] = useState(20);

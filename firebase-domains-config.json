@@ -1,0 +1,25 @@
+{
+  "projectId": "duxe-5c071",
+  "domains": [
+    {
+      "http": "http://localhost:5173",
+      "https": "https://localhost:5173"
+    },
+    {
+      "http": "http://127.0.0.1:5173",
+      "https": "https://127.0.0.1:5173"
+    },
+    {
+      "http": "http://192.168.190.1:5173",
+      "https": "https://192.168.190.1:5173"
+    },
+    {
+      "http": "http://192.168.146.1:5173",
+      "https": "https://192.168.146.1:5173"
+    },
+    {
+      "http": "http://192.168.1.14:5173",
+      "https": "https://192.168.1.14:5173"
+    }
+  ]
+}

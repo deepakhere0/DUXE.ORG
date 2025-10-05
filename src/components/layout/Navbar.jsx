@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   AcademicCapIcon, 
-  UserCircleIcon,
   Bars3Icon,
   XMarkIcon,
   BookOpenIcon,
@@ -14,15 +12,10 @@ import {
   HomeIcon,
   TagIcon
 } from '@heroicons/react/24/outline';
-import { ChevronDownIcon } from '@heroicons/react/24/solid';
-import Badge from '../common/Badge';
 
 const Navbar = () => {
-  const { currentUser, userProfile, isAdmin, logout } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   const navLinks = [
     { name: 'Home', href: '/', icon: HomeIcon },
@@ -30,13 +23,9 @@ const Navbar = () => {
     { name: 'AI Tools', href: '/tools', icon: BeakerIcon },
     { name: 'Videos', href: '/videos', icon: VideoCameraIcon },
     { name: 'Internships', href: '/internships', icon: BriefcaseIcon },
+    { name: 'Upload', href: '/upload', icon: ArrowUpTrayIcon },
     { name: 'Pricing', href: '/pricing', icon: TagIcon },
   ];
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
 
   const isActive = (path) => location.pathname === path;
 
@@ -66,88 +55,6 @@ const Navbar = () => {
                 <span>{link.name}</span>
               </Link>
             ))}
-
-            {currentUser && (
-              <Link
-                to="/upload"
-                className="ml-2 px-3 py-2 rounded-xl text-sm font-medium bg-navy-600 text-white hover:bg-navy-700 transition-all duration-200 flex items-center space-x-1"
-              >
-                <ArrowUpTrayIcon className="h-4 w-4" />
-                <span>Upload</span>
-              </Link>
-            )}
-          </div>
-
-          {/* Right Section */}
-          <div className="hidden md:flex items-center space-x-4">
-            {currentUser ? (
-              <div className="relative">
-                <button
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none"
-                >
-                  <UserCircleIcon className="h-8 w-8" />
-                  <span className="text-sm font-medium">
-                    {userProfile?.displayName || currentUser.email}
-                  </span>
-                  <ChevronDownIcon className="h-4 w-4" />
-                </button>
-
-                {/* Dropdown Menu */}
-                {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 animate-slide-up">
-                    <Link
-                      to="/dashboard"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setProfileDropdownOpen(false)}
-                    >
-                      Dashboard
-                    </Link>
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setProfileDropdownOpen(false)}
-                    >
-                      Profile Settings
-                    </Link>
-                    {isAdmin && (
-                      <Link
-                        to="/admin/dashboard"
-                        className="block px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                        onClick={() => setProfileDropdownOpen(false)}
-                      >
-                        Admin Panel
-                      </Link>
-                    )}
-                    <hr className="my-1" />
-                    <button
-                      onClick={() => {
-                        setProfileDropdownOpen(false);
-                        handleLogout();
-                      }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link
-                  to="/login"
-                  className="btn btn-secondary btn-sm"
-                >
-                  Log In
-                </Link>
-                <Link
-                  to="/signup"
-                  className="btn btn-primary btn-sm"
-                >
-                  Start for Free
-                </Link>
-              </div>
-            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -183,75 +90,6 @@ const Navbar = () => {
                 </div>
               </Link>
             ))}
-
-            {currentUser && (
-              <Link
-                to="/upload"
-                className="block px-4 py-2 text-sm font-medium bg-navy-600 text-white rounded-xl mb-1"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <div className="flex items-center space-x-2">
-                  <ArrowUpTrayIcon className="h-5 w-5" />
-                  <span>Upload Notes</span>
-                </div>
-              </Link>
-            )}
-
-            <div className="mt-4 pt-4 border-t">
-              {currentUser ? (
-                <>
-                  <Link
-                    to="/dashboard"
-                    className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-xl"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    to="/profile"
-                    className="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-xl"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Profile Settings
-                  </Link>
-                  {isAdmin && (
-                    <Link
-                      to="/admin/dashboard"
-                      className="block px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Admin Panel
-                    </Link>
-                  )}
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="block w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl"
-                  >
-                    Sign Out
-                  </button>
-                </>
-              ) : (
-                <div className="px-4 space-y-2">
-                  <Link
-                    to="/login"
-                    className="btn btn-secondary btn-md w-full"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Log In
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="btn btn-primary btn-md w-full"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Start for Free
-                  </Link>
-                </div>
-              )}
-            </div>
           </div>
         )}
       </div>
