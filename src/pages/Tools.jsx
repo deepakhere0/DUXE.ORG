@@ -24,6 +24,10 @@ import FlashcardGenerator from '../components/ai/FlashcardGenerator';
 import Toast from '../components/common/Toast';
 
 const Tools = () => {
+  // For now, we'll assume user is not logged in
+  // This will be properly implemented when Firebase auth is set up
+  const currentUser = null;
+  
   const [activeTool, setActiveTool] = useState(null);
   const [showVideo, setShowVideo] = useState(false);
   const [animationStep, setAnimationStep] = useState(0);
