@@ -11,6 +11,8 @@ import FileUpload from './FileUpload';
 import Toast from '../common/Toast';
 
 const AISummarizer = () => {
+  // For now, we'll use anonymous user until auth is implemented
+  const user = null;
   const [inputText, setInputText] = useState('');
   const [summary, setSummary] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);

@@ -13,6 +13,8 @@ import Toast from '../common/Toast';
 
 
 const MCQGenerator = () => {
+  // For now, we'll use anonymous user until auth is implemented
+  const user = null;
   
   const [inputText, setInputText] = useState('');
   const [mcqs, setMcqs] = useState([]);

@@ -21,6 +21,8 @@ import Toast from '../common/Toast';
 
 
 const ConceptMap = () => {
+  // For now, we'll use anonymous user until auth is implemented
+  const user = null;
   
   const [inputText, setInputText] = useState('');
   const [conceptData, setConceptData] = useState(null);

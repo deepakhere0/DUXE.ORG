@@ -14,6 +14,8 @@ import Toast from '../common/Toast';
 
 
 const QuestionMaker = () => {
+  // For now, we'll use anonymous user until auth is implemented
+  const user = null;
   
   const [inputText, setInputText] = useState('');
   const [questions, setQuestions] = useState(null);
