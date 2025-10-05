@@ -24,6 +24,9 @@ import {
 } from '@heroicons/react/24/solid';
 
 const Home = () => {
+  // For now, we'll assume user is not logged in
+  // This will be properly implemented when Firebase auth is set up
+  const currentUser = null;
 
   const quickLinks = [
     {

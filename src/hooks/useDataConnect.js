@@ -11,7 +11,7 @@ export const useNotes = (filters = {}, options = {}) => {
     queryKey,
     queryFn: () => dataConnect.queries.getApprovedNotes(filters),
     staleTime: 2 * 60 * 1000, // 2 minutes
-    cacheTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
     ...options
   });
 };
@@ -63,7 +63,7 @@ export const useUniversities = (options = {}) => {
     queryKey: ['universities'],
     queryFn: () => dataConnect.queries.getUniversities(),
     staleTime: 30 * 60 * 1000, // 30 minutes
-    cacheTime: 60 * 60 * 1000, // 1 hour
+    gcTime: 60 * 60 * 1000, // 1 hour
     ...options
   });
 };
@@ -74,7 +74,7 @@ export const useDepartments = (universityId = null, options = {}) => {
     queryKey: ['departments', universityId],
     queryFn: () => dataConnect.queries.getDepartments(universityId),
     staleTime: 30 * 60 * 1000,
-    cacheTime: 60 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
     ...options
   });
 };

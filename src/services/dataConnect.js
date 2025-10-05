@@ -42,7 +42,8 @@ if (isFirebaseConfigured && app && !dataConnectInitialized) {
 // Query executor with error handling
 export const query = async (queryString, variables = {}) => {
   if (!dataConnect) {
-    throw new Error('Data Connect is not initialized');
+    console.warn('DataConnect not initialized - returning empty data');
+    return { data: [] };
   }
   
   try {
@@ -60,7 +61,8 @@ export const query = async (queryString, variables = {}) => {
 // Mutation executor with error handling
 export const mutate = async (mutationString, variables = {}) => {
   if (!dataConnect) {
-    throw new Error('Data Connect is not initialized');
+    console.warn('DataConnect not initialized - mutation skipped');
+    return { data: null };
   }
   
   try {
