@@ -34,6 +34,7 @@ const Tools = () => {
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [isGeminiConfigured, setIsGeminiConfigured] = useState(false);
+  const [isConfiguringAI, setIsConfiguringAI] = useState(false);
 
   // Check if AI is configured on mount
   useEffect(() => {
@@ -50,16 +51,43 @@ const Tools = () => {
   }, []);
 
   const handleApiKeySave = async () => {
-    if (apiKey.trim()) {
-      // For now, just close modal - API key is already set in environment
-      setShowApiKeyModal(false);
-      const success = await AIService.reinitialize();
-      if (success) {
+    const trimmedKey = apiKey.trim();
+    
+    // Client-side validation
+    if (!trimmedKey) {
+      Toast.error('Please enter a valid API key');
+      return;
+    }
+    
+    if (trimmedKey.length < 30) {
+      Toast.error('API key seems too short. Please check your key.');
+      return;
+    }
+    
+    if (!trimmedKey.startsWith('AIza')) {
+      Toast.error('Invalid API key format. Gemini keys start with "AIza"');
+      return;
+    }
+
+    setIsConfiguringAI(true);
+    
+    try {
+      // Configure AI service with the provided API key
+      const result = await AIService.configureWithApiKey(trimmedKey);
+      
+      if (result.success) {
         setIsGeminiConfigured(true);
-        Toast.success('Gemini AI configured successfully!');
+        setShowApiKeyModal(false);
+        setApiKey(''); // Clear the key from state for security
+        Toast.success('🤖 Gemini AI configured successfully! All tools are now ready.');
       } else {
-        Toast.error('AI service initialization failed. Please check your configuration.');
+        throw new Error(result.message || 'Configuration failed');
       }
+    } catch (error) {
+      console.error('API key configuration error:', error);
+      Toast.error('Configuration failed: ' + error.message);
+    } finally {
+      setIsConfiguringAI(false);
     }
   };
 
@@ -362,19 +390,43 @@ const Tools = () => {
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Enter your Gemini API key"
-                className="w-full bg-slate-900/50 border border-accent-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-accent-500 mb-4"
+                placeholder="AIzaSyC..."
+                disabled={isConfiguringAI}
+                className="w-full bg-slate-900/50 border border-accent-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-accent-500 disabled:opacity-50 mb-4"
               />
+              {apiKey.trim() && (
+                <div className="mb-4 text-sm">
+                  {apiKey.trim().length < 30 ? (
+                    <p className="text-yellow-400">⚠️ API key seems short</p>
+                  ) : !apiKey.trim().startsWith('AIza') ? (
+                    <p className="text-red-400">❌ Invalid format (should start with "AIza")</p>
+                  ) : (
+                    <p className="text-green-400">✓ Format looks correct</p>
+                  )}
+                </div>
+              )}
               <div className="flex gap-3">
                 <button
                   onClick={handleApiKeySave}
-                  className="flex-1 bg-accent-500 hover:bg-accent-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"
+                  disabled={isConfiguringAI || !apiKey.trim()}
+                  className="flex-1 bg-accent-500 hover:bg-accent-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
                 >
-                  Save Key
+                  {isConfiguringAI ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                      Configuring...
+                    </>
+                  ) : (
+                    'Save Key'
+                  )}
                 </button>
                 <button
-                  onClick={() => setShowApiKeyModal(false)}
-                  className="flex-1 bg-slate-700/50 hover:bg-slate-600/50 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"
+                  onClick={() => {
+                    setShowApiKeyModal(false);
+                    setApiKey('');
+                  }}
+                  disabled={isConfiguringAI}
+                  className="flex-1 bg-slate-700/50 hover:bg-slate-600/50 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300"
                 >
                   Cancel
                 </button>

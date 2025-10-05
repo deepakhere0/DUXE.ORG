@@ -674,6 +674,53 @@ Requirements:
   // Reinitialize AI service if needed
   async reinitialize() {
     return initializeGemini();
+  },
+
+  // Configure AI service with runtime API key
+  async configureWithApiKey(apiKey) {
+    if (!apiKey || apiKey.length < 30 || !apiKey.startsWith('AIza')) {
+      throw new Error('Invalid API key format. Please check your Gemini API key.');
+    }
+
+    try {
+      // Initialize with the provided API key
+      genAI = new GoogleGenerativeAI(apiKey);
+      model = genAI.getGenerativeModel({ 
+        model: 'gemini-1.5-flash',
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.8,
+          topK: 40,
+          maxOutputTokens: 4096,
+        }
+      });
+      
+      // Test the connection with a simple request
+      const testResult = await model.generateContent('Test connection: Say "Hello"');
+      const testResponse = testResult.response.text();
+      
+      if (testResponse) {
+        aiInitialized = true;
+        console.log('🤖 Gemini AI configured successfully with runtime API key');
+        return { success: true, message: 'AI service configured successfully!' };
+      } else {
+        throw new Error('Failed to get response from AI service');
+      }
+    } catch (error) {
+      console.error('⚠️ AI service configuration failed:', error.message);
+      // Reset to null on failure
+      genAI = null;
+      model = null;
+      aiInitialized = false;
+      
+      if (error.message.includes('API_KEY_INVALID')) {
+        throw new Error('Invalid API key. Please check your Gemini API key.');
+      } else if (error.message.includes('PERMISSION_DENIED')) {
+        throw new Error('API key does not have permission. Please check your Google Cloud settings.');
+      } else {
+        throw new Error(`Configuration failed: ${error.message}`);
+      }
+    }
   }
 };
 
