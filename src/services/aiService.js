@@ -37,7 +37,7 @@ function initializeGemini() {
       aiInitialized = true;
       genAI = new GoogleGenerativeAI(apiKey);
       model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
+        model: 'gemini-pro',
         generationConfig: {
           temperature: 0.7,
           topP: 0.8,
@@ -664,7 +664,7 @@ Requirements:
   getModelInfo() {
     return { 
       configured: !!model, 
-      model: model ? 'gemini-1.5-flash' : 'Not configured',
+      model: model ? 'gemini-pro' : 'Not configured',
       provider: 'Google Gemini API',
       apiKey: import.meta.env.VITE_GEMINI_API_KEY ? 'Configured' : 'Missing',
       features: ['Summarization', 'MCQ Generation', 'Flashcards', 'Concept Maps', 'Questions', 'Internship Matching']
@@ -686,7 +686,7 @@ Requirements:
       // Initialize with the provided API key
       genAI = new GoogleGenerativeAI(apiKey);
       model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
+        model: 'gemini-pro',
         generationConfig: {
           temperature: 0.7,
           topP: 0.8,
