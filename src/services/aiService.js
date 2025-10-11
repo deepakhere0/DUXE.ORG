@@ -1,101 +1,49 @@
-// Enhanced AI service powered by OpenAI GPT-4o mini
-import OpenAI from 'openai';
+// Enhanced AI service - Secure backend API integration
 import { AIJobs } from './firestoreData';
 import Toast from '../components/common/Toast';
 
-// Initialize OpenAI with enhanced error handling
-let openai = null;
+// Backend API configuration
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 let aiInitialized = false;
 
-// Check if already initialized from openaiService
-try {
-  // Try to import the service from openaiService
-  import('./openaiService').then(openaiService => {
-    if (openaiService.default.isConfigured()) {
-      console.log('🤖 Using existing OpenAI instance from openaiService');
-      aiInitialized = true;
-      openai = openaiService.default;
-    } else {
-      initializeOpenAI();
-    }
-  }).catch(() => {
-    // If import fails, initialize our own
-    initializeOpenAI();
-  });
-} catch (error) {
-  // Fallback initialization
-  initializeOpenAI();
-}
-
-// Initialize OpenAI
-function initializeOpenAI() {
-  if (aiInitialized) return true; // Prevent multiple initializations
-
+// Check backend API status on initialization
+async function checkBackendStatus() {
   try {
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    if (apiKey && !apiKey.startsWith('your_')) {
-      aiInitialized = true;
-      openai = new OpenAI({
-        apiKey: apiKey,
-        dangerouslyAllowBrowser: true // Required for client-side usage
-      });
-      console.log('🤖 OpenAI initialized successfully (aiService)');
-      return true;
-    } else {
-      console.log('🚫 No valid OpenAI API key found (aiService)');
-      return false;
-    }
+    const response = await fetch(`${API_BASE_URL}/api/ai/status`);
+    const data = await response.json();
+    aiInitialized = data.configured;
+    console.log('🤖 Backend AI service status:', data);
+    return data.configured;
   } catch (error) {
-    console.error('⚠️ OpenAI initialization failed (aiService):', error.message);
-    Toast.error('AI service initialization failed');
+    console.error('⚠️ Failed to connect to backend:', error.message);
+    aiInitialized = false;
     return false;
   }
 }
 
-const parseJsonFromResponse = (text) => {
-  try {
-    const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    return JSON.parse(cleaned);
-  } catch (e) {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[0]);
-      } catch (e2) {
-        return null;
-      }
-    }
-    return null;
-  }
-};
+// Initialize by checking backend status
+checkBackendStatus();
 
-// Helper function to make OpenAI API calls
-const makeOpenAICall = async (prompt, maxTokens = 2000) => {
-  if (!openai) {
-    throw new Error('OpenAI not initialized. Please add your API key.');
-  }
-
+// Helper function to make backend API calls
+const makeBackendCall = async (endpoint, data) => {
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert educational AI assistant. Always respond with valid JSON when requested and provide accurate, educational content."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: maxTokens,
-      temperature: 0.7,
-      top_p: 0.8
+    const response = await fetch(`${API_BASE_URL}/api/ai/${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
     });
 
-    return completion.choices[0]?.message?.content || '';
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || error.error || 'Backend API call failed');
+    }
+
+    const result = await response.json();
+    return result;
   } catch (error) {
-    console.error('OpenAI API call failed:', error);
+    console.error(`Backend API call to ${endpoint} failed:`, error);
     throw error;
   }
 };
@@ -105,52 +53,15 @@ export const AIService = {
     const jobId = await AIJobs.create({ type: 'summary', noteId, inputText: inputText?.substring(0, 1000), status: 'processing', createdBy });
     
     try {
-      let output;
-      if (openai && inputText) {
-        const prompt = `You are an expert educational content summarizer. Analyze the following study material and provide a comprehensive summary.
+      if (!inputText) {
+        throw new Error('Input text is required');
+      }
 
-Study Material:
-"""${inputText}"""
-
-Provide a detailed summary in this exact JSON format:
-{
-  "title": "Descriptive title for the content",
-  "bullets": [
-    "First key point with important details",
-    "Second key point with important details",
-    "Third key point with important details",
-    "Fourth key point with important details",
-    "Fifth key point with important details"
-  ],
-  "tldr": "Concise one-sentence summary capturing the essence",
-  "keyTerms": ["term1", "term2", "term3", "term4", "term5"],
-  "mainConcepts": ["concept1", "concept2", "concept3"],
-  "studyTips": ["tip1", "tip2", "tip3"]
-}
-
-Requirements:
-- Extract 5-7 comprehensive bullet points
-- Identify key terms and main concepts
-- Provide actionable study tips
-- Keep content educational and student-focused
-- Return ONLY valid JSON, no additional text`;
-
-        const text = await makeOpenAICall(prompt, 2000);
-        output = parseJsonFromResponse(text);
-        
-        // Fallback if parsing fails
-        if (!output) {
-          output = {
-            title: "AI-Generated Summary",
-            bullets: ['Content analysis completed', 'Key information extracted', 'Summary generated successfully'],
-            tldr: 'AI-powered summary of the educational content',
-            keyTerms: ['Study', 'Learning', 'Education'],
-            mainConcepts: ['Key Concepts', 'Main Ideas'],
-            studyTips: ['Review regularly', 'Take notes', 'Practice active recall']
-          };
-        }
-      } else {
-        throw new Error('OpenAI not configured. Please check your API key.');
+      const response = await makeBackendCall('summarize', { inputText });
+      const output = response.output;
+      
+      if (!output) {
+        throw new Error('Failed to generate summary');
       }
       
       await AIJobs.update(jobId, { status: 'completed', output });
@@ -176,83 +87,12 @@ Requirements:
     const jobId = await AIJobs.create({ type: 'mcq', inputText: inputText?.substring(0, 1500), status: 'processing', createdBy });
     
     try {
-      let output;
-      if (openai && inputText) {
-        const prompt = `You are an expert educational assessment creator. Generate ${count} high-quality multiple-choice questions based on the following study material.
-
-Study Material:
-"""${inputText}"""
-
-Generate exactly ${count} MCQs in this JSON format:
-[
-  {
-    "id": 1,
-    "question": "Clear and specific question text?",
-    "choices": [
-      "Option A - complete answer",
-      "Option B - complete answer", 
-      "Option C - complete answer",
-      "Option D - complete answer"
-    ],
-    "correctIndex": 0,
-    "explanation": "Detailed explanation of why this answer is correct and why others are incorrect",
-    "difficulty": "easy|medium|hard",
-    "topic": "Specific topic this question tests",
-    "bloomsLevel": "remember|understand|apply|analyze|evaluate|create"
-  }
-]
-
-Requirements:
-- Create ${count} diverse questions covering different aspects
-- Test understanding, not just memorization
-- Make wrong answers plausible but clearly incorrect
-- Provide comprehensive explanations for learning
-- Vary difficulty levels (mix of easy, medium, hard)
-- Include Bloom's taxonomy level for each question
-- Return ONLY valid JSON array, no additional text`;
-
-        const text = await makeOpenAICall(prompt, 3000);
-        output = parseJsonFromResponse(text);
-        
-        // Validate and fix output format
-        if (!Array.isArray(output)) {
-          throw new Error('Failed to parse MCQs from AI response');
-        }
-        
-        // Ensure we have the correct number and format
-        output = output.slice(0, count).map((mcq, index) => ({
-          id: index + 1,
-          question: mcq.question || `Question ${index + 1}`,
-          choices: Array.isArray(mcq.choices) && mcq.choices.length >= 4 
-            ? mcq.choices.slice(0, 4)
-            : [`Option A`, `Option B`, `Option C`, `Option D`],
-          correctIndex: typeof mcq.correctIndex === 'number' && mcq.correctIndex >= 0 && mcq.correctIndex < 4
-            ? mcq.correctIndex 
-            : 0,
-          explanation: mcq.explanation || 'Explanation not provided',
-          difficulty: mcq.difficulty || 'medium',
-          topic: mcq.topic || 'General',
-          bloomsLevel: mcq.bloomsLevel || 'understand'
-        }));
-        
-        // Fill remaining questions if needed
-        while (output.length < count) {
-          const index = output.length;
-          output.push({
-            id: index + 1,
-            question: `Generated Question ${index + 1}`,
-            choices: ['Option A', 'Option B', 'Option C', 'Option D'],
-            correctIndex: 0,
-            explanation: 'AI-generated question',
-            difficulty: 'medium',
-            topic: 'General',
-            bloomsLevel: 'understand'
-          });
-        }
-        
-      } else {
-        throw new Error('OpenAI not configured. Please check your API key.');
+      if (!inputText) {
+        throw new Error('Input text is required');
       }
+
+      const response = await makeBackendCall('generate-mcq', { inputText, count });
+      const output = response.output;
       
       await AIJobs.update(jobId, { status: 'completed', output });
       Toast.success(`🧠 ${count} MCQs generated successfully!`);
@@ -279,75 +119,12 @@ Requirements:
     const jobId = await AIJobs.create({ type: 'flashcard', inputText: inputText?.substring(0, 1500), status: 'processing', createdBy });
     
     try {
-      let output;
-      if (openai && inputText) {
-        const prompt = `You are an expert at creating effective educational flashcards. Create ${count} high-quality flashcards from the following study material.
-
-Study Material:
-"""${inputText}"""
-
-Generate exactly ${count} flashcards in this JSON format:
-[
-  {
-    "id": 1,
-    "front": "Question, term, or concept",
-    "back": "Detailed answer, definition, or explanation",
-    "category": "Topic category",
-    "difficulty": "easy|medium|hard",
-    "type": "definition|concept|fact|process|example",
-    "hint": "Optional hint to help remember",
-    "tags": ["tag1", "tag2"]
-  }
-]
-
-Requirements:
-- Create ${count} diverse flashcards covering key concepts
-- Include definitions, facts, processes, and examples
-- Make front sides concise and back sides comprehensive
-- Add helpful hints for difficult concepts
-- Categorize by topic and difficulty
-- Include relevant tags for organization
-- Ensure educational value and accuracy
-- Return ONLY valid JSON array, no additional text`;
-
-        const text = await makeOpenAICall(prompt, 2500);
-        output = parseJsonFromResponse(text);
-        
-        // Validate and fix output format
-        if (!Array.isArray(output)) {
-          throw new Error('Failed to parse flashcards from AI response');
-        }
-        
-        // Ensure correct format and count
-        output = output.slice(0, count).map((card, index) => ({
-          id: index + 1,
-          front: card.front || `Term ${index + 1}`,
-          back: card.back || `Definition ${index + 1}`,
-          category: card.category || 'General',
-          difficulty: card.difficulty || 'medium',
-          type: card.type || 'definition',
-          hint: card.hint || '',
-          tags: Array.isArray(card.tags) ? card.tags : ['study']
-        }));
-        
-        // Fill remaining cards if needed
-        while (output.length < count) {
-          const index = output.length;
-          output.push({
-            id: index + 1,
-            front: `Concept ${index + 1}`,
-            back: `Generated explanation ${index + 1}`,
-            category: 'General',
-            difficulty: 'medium',
-            type: 'concept',
-            hint: '',
-            tags: ['generated']
-          });
-        }
-        
-      } else {
-        throw new Error('OpenAI not configured. Please check your API key.');
+      if (!inputText) {
+        throw new Error('Input text is required');
       }
+
+      const response = await makeBackendCall('generate-flashcards', { inputText, count });
+      const output = response.output;
       
       await AIJobs.update(jobId, { status: 'completed', output });
       Toast.success(`🎯 ${count} flashcards created successfully!`);
@@ -375,81 +152,19 @@ Requirements:
     const jobId = await AIJobs.create({ type: 'concept-map', inputText: inputText?.substring(0, 2000), status: 'processing', createdBy });
     
     try {
-      let output;
-      if (openai && inputText) {
-        const prompt = `You are an expert at creating educational concept maps. Analyze the following text and create a structured concept map showing relationships between key concepts.
-
-Text to analyze:
-"""${inputText}"""
-
-Generate a concept map in this JSON format:
-{
-  "title": "Main topic or theme",
-  "nodes": [
-    {
-      "id": "node1",
-      "label": "Concept name",
-      "type": "main|subtopic|detail",
-      "description": "Brief description of the concept",
-      "importance": "high|medium|low",
-      "position": {"x": 0, "y": 0},
-      "color": "#hex_color"
-    }
-  ],
-  "edges": [
-    {
-      "id": "edge1",
-      "source": "node1",
-      "target": "node2",
-      "label": "relationship description",
-      "type": "relates|causes|contains|supports|contrasts|leads-to"
-    }
-  ],
-  "clusters": [
-    {
-      "id": "cluster1",
-      "label": "Group name",
-      "nodes": ["node1", "node2"],
-      "color": "#hex_color"
-    }
-  ],
-  "learningPath": [
-    {
-      "step": 1,
-      "concept": "Starting concept",
-      "nodeId": "node1",
-      "reason": "Why start here",
-      "estimatedTime": "5-10 minutes"
-    }
-  ],
-  "summary": "Brief overview of the concept map",
-  "studyTips": ["tip1", "tip2", "tip3"]
-}
-
-Requirements:
-- Identify 10-20 key concepts from the text
-- Create meaningful relationships between concepts
-- Organize hierarchically (main → subtopic → detail)
-- Suggest a logical learning path
-- Group related concepts into clusters
-- Use appropriate colors for visual appeal
-- Include study tips for effective learning
-- Return ONLY valid JSON, no additional text`;
-
-        const text = await makeOpenAICall(prompt, 2000);
-        output = parseJsonFromResponse(text);
-        
-        // Validate and enhance output
-        if (!output || !output.nodes || !output.edges) {
-          throw new Error('Failed to parse concept map from AI response');
-        }
-        
-        // Ensure proper structure and layout
-        output = this.enhanceConceptMap(output);
-        
-      } else {
-        throw new Error('OpenAI not configured. Please check your API key.');
+      if (!inputText) {
+        throw new Error('Input text is required');
       }
+
+      const response = await makeBackendCall('generate-concept-map', { inputText });
+      let output = response.output;
+      
+      if (!output || !output.nodes || !output.edges) {
+        throw new Error('Failed to generate concept map');
+      }
+      
+      // Ensure proper structure and layout
+      output = this.enhanceConceptMap(output);
       
       await AIJobs.update(jobId, { status: 'completed', output });
       Toast.success('🗺️ Concept map generated successfully!');
@@ -478,36 +193,15 @@ Requirements:
     }
   },
 
-  // Enhanced internship matching with OpenAI insights
+  // Enhanced internship matching with AI insights
   async matchInternships({ userSkills = [], internships = [] }) {
     try {
-      if (openai && userSkills.length > 0 && internships.length > 0) {
-        const prompt = `Given user skills: ${userSkills.join(', ')}
-
-Score these internships (0-100) in JSON format:
-${internships.map((i, idx) => 
-  `${idx}. ${i.role} at ${i.company} - Skills: ${(i.skills || []).join(', ')}`
-).join('\n')}
-
-Return JSON: [{"index": 0, "score": 85, "reason": "why"}]`;
-
-        const text = await makeOpenAICall(prompt, 1000);
-        const matches = parseJsonFromResponse(text);
-        
-        if (Array.isArray(matches)) {
-          return internships.map((internship, idx) => {
-            const match = matches.find(m => m.index === idx) || {};
-            return {
-              ...internship,
-              matchScore: match.score || 0,
-              matchReason: match.reason || 'Based on skills',
-              aiEnhanced: true
-            };
-          }).sort((a, b) => b.matchScore - a.matchScore);
-        }
+      if (userSkills.length > 0 && internships.length > 0) {
+        const response = await makeBackendCall('match-internships', { userSkills, internships });
+        return response.output;
       }
       
-      // Fallback to simple matching
+      // Fallback to simple matching if no skills or internships
       const set = new Set(userSkills.map(s => s.toLowerCase()));
       return internships.map(i => ({
         ...i,
@@ -518,6 +212,7 @@ Return JSON: [{"index": 0, "score": 85, "reason": "why"}]`;
       })).sort((a, b) => b.matchScore - a.matchScore);
     } catch (error) {
       console.error('Matching error:', error);
+      // Fallback to simple matching on error
       const set = new Set(userSkills.map(s => s.toLowerCase()));
       return internships.map(i => ({
         ...i,
@@ -587,74 +282,15 @@ Return JSON: [{"index": 0, "score": 85, "reason": "why"}]`;
     const jobId = await AIJobs.create({ type: 'questions', inputText: inputText?.substring(0, 2000), status: 'processing', createdBy });
     
     try {
-      let output;
-      if (openai && inputText) {
-        const prompt = `You are an expert educational content creator. Generate a comprehensive set of study questions based on the following material.
+      if (!inputText) {
+        throw new Error('Input text is required');
+      }
 
-Study Material:
-"""${inputText}"""
-
-Generate study questions in this JSON format:
-{
-  "shortAnswer": [
-    {
-      "question": "Concise question requiring brief answer",
-      "suggestedAnswer": "Expected answer",
-      "points": "Key points to cover",
-      "difficulty": "easy|medium|hard"
-    }
-  ],
-  "longAnswer": [
-    {
-      "question": "Question requiring detailed explanation",
-      "guidelines": "What a good answer should include",
-      "keyPoints": ["point1", "point2", "point3"],
-      "difficulty": "easy|medium|hard"
-    }
-  ],
-  "critical": [
-    {
-      "question": "Analytical or critical thinking question",
-      "approach": "How to approach this question",
-      "considerations": ["consideration1", "consideration2"],
-      "difficulty": "easy|medium|hard"
-    }
-  ],
-  "practical": [
-    {
-      "question": "Application-based question",
-      "scenario": "Real-world context",
-      "expectedOutcome": "What to demonstrate",
-      "difficulty": "easy|medium|hard"
-    }
-  ]
-}
-
-Requirements:
-- Generate at least 5 questions in each category
-- Questions should test different cognitive levels
-- Include questions for understanding, application, analysis, evaluation
-- Make questions thought-provoking and educational
-- Vary difficulty levels appropriately
-- Return ONLY valid JSON, no additional text`;
-
-        const text = await makeOpenAICall(prompt, 2000);
-        output = parseJsonFromResponse(text);
-        
-        if (!output) {
-          throw new Error('Failed to parse questions from AI response');
-        }
-        
-        // Ensure structure
-        output = {
-          shortAnswer: output.shortAnswer || [],
-          longAnswer: output.longAnswer || [],
-          critical: output.critical || [],
-          practical: output.practical || []
-        };
-        
-      } else {
-        throw new Error('OpenAI not configured. Please check your API key.');
+      const response = await makeBackendCall('generate-questions', { inputText });
+      const output = response.output;
+      
+      if (!output) {
+        throw new Error('Failed to generate questions');
       }
       
       await AIJobs.update(jobId, { status: 'completed', output });
@@ -675,72 +311,37 @@ Requirements:
   },
 
   // Check if AI service is properly configured
-  isConfigured() {
-    return !!openai;
+  async isConfigured() {
+    return await checkBackendStatus();
   },
 
   // Get model information and status
-  getModelInfo() {
-    return { 
-      configured: !!openai, 
-      model: openai ? 'gpt-4o-mini' : 'Not configured',
-      provider: 'OpenAI API',
-      apiKey: import.meta.env.VITE_OPENAI_API_KEY ? 'Configured' : 'Missing',
-      features: ['Summarization', 'MCQ Generation', 'Flashcards', 'Concept Maps', 'Questions', 'Internship Matching']
-    };
+  async getModelInfo() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/ai/status`);
+      const data = await response.json();
+      return { 
+        configured: data.configured, 
+        model: data.model || 'Not configured',
+        provider: 'OpenAI API (Backend)',
+        backend: API_BASE_URL,
+        features: ['Summarization', 'MCQ Generation', 'Flashcards', 'Concept Maps', 'Questions', 'Internship Matching']
+      };
+    } catch (error) {
+      return {
+        configured: false,
+        model: 'Not configured',
+        provider: 'OpenAI API (Backend)',
+        backend: API_BASE_URL,
+        error: error.message,
+        features: []
+      };
+    }
   },
 
   // Reinitialize AI service if needed
   async reinitialize() {
-    return initializeOpenAI();
-  },
-
-  // Configure AI service with runtime API key
-  async configureWithApiKey(apiKey) {
-    if (!apiKey || apiKey.length < 40 || !apiKey.startsWith('sk-')) {
-      throw new Error('Invalid API key format. Please check your OpenAI API key.');
-    }
-
-    try {
-      // Initialize with the provided API key
-      const testOpenAI = new OpenAI({
-        apiKey: apiKey,
-        dangerouslyAllowBrowser: true
-      });
-      
-      // Test the connection with a simple request
-      const testResponse = await testOpenAI.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: 'Test connection: Say "Hello"' }],
-        max_tokens: 10,
-        temperature: 0.7
-      });
-      
-      if (testResponse.choices && testResponse.choices[0]?.message?.content) {
-        // Set the global openai instance
-        openai = testOpenAI;
-        aiInitialized = true;
-        console.log('🤖 OpenAI configured successfully with runtime API key');
-        return { success: true, message: 'AI service configured successfully!' };
-      } else {
-        throw new Error('Failed to get response from AI service');
-      }
-    } catch (error) {
-      console.error('⚠️ AI service configuration failed:', error.message);
-      // Reset to null on failure
-      openai = null;
-      aiInitialized = false;
-      
-      if (error.message.includes('Incorrect API key') || error.message.includes('Invalid API key')) {
-        throw new Error('Invalid API key. Please check your OpenAI API key.');
-      } else if (error.message.includes('insufficient_quota') || error.message.includes('Quota exceeded')) {
-        throw new Error('API quota exceeded. Please check your usage limits.');
-      } else if (error.message.includes('model_not_found') || error.message.includes('model not found')) {
-        throw new Error('Model not available. The service may be temporarily unavailable.');
-      } else {
-        throw new Error(`Configuration failed: ${error.message}`);
-      }
-    }
+    return await checkBackendStatus();
   }
 };
 
