@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Make User Admin</title>
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyB13RVT0Fvxmp4g1Vp2BM8PQtTO1bsprMs",
+            authDomain: "duxe-5c071.firebaseapp.com",
+            projectId: "duxe-5c071",
+            storageBucket: "duxe-5c071.appspot.com",
+            messagingSenderId: "688572994825",
+            appId: "1:688572994825:web:20fd7a2825efea1bfaf5f7",
+            measurementId: "G-09H7K4Y1LH"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Check auth state
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('status').innerHTML = `
+                    <p>✅ Signed in as: ${user.email}</p>
+                    <button onclick="makeAdmin()">Make Me Admin</button>
+                `;
+            } else {
+                document.getElementById('status').innerHTML = `
+                    <p>❌ Not signed in</p>
+                    <input type="email" id="email" placeholder="Email" style="margin: 5px; padding: 5px;">
+                    <input type="password" id="password" placeholder="Password" style="margin: 5px; padding: 5px;">
+                    <button onclick="signIn()">Sign In</button>
+                `;
+            }
+        });
+
+        // Sign in function
+        window.signIn = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                console.log('Signed in successfully');
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        };
+
+        // Make admin function
+        window.makeAdmin = async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                alert('Please sign in first');
+                return;
+            }
+
+            try {
+                const userDoc = doc(db, 'users', user.uid);
+                await setDoc(userDoc, {
+                    uid: user.uid,
+                    displayName: user.displayName || user.email,
+                    email: user.email,
+                    role: 'admin',
+                    skills: ['Platform Management', 'Content Moderation', 'Analytics'],
+                    bookmarks: [],
+                    university: 'DUXE Platform',
+                    department: 'Administration',
+                    year: 'Staff',
+                    bio: 'Platform administrator with full access to admin panel.',
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    lastActive: serverTimestamp(),
+                    profilePicture: null
+                }, { merge: true });
+
+                document.getElementById('status').innerHTML = `
+                    <p>✅ Successfully made ${user.email} an admin!</p>
+                    <p>🎯 You can now access admin features</p>
+                    <p>📋 Next: Go to your app and look for admin options in the navigation</p>
+                `;
+            } catch (error) {
+                alert('Error making admin: ' + error.message);
+                console.error(error);
+            }
+        };
+    </script>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px;">
+    <h1>🛡️ Make User Admin</h1>
+    <div id="status">Loading...</div>
+    
+    <hr style="margin: 30px 0;">
+    <h2>Instructions:</h2>
+    <ol>
+        <li>If you don't have a Firebase user account, create one at: <a href="https://console.firebase.google.com/project/duxe-5c071/authentication" target="_blank">Firebase Console</a></li>
+        <li>Enter your email/password above and click "Sign In"</li>
+        <li>Click "Make Me Admin" to grant admin privileges</li>
+        <li>Go back to your main app to access admin features</li>
+    </ol>
+</body>
+</html>

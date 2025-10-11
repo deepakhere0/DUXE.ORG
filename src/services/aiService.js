@@ -1,58 +1,52 @@
-// Enhanced AI service powered by Google Gemini API
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// Enhanced AI service powered by OpenAI GPT-4o mini
+import OpenAI from 'openai';
 import { AIJobs } from './firestoreData';
 import Toast from '../components/common/Toast';
 
-// Initialize Gemini AI with enhanced error handling
-let genAI = null;
-let model = null;
+// Initialize OpenAI with enhanced error handling
+let openai = null;
 let aiInitialized = false;
 
-// Check if already initialized from geminiService
+// Check if already initialized from openaiService
 try {
-  // Try to import the model from geminiService
-  import('./geminiService').then(geminiService => {
-    if (geminiService.default.isConfigured()) {
-      console.log('🤖 Using existing Gemini AI instance from geminiService');
+  // Try to import the service from openaiService
+  import('./openaiService').then(openaiService => {
+    if (openaiService.default.isConfigured()) {
+      console.log('🤖 Using existing OpenAI instance from openaiService');
       aiInitialized = true;
+      openai = openaiService.default;
     } else {
-      initializeGemini();
+      initializeOpenAI();
     }
   }).catch(() => {
     // If import fails, initialize our own
-    initializeGemini();
+    initializeOpenAI();
   });
 } catch (error) {
   // Fallback initialization
-  initializeGemini();
+  initializeOpenAI();
 }
 
-// Initialize Gemini AI
-function initializeGemini() {
+// Initialize OpenAI
+function initializeOpenAI() {
   if (aiInitialized) return true; // Prevent multiple initializations
 
   try {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     if (apiKey && !apiKey.startsWith('your_')) {
       aiInitialized = true;
-      genAI = new GoogleGenerativeAI(apiKey);
-      model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.8,
-          topK: 40,
-          maxOutputTokens: 4096,
-        }
+      openai = new OpenAI({
+        apiKey: apiKey,
+        dangerouslyAllowBrowser: true // Required for client-side usage
       });
-      console.log('🤖 Gemini AI initialized successfully (aiService)');
+      console.log('🤖 OpenAI initialized successfully (aiService)');
       return true;
     } else {
-      console.log('🚫 No valid Gemini API key found (aiService)');
+      console.log('🚫 No valid OpenAI API key found (aiService)');
       return false;
     }
   } catch (error) {
-    console.error('⚠️ Gemini AI initialization failed (aiService):', error.message);
+    console.error('⚠️ OpenAI initialization failed (aiService):', error.message);
     Toast.error('AI service initialization failed');
     return false;
   }
@@ -75,13 +69,44 @@ const parseJsonFromResponse = (text) => {
   }
 };
 
+// Helper function to make OpenAI API calls
+const makeOpenAICall = async (prompt, maxTokens = 2000) => {
+  if (!openai) {
+    throw new Error('OpenAI not initialized. Please add your API key.');
+  }
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert educational AI assistant. Always respond with valid JSON when requested and provide accurate, educational content."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: maxTokens,
+      temperature: 0.7,
+      top_p: 0.8
+    });
+
+    return completion.choices[0]?.message?.content || '';
+  } catch (error) {
+    console.error('OpenAI API call failed:', error);
+    throw error;
+  }
+};
+
 export const AIService = {
   async summarize({ noteId, inputText, createdBy }) {
     const jobId = await AIJobs.create({ type: 'summary', noteId, inputText: inputText?.substring(0, 1000), status: 'processing', createdBy });
     
     try {
       let output;
-      if (model && inputText) {
+      if (openai && inputText) {
         const prompt = `You are an expert educational content summarizer. Analyze the following study material and provide a comprehensive summary.
 
 Study Material:
@@ -110,8 +135,7 @@ Requirements:
 - Keep content educational and student-focused
 - Return ONLY valid JSON, no additional text`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+        const text = await makeOpenAICall(prompt, 2000);
         output = parseJsonFromResponse(text);
         
         // Fallback if parsing fails
@@ -126,7 +150,7 @@ Requirements:
           };
         }
       } else {
-        throw new Error('Gemini AI not configured. Please check your API key.');
+        throw new Error('OpenAI not configured. Please check your API key.');
       }
       
       await AIJobs.update(jobId, { status: 'completed', output });
@@ -153,7 +177,7 @@ Requirements:
     
     try {
       let output;
-      if (model && inputText) {
+      if (openai && inputText) {
         const prompt = `You are an expert educational assessment creator. Generate ${count} high-quality multiple-choice questions based on the following study material.
 
 Study Material:
@@ -187,8 +211,7 @@ Requirements:
 - Include Bloom's taxonomy level for each question
 - Return ONLY valid JSON array, no additional text`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+        const text = await makeOpenAICall(prompt, 3000);
         output = parseJsonFromResponse(text);
         
         // Validate and fix output format
@@ -228,7 +251,7 @@ Requirements:
         }
         
       } else {
-        throw new Error('Gemini AI not configured. Please check your API key.');
+        throw new Error('OpenAI not configured. Please check your API key.');
       }
       
       await AIJobs.update(jobId, { status: 'completed', output });
@@ -257,7 +280,7 @@ Requirements:
     
     try {
       let output;
-      if (model && inputText) {
+      if (openai && inputText) {
         const prompt = `You are an expert at creating effective educational flashcards. Create ${count} high-quality flashcards from the following study material.
 
 Study Material:
@@ -287,8 +310,7 @@ Requirements:
 - Ensure educational value and accuracy
 - Return ONLY valid JSON array, no additional text`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+        const text = await makeOpenAICall(prompt, 2500);
         output = parseJsonFromResponse(text);
         
         // Validate and fix output format
@@ -324,7 +346,7 @@ Requirements:
         }
         
       } else {
-        throw new Error('Gemini AI not configured. Please check your API key.');
+        throw new Error('OpenAI not configured. Please check your API key.');
       }
       
       await AIJobs.update(jobId, { status: 'completed', output });
@@ -354,7 +376,7 @@ Requirements:
     
     try {
       let output;
-      if (model && inputText) {
+      if (openai && inputText) {
         const prompt = `You are an expert at creating educational concept maps. Analyze the following text and create a structured concept map showing relationships between key concepts.
 
 Text to analyze:
@@ -414,8 +436,7 @@ Requirements:
 - Include study tips for effective learning
 - Return ONLY valid JSON, no additional text`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+        const text = await makeOpenAICall(prompt, 2000);
         output = parseJsonFromResponse(text);
         
         // Validate and enhance output
@@ -427,7 +448,7 @@ Requirements:
         output = this.enhanceConceptMap(output);
         
       } else {
-        throw new Error('Gemini AI not configured. Please check your API key.');
+        throw new Error('OpenAI not configured. Please check your API key.');
       }
       
       await AIJobs.update(jobId, { status: 'completed', output });
@@ -457,10 +478,10 @@ Requirements:
     }
   },
 
-  // Enhanced internship matching with Gemini insights
+  // Enhanced internship matching with OpenAI insights
   async matchInternships({ userSkills = [], internships = [] }) {
     try {
-      if (model && userSkills.length > 0 && internships.length > 0) {
+      if (openai && userSkills.length > 0 && internships.length > 0) {
         const prompt = `Given user skills: ${userSkills.join(', ')}
 
 Score these internships (0-100) in JSON format:
@@ -470,8 +491,7 @@ ${internships.map((i, idx) =>
 
 Return JSON: [{"index": 0, "score": 85, "reason": "why"}]`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+        const text = await makeOpenAICall(prompt, 1000);
         const matches = parseJsonFromResponse(text);
         
         if (Array.isArray(matches)) {
@@ -568,7 +588,7 @@ Return JSON: [{"index": 0, "score": 85, "reason": "why"}]`;
     
     try {
       let output;
-      if (model && inputText) {
+      if (openai && inputText) {
         const prompt = `You are an expert educational content creator. Generate a comprehensive set of study questions based on the following material.
 
 Study Material:
@@ -618,8 +638,7 @@ Requirements:
 - Vary difficulty levels appropriately
 - Return ONLY valid JSON, no additional text`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
+        const text = await makeOpenAICall(prompt, 2000);
         output = parseJsonFromResponse(text);
         
         if (!output) {
@@ -635,7 +654,7 @@ Requirements:
         };
         
       } else {
-        throw new Error('Gemini AI not configured. Please check your API key.');
+        throw new Error('OpenAI not configured. Please check your API key.');
       }
       
       await AIJobs.update(jobId, { status: 'completed', output });
@@ -657,61 +676,51 @@ Requirements:
 
   // Check if AI service is properly configured
   isConfigured() {
-    return !!model;
+    return !!openai;
   },
 
   // Get model information and status
   getModelInfo() {
     return { 
-      configured: !!model, 
-      model: model ? 'gemini-1.5-flash' : 'Not configured',
-      provider: 'Google Gemini API',
-      apiKey: import.meta.env.VITE_GEMINI_API_KEY ? 'Configured' : 'Missing',
+      configured: !!openai, 
+      model: openai ? 'gpt-4o-mini' : 'Not configured',
+      provider: 'OpenAI API',
+      apiKey: import.meta.env.VITE_OPENAI_API_KEY ? 'Configured' : 'Missing',
       features: ['Summarization', 'MCQ Generation', 'Flashcards', 'Concept Maps', 'Questions', 'Internship Matching']
     };
   },
 
   // Reinitialize AI service if needed
   async reinitialize() {
-    return initializeGemini();
+    return initializeOpenAI();
   },
 
   // Configure AI service with runtime API key
   async configureWithApiKey(apiKey) {
-    if (!apiKey || apiKey.length < 30 || !apiKey.startsWith('AIza')) {
-      throw new Error('Invalid API key format. Please check your Gemini API key.');
+    if (!apiKey || apiKey.length < 40 || !apiKey.startsWith('sk-')) {
+      throw new Error('Invalid API key format. Please check your OpenAI API key.');
     }
 
     try {
       // Initialize with the provided API key
-      genAI = new GoogleGenerativeAI(apiKey);
-      model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.8,
-          topK: 40,
-          maxOutputTokens: 4096,
-        },
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-          },
-        ],
+      const testOpenAI = new OpenAI({
+        apiKey: apiKey,
+        dangerouslyAllowBrowser: true
       });
       
       // Test the connection with a simple request
-      const testResult = await model.generateContent('Test connection: Say "Hello"');
-      const testResponse = testResult.response.text();
+      const testResponse = await testOpenAI.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: 'Test connection: Say "Hello"' }],
+        max_tokens: 10,
+        temperature: 0.7
+      });
       
-      if (testResponse) {
+      if (testResponse.choices && testResponse.choices[0]?.message?.content) {
+        // Set the global openai instance
+        openai = testOpenAI;
         aiInitialized = true;
-        console.log('🤖 Gemini AI configured successfully with runtime API key');
+        console.log('🤖 OpenAI configured successfully with runtime API key');
         return { success: true, message: 'AI service configured successfully!' };
       } else {
         throw new Error('Failed to get response from AI service');
@@ -719,17 +728,14 @@ Requirements:
     } catch (error) {
       console.error('⚠️ AI service configuration failed:', error.message);
       // Reset to null on failure
-      genAI = null;
-      model = null;
+      openai = null;
       aiInitialized = false;
       
-      if (error.message.includes('API_KEY_INVALID') || error.message.includes('Invalid API key')) {
-        throw new Error('Invalid API key. Please check your Gemini API key.');
-      } else if (error.message.includes('PERMISSION_DENIED') || error.message.includes('Permission denied')) {
-        throw new Error('API key does not have permission. Please check your Google Cloud settings.');
-      } else if (error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('Quota exceeded')) {
+      if (error.message.includes('Incorrect API key') || error.message.includes('Invalid API key')) {
+        throw new Error('Invalid API key. Please check your OpenAI API key.');
+      } else if (error.message.includes('insufficient_quota') || error.message.includes('Quota exceeded')) {
         throw new Error('API quota exceeded. Please check your usage limits.');
-      } else if (error.message.includes('404') || error.message.includes('model not found')) {
+      } else if (error.message.includes('model_not_found') || error.message.includes('model not found')) {
         throw new Error('Model not available. The service may be temporarily unavailable.');
       } else {
         throw new Error(`Configuration failed: ${error.message}`);

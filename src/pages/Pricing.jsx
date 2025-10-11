@@ -28,7 +28,7 @@ const Pricing = () => {
         'All features of Free plan',
         'AI MCQ generation',
         'AI mapping notes',
-        'Gemini AI access',
+        'OpenAI GPT-4o mini access',
         'Text-to-speech (reading voice aloud)',
         'AI question generation',
         'Unlimited note uploads',

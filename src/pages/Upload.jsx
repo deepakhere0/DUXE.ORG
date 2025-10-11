@@ -7,12 +7,16 @@ import {
   CheckCircleIcon,
   InformationCircleIcon
 } from '@heroicons/react/24/outline';
+import { createDoc } from '../services/firestoreData';
+import { useAuth } from '../hooks/useAuth';
 
 const Upload = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     university: '',
@@ -36,11 +40,45 @@ const Upload = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setUploading(true);
-    // Add Firebase upload logic here
-    setTimeout(() => {
+    setError(null);
+    
+    try {
+      if (!user) {
+        throw new Error('You must be signed in to upload notes');
+      }
+      
+      // Create note document in Firestore
+      const noteData = {
+        title: formData.title,
+        universityId: formData.university,
+        departmentId: formData.department,
+        subject: formData.subject,
+        semester: parseInt(formData.semester),
+        courseCode: formData.courseCode,
+        description: formData.description,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        status: 'pending',
+        createdBy: user.uid,
+        authorName: user.displayName || user.email,
+        authorEmail: user.email,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        downloads: 0,
+        rating: 0,
+        ratingCount: 0
+      };
+      
+      // Save to Firestore
+      await createDoc('notes', noteData);
+      
       setUploading(false);
       setUploadSuccess(true);
-    }, 2000);
+    } catch (error) {
+      console.error('Upload error:', error);
+      setError(error.message);
+      setUploading(false);
+    }
   };
 
   if (uploadSuccess) {
@@ -223,6 +261,15 @@ const Upload = () => {
               </div>
             </div>
           </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+              <div className="text-sm text-red-800">
+                <p className="font-medium mb-1">Upload Error</p>
+                <p>{error}</p>
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"

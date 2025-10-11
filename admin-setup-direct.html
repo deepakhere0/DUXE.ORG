@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct Admin Setup</title>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLKDl_Qo6nTqGjdFaTCsB3YggQW5YQsR0",
+            authDomain: "duxe-5c071.firebaseapp.com",
+            projectId: "duxe-5c071",
+            storageBucket: "duxe-5c071.appspot.com",
+            messagingSenderId: "688572994825",
+            appId: "1:688572994825:web:20fd7a2825efea1bfaf5f7",
+            measurementId: "G-09H7K4Y1LH"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        window.setupAdmin = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const uid = document.getElementById('uid').value;
+            
+            if (!email || !password || !uid) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            try {
+                // Sign in first
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                
+                if (user.uid !== uid) {
+                    throw new Error(`UID mismatch! Expected: ${uid}, Got: ${user.uid}`);
+                }
+
+                // Now create the admin user document
+                const userDoc = doc(db, 'users', uid);
+                await setDoc(userDoc, {
+                    uid: uid,
+                    displayName: user.displayName || 'Admin User',
+                    email: email,
+                    role: 'admin',
+                    skills: ['Platform Management', 'Content Moderation', 'Analytics'],
+                    bookmarks: [],
+                    university: 'DUXE Platform',
+                    department: 'Administration',
+                    year: 'Staff',
+                    bio: 'Platform administrator with full access to admin panel.',
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    lastActive: serverTimestamp(),
+                    profilePicture: null
+                }, { merge: true });
+
+                document.getElementById('result').innerHTML = `
+                    <div style="color: green; margin: 20px 0; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px;">
+                        <strong>✅ SUCCESS!</strong><br>
+                        Admin user created successfully!<br><br>
+                        <strong>Details:</strong><br>
+                        UID: ${uid}<br>
+                        Email: ${email}<br>
+                        Role: admin<br><br>
+                        
+                        <strong>🎯 Next Steps:</strong><br>
+                        1. Go to <a href="http://localhost:5173/admin/dashboard" target="_blank" style="color: #007bff;">Admin Dashboard</a><br>
+                        2. Sign in with this email and password<br>
+                        3. You should see all your pending notes ready for approval!
+                    </div>
+                `;
+                
+                // Auto-redirect after 3 seconds
+                setTimeout(() => {
+                    window.open('http://localhost:5173/admin/dashboard', '_blank');
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Setup error:', error);
+                document.getElementById('result').innerHTML = `
+                    <div style="color: red; margin: 20px 0; padding: 15px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px;">
+                        <strong>❌ Error:</strong> ${error.message}<br><br>
+                        
+                        <strong>Possible solutions:</strong><br>
+                        1. Make sure you created this user in Firebase Console<br>
+                        2. Check that email and password are correct<br>
+                        3. Verify the UID matches exactly<br>
+                        4. Try refreshing and logging in again
+                    </div>
+                `;
+            }
+        };
+    </script>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 700px; margin: 50px auto; padding: 20px; background: #f8f9fa;">
+    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h1 style="color: #333;">🛡️ Direct Admin Setup</h1>
+        
+        <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #007bff;">
+            <strong>📋 What this does:</strong><br>
+            1. Signs you into Firebase with your credentials<br>
+            2. Creates an admin user document in Firestore<br>
+            3. Grants you admin access to approve notes
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Email Address:</label>
+            <input type="email" id="email" value="deepakjangir0702@gmail.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Password:</label>
+            <input type="password" id="password" placeholder="Enter your Firebase password" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Firebase User UID:</label>
+            <input type="text" id="uid" value="zNHf9krGMqSe5RLf6p94uXBq4Y42" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-family: monospace;">
+        </div>
+        
+        <button onclick="setupAdmin()" style="background: #007bff; color: white; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold;">
+            🚀 Setup Admin Access
+        </button>
+        
+        <div id="result" style="margin-top: 20px;"></div>
+        
+        <hr style="margin: 40px 0;">
+        
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <strong>⚠️ Prerequisites:</strong><br>
+            1. You must have created this user in <a href="https://console.firebase.google.com/project/duxe-5c071/authentication/users" target="_blank">Firebase Console</a><br>
+            2. The email and password must match exactly<br>
+            3. The UID must be copied correctly from Firebase Console
+        </div>
+    </div>
+</body>
+</html>

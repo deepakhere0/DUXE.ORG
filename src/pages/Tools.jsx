@@ -33,13 +33,13 @@ const Tools = () => {
   const [animationStep, setAnimationStep] = useState(0);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [apiKey, setApiKey] = useState('');
-  const [isGeminiConfigured, setIsGeminiConfigured] = useState(false);
+  const [isOpenAIConfigured, setIsOpenAIConfigured] = useState(false);
   const [isConfiguringAI, setIsConfiguringAI] = useState(false);
 
   // Check if AI is configured on mount
   useEffect(() => {
     const configured = AIService.isConfigured();
-    setIsGeminiConfigured(configured);
+    setIsOpenAIConfigured(configured);
   }, []);
 
   // Animation effect for the promotional section
@@ -64,8 +64,8 @@ const Tools = () => {
       return;
     }
     
-    if (!trimmedKey.startsWith('AIza')) {
-      Toast.error('Invalid API key format. Gemini keys start with "AIza"');
+    if (!trimmedKey.startsWith('sk-')) {
+      Toast.error('Invalid API key format. OpenAI keys start with "sk-"');
       return;
     }
 
@@ -76,10 +76,10 @@ const Tools = () => {
       const result = await AIService.configureWithApiKey(trimmedKey);
       
       if (result.success) {
-        setIsGeminiConfigured(true);
+        setIsOpenAIConfigured(true);
         setShowApiKeyModal(false);
         setApiKey(''); // Clear the key from state for security
-        Toast.success('🤖 Gemini AI configured successfully! All tools are now ready.');
+        Toast.success('🤖 OpenAI configured successfully! All tools are now ready.');
       } else {
         throw new Error(result.message || 'Configuration failed');
       }
@@ -92,7 +92,7 @@ const Tools = () => {
   };
 
   const handleToolClick = (toolId) => {
-    if (!isGeminiConfigured) {
+    if (!isOpenAIConfigured) {
       setShowApiKeyModal(true);
       return;
     }
@@ -355,11 +355,11 @@ const Tools = () => {
                   )}
                   
                   {/* API Key Configuration */}
-                  {currentUser && !isGeminiConfigured && (
+                  {currentUser && !isOpenAIConfigured && (
                     <div className="mt-8 p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
                       <p className="text-yellow-400 mb-3">
                         <KeyIcon className="inline h-5 w-5 mr-2" />
-                        Gemini AI is not configured. Add your API key to enable AI features.
+                        OpenAI is not configured. Add your API key to enable AI features.
                       </p>
                       <button
                         onClick={() => setShowApiKeyModal(true)}
@@ -379,10 +379,10 @@ const Tools = () => {
         {showApiKeyModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-slate-800 rounded-2xl border border-accent-500/30 p-6 max-w-md w-full">
-              <h3 className="text-xl font-bold text-white mb-4">Configure Gemini API Key</h3>
+              <h3 className="text-xl font-bold text-white mb-4">Configure OpenAI API Key</h3>
               <p className="text-gray-400 mb-4">
-                Enter your Google Gemini API key to enable AI features. 
-                <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent-500 hover:underline">
+                Enter your OpenAI API key to enable AI features. 
+                <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-accent-500 hover:underline">
                   Get your API key here
                 </a>
               </p>
@@ -390,16 +390,16 @@ const Tools = () => {
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="AIzaSyC..."
+                placeholder="sk-..."
                 disabled={isConfiguringAI}
                 className="w-full bg-slate-900/50 border border-accent-500/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-accent-500 disabled:opacity-50 mb-4"
               />
               {apiKey.trim() && (
                 <div className="mb-4 text-sm">
-                  {apiKey.trim().length < 30 ? (
+                  {apiKey.trim().length < 40 ? (
                     <p className="text-yellow-400">⚠️ API key seems short</p>
-                  ) : !apiKey.trim().startsWith('AIza') ? (
-                    <p className="text-red-400">❌ Invalid format (should start with "AIza")</p>
+                  ) : !apiKey.trim().startsWith('sk-') ? (
+                    <p className="text-red-400">❌ Invalid format (should start with "sk-")</p>
                   ) : (
                     <p className="text-green-400">✓ Format looks correct</p>
                   )}

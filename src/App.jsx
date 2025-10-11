@@ -29,6 +29,7 @@ import Report from './pages/Report';
 import Feedback from './pages/Feedback';
 import DataConnectTest from './components/DataConnectTest';
 import Debug from './pages/Debug';
+import AdminDashboard from './pages/AdminDashboard';
 
 
 // Create a client
@@ -84,6 +85,9 @@ function App() {
               {/* Public Routes */}
               <Route path="upload" element={<Upload />} />
               <Route path="tools" element={<Tools />} />
+              
+              {/* Admin Routes */}
+              <Route path="admin/dashboard" element={<AdminDashboard />} />
               
               {/* Catch all - 404 */}
               <Route path="*" element={<NotFound />} />
