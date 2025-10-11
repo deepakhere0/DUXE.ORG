@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   AcademicCapIcon, 
   Bars3Icon,
@@ -10,11 +11,14 @@ import {
   BriefcaseIcon,
   ArrowUpTrayIcon,
   HomeIcon,
-  TagIcon
+  TagIcon,
+  ArrowRightIcon
 } from '@heroicons/react/24/outline';
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -57,6 +61,54 @@ const Navbar = () => {
             ))}
           </div>
 
+          {/* Auth Buttons - Desktop */}
+          <div className="hidden md:flex items-center space-x-3 ml-4">
+            {user ? (
+              // Logged in - Show Dashboard and Logout
+              <>
+                <Link
+                  to="/dashboard"
+                  className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200
+                    text-navy-500 hover:bg-navy-100"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={async () => {
+                    await logout();
+                    navigate('/');
+                  }}
+                  className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200
+                    border-2 border-gray-300 text-gray-700 hover:border-red-500 hover:text-red-500
+                    hover:shadow-md"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              // Not logged in - Show Login and Signup
+              <>
+                <Link
+                  to="/login"
+                  className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200
+                    border-2 border-navy-500 text-navy-500 hover:bg-navy-500 hover:text-white
+                    hover:shadow-md"
+                >
+                  Log In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200
+                    bg-accent-500 text-white hover:bg-accent-600 hover:shadow-lg
+                    hover:scale-105 transform flex items-center space-x-1 group"
+                >
+                  <span>Join for Free</span>
+                  <ArrowRightIcon className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
+                </Link>
+              </>
+            )}
+          </div>
+
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -90,6 +142,58 @@ const Navbar = () => {
                 </div>
               </Link>
             ))}
+            
+            {/* Auth Buttons - Mobile */}
+            <div className="mt-4 pt-4 border-t space-y-2 px-4">
+              {user ? (
+                // Logged in - Show Dashboard and Logout
+                <>
+                  <Link
+                    to="/dashboard"
+                    className="block w-full px-4 py-2.5 rounded-xl text-sm font-medium text-center
+                      bg-navy-500 text-white hover:bg-navy-600 transition-all duration-200"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={async () => {
+                      await logout();
+                      setMobileMenuOpen(false);
+                      navigate('/');
+                    }}
+                    className="block w-full px-4 py-2.5 rounded-xl text-sm font-medium text-center
+                      border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white
+                      transition-all duration-200"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                // Not logged in - Show Login and Signup
+                <>
+                  <Link
+                    to="/login"
+                    className="block w-full px-4 py-2.5 rounded-xl text-sm font-medium text-center
+                      border-2 border-navy-500 text-navy-500 hover:bg-navy-500 hover:text-white
+                      transition-all duration-200"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="block w-full px-4 py-2.5 rounded-xl text-sm font-medium text-center
+                      bg-accent-500 text-white hover:bg-accent-600 transition-all duration-200
+                      flex items-center justify-center space-x-1 group"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span>Join for Free</span>
+                    <ArrowRightIcon className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
