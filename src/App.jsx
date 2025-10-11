@@ -57,14 +57,11 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
-            <Route path="/" element={<Layout />}>
-              {/* Auth Routes - Outside Layout */}
-            </Route>
-            
             {/* Auth Pages (No Layout) */}
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<Signup />} />
             
+            {/* Main App Routes with Layout */}
             <Route path="/" element={<Layout />}>
               {/* Public Routes */}
               <Route index element={<Home />} />

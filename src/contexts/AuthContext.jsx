@@ -4,7 +4,12 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  signInWithPopup,
+  GoogleAuthProvider,
+  OAuthProvider,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -129,6 +134,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Ensure auth persistence across reloads
+  useEffect(() => {
+    (async () => {
+      try {
+        if (auth) {
+          await setPersistence(auth, browserLocalPersistence);
+        }
+      } catch (e) {
+        console.warn('Auth persistence setup failed:', e?.message);
+      }
+    })();
+  }, []);
+
   // Listen for auth state changes
   useEffect(() => {
     if (!auth) {
@@ -158,6 +176,64 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
+  /**
+   * Social login helper - creates Firestore user doc on first login
+   */
+  const handlePostSocialLogin = async (firebaseUser) => {
+    try {
+      const existing = await getDoc(doc(db, 'users', firebaseUser.uid));
+      if (!existing.exists()) {
+        await setDoc(doc(db, 'users', firebaseUser.uid), {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+          role: 'user',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          bookmarks: [],
+          skills: []
+        });
+      }
+    } catch (e) {
+      console.error('Post social login setup failed:', e);
+    }
+  };
+
+  /**
+   * Login with Google using popup
+   */
+  const loginWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      await handlePostSocialLogin(result.user);
+      return result;
+    } catch (error) {
+      console.error('Google login error:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
+
+  /**
+   * Login with Apple using OAuth provider (apple.com)
+   */
+  const loginWithApple = async () => {
+    const provider = new OAuthProvider('apple.com');
+    // Request email and name scopes
+    provider.addScope('email');
+    provider.addScope('name');
+    try {
+      const result = await signInWithPopup(auth, provider);
+      await handlePostSocialLogin(result.user);
+      return result;
+    } catch (error) {
+      console.error('Apple login error:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
+
   // Context value
   const value = {
     user,
@@ -166,6 +242,8 @@ export const AuthProvider = ({ children }) => {
     signup,
     login,
     logout,
+    loginWithGoogle,
+    loginWithApple,
     getUserData
   };
 
