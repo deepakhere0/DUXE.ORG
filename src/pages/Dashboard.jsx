@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import AdminStatusChecker from '../components/AdminStatusChecker';
 import { 
   AcademicCapIcon,
   BookOpenIcon,
@@ -54,6 +55,9 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container-custom">
+        {/* Admin Status Checker */}
+        <AdminStatusChecker />
+        
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-navy-700 mb-2">
