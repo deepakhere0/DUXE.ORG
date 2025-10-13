@@ -5,6 +5,14 @@ import { ShieldCheckIcon, XCircleIcon, ArrowUpTrayIcon, ClipboardDocumentCheckIc
 
 const AdminStatusChecker = () => {
   const { user, userRole, isAdmin } = useAuth();
+  
+  // Debug info
+  console.log('AdminStatusChecker Debug:', {
+    userRole,
+    isAdmin,
+    userRoleType: typeof userRole,
+    userData: user?.userData
+  });
 
   if (!user) {
     return (
@@ -34,7 +42,8 @@ const AdminStatusChecker = () => {
               {isAdmin ? '✅ Admin Access Confirmed' : '❌ No Admin Access'}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              Email: {user.email} | Role: <span className="font-semibold">{userRole || 'user'}</span>
+              Email: {user.email} | Role: <span className="font-semibold">{userRole || 'user'}</span> | 
+              Type: {typeof userRole} | isAdmin: {String(isAdmin)}
             </p>
           </div>
         </div>

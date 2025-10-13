@@ -164,9 +164,10 @@ export const AuthProvider = ({ children }) => {
           ...firebaseUser,
           userData: userData
         });
-        // Set user role from userData
-        setUserRole(userData?.role || 'user');
-        console.log('🔐 Auth state: User logged in', firebaseUser.email, 'Role:', userData?.role || 'user');
+        // Set user role from userData (handle string properly)
+        const role = userData?.role ? String(userData.role).trim().toLowerCase() : 'user';
+        setUserRole(role);
+        console.log('🔐 Auth state: User logged in', firebaseUser.email, 'Role:', role);
       } else {
         // User is signed out
         setUser(null);
@@ -244,7 +245,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     error,
     userRole,
-    isAdmin: userRole === 'admin',
+    isAdmin: userRole && String(userRole).trim().toLowerCase() === 'admin',
     signup,
     login,
     logout,
