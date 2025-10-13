@@ -89,41 +89,24 @@ service cloud.firestore {
       // Admins, moderators, and teachers can read all notes
       allow read: if isTeacher();
       
-      // Signed-in users can create valid notes (auto-set to pending)
-      allow create: if isSignedIn() && 
+      // Only admins can create notes
+      allow create: if isAdmin() && 
                        isValidNoteData() &&
-                       request.resource.data.status == 'pending' &&
-                       request.resource.data.createdBy == request.auth.uid &&
-                       request.resource.data.authorName == request.auth.token.name;
+                       request.resource.data.createdBy == request.auth.uid;
       
-      // Users can update their own notes (limited fields and only if pending)
-      allow update: if isSignedIn() && 
-                       resource.data.createdBy == request.auth.uid &&
-                       resource.data.status == 'pending' &&
+      // Only admins can update notes (except system fields)
+      allow update: if isAdmin() && 
                        !request.resource.data.diff(resource.data).affectedKeys()
-                         .hasAny(['status', 'createdBy', 'createdAt', 'downloads', 'ratingAvg', 'ratingCount']);
+                         .hasAny(['createdAt', 'downloads', 'ratingAvg', 'ratingCount']);
       
-      // Users can delete their own notes (only if pending)
-      allow delete: if isSignedIn() && 
-                       resource.data.createdBy == request.auth.uid &&
-                       resource.data.status == 'pending';
-      
-      // Admins can update any notes
-      allow update: if isAdmin();
-      
-      // Teachers and moderators can update note status (approve/reject)
-      allow update: if isTeacher() && 
-                       request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['status', 'reviewedBy', 'reviewedAt', 'reviewNotes']);
+      // Only admins can delete notes
+      allow delete: if isAdmin();
       
       // System updates for downloads and ratings (special case)
       allow update: if request.resource.data.diff(resource.data).affectedKeys()
                        .hasOnly(['downloads']) ||
                     request.resource.data.diff(resource.data).affectedKeys()
                        .hasOnly(['ratingAvg', 'ratingCount']);
-                       
-      // Admins can delete any note
-      allow delete: if isAdmin();
     }
     
     // AI Jobs collection

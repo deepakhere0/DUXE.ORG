@@ -9,27 +9,34 @@ import {
   BeakerIcon,
   VideoCameraIcon,
   BriefcaseIcon,
-  ArrowUpTrayIcon,
   HomeIcon,
   TagIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  ArrowUpTrayIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Build nav links dynamically based on user role
   const navLinks = [
     { name: 'Home', href: '/', icon: HomeIcon },
     { name: 'Notes', href: '/notes', icon: BookOpenIcon },
     { name: 'AI Tools', href: '/tools', icon: BeakerIcon },
     { name: 'Videos', href: '/videos', icon: VideoCameraIcon },
     { name: 'Internships', href: '/internships', icon: BriefcaseIcon },
-    { name: 'Upload', href: '/upload', icon: ArrowUpTrayIcon },
     { name: 'Pricing', href: '/pricing', icon: TagIcon },
   ];
+
+  // Add admin-only links
+  if (isAdmin) {
+    navLinks.splice(2, 0, { name: 'Upload', href: '/upload', icon: ArrowUpTrayIcon });
+    navLinks.splice(3, 0, { name: 'Review', href: '/admin/review', icon: ShieldCheckIcon });
+  }
 
   const isActive = (path) => location.pathname === path;
 
@@ -66,6 +73,12 @@ const Navbar = () => {
             {user ? (
               // Logged in - Show Dashboard and Logout
               <>
+                {isAdmin && (
+                  <div className="flex items-center px-3 py-1 bg-blue-100 rounded-full text-blue-700 text-xs font-medium mr-2">
+                    <ShieldCheckIcon className="h-4 w-4 mr-1" />
+                    Admin
+                  </div>
+                )}
                 <Link
                   to="/dashboard"
                   className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200
@@ -148,6 +161,14 @@ const Navbar = () => {
               {user ? (
                 // Logged in - Show Dashboard and Logout
                 <>
+                  {isAdmin && (
+                    <div className="flex items-center justify-center px-3 py-2 mb-2">
+                      <div className="flex items-center px-3 py-1 bg-blue-100 rounded-full text-blue-700 text-xs font-medium">
+                        <ShieldCheckIcon className="h-4 w-4 mr-1" />
+                        Admin Account
+                      </div>
+                    </div>
+                  )}
                   <Link
                     to="/dashboard"
                     className="block w-full px-4 py-2.5 rounded-xl text-sm font-medium text-center

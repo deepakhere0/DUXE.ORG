@@ -41,13 +41,6 @@ const Dashboard = () => {
       href: '/internships',
       icon: BriefcaseIcon,
       color: 'bg-green-500'
-    },
-    {
-      name: 'Upload Notes',
-      description: 'Share your materials',
-      href: '/upload',
-      icon: AcademicCapIcon,
-      color: 'bg-purple-500'
     }
   ];
 

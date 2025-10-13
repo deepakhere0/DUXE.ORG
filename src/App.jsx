@@ -12,6 +12,7 @@ import Notes from './pages/Notes';
 import NotesPortal from './pages/NotesPortal';
 import NoteDetail from './pages/NoteDetail';
 import Upload from './pages/Upload';
+import AdminReview from './pages/AdminReview';
 import Tools from './pages/Tools';
 import Videos from './pages/Videos';
 import Internships from './pages/Internships';
@@ -101,9 +102,16 @@ function App() {
                   <Dashboard />
                 </ProtectedRoute>
               } />
+              
+              {/* Admin Only Routes */}
               <Route path="upload" element={
                 <ProtectedRoute>
                   <Upload />
+                </ProtectedRoute>
+              } />
+              <Route path="admin/review" element={
+                <ProtectedRoute>
+                  <AdminReview />
                 </ProtectedRoute>
               } />
               

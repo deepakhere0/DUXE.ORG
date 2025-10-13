@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userRole, setUserRole] = useState(null);
 
   /**
    * Sign up a new user with email and password
@@ -163,10 +164,13 @@ export const AuthProvider = ({ children }) => {
           ...firebaseUser,
           userData: userData
         });
-        console.log('🔐 Auth state: User logged in', firebaseUser.email);
+        // Set user role from userData
+        setUserRole(userData?.role || 'user');
+        console.log('🔐 Auth state: User logged in', firebaseUser.email, 'Role:', userData?.role || 'user');
       } else {
         // User is signed out
         setUser(null);
+        setUserRole(null);
         console.log('🔓 Auth state: User logged out');
       }
       setLoading(false);
@@ -239,6 +243,8 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     error,
+    userRole,
+    isAdmin: userRole === 'admin',
     signup,
     login,
     logout,

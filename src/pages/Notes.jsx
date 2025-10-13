@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { collection, query, where, orderBy, limit, getDocs, startAfter } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { Notes as NotesService, Universities, Departments } from '../services/firestoreData';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -21,6 +22,7 @@ import LazyNoteCard from '../components/common/LazyNoteCard';
 import { SkeletonCard } from '../components/common/Skeleton';
 
 const Notes = () => {
+  const { isAdmin } = useAuth();
   const [filters, setFilters] = useState({});
   const [sortBy, setSortBy] = useState('popular');
   const [page, setPage] = useState(1);
@@ -61,8 +63,10 @@ const Notes = () => {
         // Build Firestore query
         let q = query(collection(db, 'notes'));
         
-        // Only show approved notes
-        q = query(q, where('status', '==', 'approved'));
+        // Only show approved notes for normal users, admins can see all
+        if (!isAdmin) {
+          q = query(q, where('status', '==', 'approved'));
+        }
         
         // Apply filters
         if (filters.universityId) {

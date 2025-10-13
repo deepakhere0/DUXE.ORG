@@ -14,8 +14,7 @@ import {
   StarIcon,
   BuildingLibraryIcon,
   TagIcon,
-  FireIcon,
-  ArrowUpTrayIcon
+  FireIcon
 } from '@heroicons/react/24/outline';
 import { 
   LightBulbIcon,
@@ -49,13 +48,6 @@ const Home = () => {
       icon: FireIcon,
       href: '/notes?filter=trending',
       color: 'bg-red-100 text-red-600'
-    },
-    {
-      title: 'Upload',
-      description: 'Share your notes and earn rewards',
-      icon: ArrowUpTrayIcon,
-      href: '/upload',
-      color: 'bg-purple-100 text-purple-600'
     }
   ];
 
