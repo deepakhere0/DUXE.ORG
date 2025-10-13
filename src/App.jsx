@@ -12,6 +12,7 @@ import Notes from './pages/Notes';
 import NotesPortal from './pages/NotesPortal';
 import NoteDetail from './pages/NoteDetail';
 import Upload from './pages/Upload';
+import UploadDev from './pages/UploadDev'; // Temporary development upload
 import AdminReview from './pages/AdminReview';
 import Tools from './pages/Tools';
 import Videos from './pages/Videos';
@@ -106,7 +107,7 @@ function App() {
               {/* Admin Only Routes */}
               <Route path="upload" element={
                 <ProtectedRoute>
-                  <Upload />
+                  <UploadDev />
                 </ProtectedRoute>
               } />
               <Route path="admin/review" element={

@@ -7,11 +7,12 @@ import {
   XMarkIcon,
   CheckCircleIcon,
   InformationCircleIcon,
-  ShieldExclamationIcon
+  ShieldExclamationIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../services/firebase';
+import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
+import { db, storage, isFirebaseConfigured } from '../services/firebase';
 import toast from 'react-hot-toast';
 
 const Upload = () => {
@@ -20,6 +21,9 @@ const Upload = () => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState('');
+  const [debugInfo, setDebugInfo] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
     university: '',
@@ -31,11 +35,32 @@ const Upload = () => {
     tags: ''
   });
 
+  // Debug logging helper
+  const addDebugInfo = (message, data = null) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = `[${timestamp}] ${message}`;
+    console.log(logEntry, data);
+    setDebugInfo(prev => [...prev, logEntry].slice(-10)); // Keep last 10 entries
+  };
+
+  // Check Firebase configuration on component mount
+  useEffect(() => {
+    if (!isFirebaseConfigured) {
+      addDebugInfo('⚠️ Firebase not properly configured');
+      toast.error('Firebase is not properly configured. Please check environment variables.');
+    } else {
+      addDebugInfo('✅ Firebase configuration verified');
+    }
+  }, []);
+
   // Redirect non-admin users
   useEffect(() => {
     if (!isAdmin && user) {
+      addDebugInfo('❌ Access denied - user is not admin');
       toast.error('Access denied. Admin privileges required.');
       navigate('/notes');
+    } else if (isAdmin && user) {
+      addDebugInfo('✅ Admin access confirmed', { email: user.email, role: user.userData?.role });
     }
   }, [isAdmin, user, navigate]);
 
@@ -93,23 +118,122 @@ const Upload = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Initial validation
     if (!file) {
       toast.error('Please select a file to upload');
       return;
     }
 
+    if (!isFirebaseConfigured) {
+      toast.error('Firebase is not properly configured. Cannot upload files.');
+      return;
+    }
+
+    if (!user || !isAdmin) {
+      toast.error('Admin authentication required');
+      return;
+    }
+
+    // Reset states
     setUploading(true);
+    setUploadProgress(0);
+    setCurrentStep('Starting upload...');
+    addDebugInfo('🚀 Starting upload process', { fileName: file.name, fileSize: file.size });
     
     try {
-      // Upload file to Firebase Storage
+      // Step 1: Validate user permissions in Firestore first
+      setCurrentStep('Validating admin permissions...');
+      addDebugInfo('🔐 Validating user permissions in database');
+      
+      // Skip database check if we already know user is admin from AuthContext
+      if (isAdmin) {
+        addDebugInfo('✅ Admin permissions verified from Auth Context');
+      } else {
+        // Double-check in database if AuthContext says not admin
+        const userDoc = doc(db, 'users', user.uid);
+        const userData = await import('firebase/firestore').then(({ getDoc }) => getDoc(userDoc));
+        
+        if (!userData.exists()) {
+          addDebugInfo('⚠️ User document not found in database, creating admin document');
+          // Create admin document for authenticated user
+          await import('firebase/firestore').then(({ setDoc }) => 
+            setDoc(doc(db, 'users', user.uid), {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName || user.email,
+              role: 'admin',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              bookmarks: [],
+              skills: []
+            })
+          );
+          addDebugInfo('✅ Admin document created');
+        } else {
+          const userRole = userData.data().role;
+          const normalizedRole = userRole ? String(userRole).trim().toLowerCase() : 'user';
+          
+          if (normalizedRole !== 'admin') {
+            addDebugInfo(`❌ User role is '${userRole}' (normalized: '${normalizedRole}'), not admin`);
+            throw new Error(`Insufficient permissions. User role: ${userRole || 'not set'}. Please ensure your account has admin privileges.`);
+          }
+          addDebugInfo('✅ Admin permissions verified in database');
+        }
+      }
+      
+      // Step 2: Upload file to Firebase Storage with progress tracking
+      setCurrentStep('Uploading file to storage...');
       const timestamp = Date.now();
-      const fileName = `notes/${timestamp}_${file.name}`;
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `notes/${timestamp}_${sanitizedFileName}`;
+      
+      addDebugInfo('📁 Uploading file to storage', { path: fileName });
+      
+      let fileUrl = '';
+      
+      // Check if storage is available
+      if (!storage) {
+        addDebugInfo('⚠️ Storage service not available');
+        throw new Error('Firebase Storage service is not available');
+      }
+      
       const storageRef = ref(storage, fileName);
       
-      const snapshot = await uploadBytes(storageRef, file);
-      const fileUrl = await getDownloadURL(snapshot.ref);
+      // Use resumable upload for better reliability
+      const uploadTask = uploadBytesResumable(storageRef, file);
       
-      // Create note document in Firestore
+      fileUrl = await new Promise((resolve, reject) => {
+        uploadTask.on('state_changed', 
+          (snapshot) => {
+            // Progress tracking
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgress(Math.round(progress));
+            setCurrentStep(`Uploading file: ${Math.round(progress)}%`);
+            addDebugInfo(`📄 Upload progress: ${Math.round(progress)}%`);
+          }, 
+          (error) => {
+            // Handle upload errors
+            addDebugInfo('❌ Storage upload failed', error);
+            reject(error);
+          }, 
+          async () => {
+            // Upload completed successfully
+            try {
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              addDebugInfo('✅ File uploaded successfully, URL obtained');
+              resolve(downloadURL);
+            } catch (urlError) {
+              addDebugInfo('❌ Failed to get download URL', urlError);
+              reject(urlError);
+            }
+          }
+        );
+      });
+      
+      // Step 3: Create note document in Firestore
+      setCurrentStep('Saving note information...');
+      addDebugInfo('💾 Creating Firestore document');
+      
       const noteData = {
         title: formData.title,
         universityId: formData.university,
@@ -130,20 +254,79 @@ const Upload = () => {
         downloads: 0,
         rating: 0,
         ratingCount: 0,
+        ratingAvg: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
       
-      // Save to Firestore
-      await addDoc(collection(db, 'notes'), noteData);
+      addDebugInfo('💾 Saving to Firestore', { title: noteData.title, status: noteData.status });
       
+      const docRef = await addDoc(collection(db, 'notes'), noteData);
+      
+      addDebugInfo('✅ Document saved successfully', { documentId: docRef.id });
+      
+      // Success!
+      setUploadProgress(100);
+      setCurrentStep('Upload completed successfully!');
       setUploading(false);
       setUploadSuccess(true);
-      toast.success('Note uploaded successfully!');
+      toast.success('🎉 Note uploaded successfully!');
+      
+      addDebugInfo('🎉 Upload process completed successfully');
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Upload failed: ' + error.message);
+      // Log detailed error information
+      setCurrentStep('Error occurred');
+      addDebugInfo('❌ Upload failed', { 
+        message: error.message,
+        code: error.code || 'no_code',
+        stack: error.stack?.split('\n')[0] || 'no_stack'
+      });
+      
+      console.error('Upload error details:', error);
+      
+      // Provide specific error messages based on error type
+      let errorMessage = 'Upload failed: ';
+      let recoveryTip = '';
+      
+      if (error.code === 'storage/unauthorized') {
+        errorMessage += 'Permission denied.';
+        recoveryTip = 'Your account does not have permission to upload files. Please check your admin role or Firebase Storage rules.';
+        addDebugInfo('🛑 Storage permission denied');
+      } else if (error.code === 'storage/canceled') {
+        errorMessage += 'Upload was canceled.';
+        recoveryTip = 'Please try uploading again.';
+      } else if (error.code === 'storage/server-file-wrong-size') {
+        errorMessage += 'Upload failed due to network issues.';
+        recoveryTip = 'Try uploading a smaller file or check your internet connection.';
+      } else if (error.code === 'storage/retry-limit-exceeded') {
+        errorMessage += 'Upload timed out.';
+        recoveryTip = 'Try again with a more stable internet connection or a smaller file.';
+      } else if (error.code === 'storage/unknown' || error.message.includes('Firebase Storage')) {
+        errorMessage += 'Storage service error.';
+        recoveryTip = 'Check Firebase configuration and try again.';
+      } else if (error.message.includes('permission') || error.message.includes('Permission')) {
+        errorMessage += 'Permission issue detected.';
+        recoveryTip = 'Verify your admin status and permissions.';
+      } else if (error.message.includes('network') || error.message.includes('timeout')) {
+        errorMessage += 'Network issue detected.';
+        recoveryTip = 'Please check your internet connection and try again.';
+      } else {
+        errorMessage += error.message;
+      }
+      
+      // Show error toast with recovery tip
+      toast.error(errorMessage);
+      if (recoveryTip) {
+        setTimeout(() => {
+          toast(recoveryTip, {
+            icon: '❓',
+            duration: 6000
+          });
+        }, 1000);
+      }
+      
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -159,6 +342,9 @@ const Upload = () => {
               onClick={() => {
                 setUploadSuccess(false);
                 setFile(null);
+                setUploadProgress(0);
+                setCurrentStep('');
+                setDebugInfo([]);
                 setFormData({
                   title: '',
                   university: '',
@@ -196,6 +382,19 @@ const Upload = () => {
         </div>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Upload Notes</h1>
+        
+        {/* Firebase Configuration Warning */}
+        {!isFirebaseConfigured && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+            <div className="flex">
+              <ExclamationTriangleIcon className="h-5 w-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-red-800">
+                <p className="font-medium mb-1">Firebase Configuration Required</p>
+                <p>Firebase services are not properly configured. Please check your environment variables before uploading files.</p>
+              </div>
+            </div>
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* File Upload */}
@@ -367,6 +566,36 @@ const Upload = () => {
             </div>
           </div>
 
+          {/* Upload Progress */}
+          {uploading && (
+            <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Uploading Note</h3>
+                <p className="text-sm text-gray-600 mb-4">{currentStep}</p>
+                
+                {/* Progress Bar */}
+                <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+                  <div 
+                    className="bg-blue-600 h-3 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+                
+                <p className="text-sm text-gray-500">{uploadProgress}% completed</p>
+              </div>
+              
+              {/* Debug Information */}
+              {debugInfo.length > 0 && (
+                <div className="bg-gray-50 rounded-xl p-4 max-h-32 overflow-y-auto">
+                  <p className="text-xs font-medium text-gray-700 mb-2">Debug Information:</p>
+                  {debugInfo.map((info, index) => (
+                    <p key={index} className="text-xs text-gray-600 font-mono">{info}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={uploading || !file}
@@ -376,7 +605,14 @@ const Upload = () => {
                 : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
-            {uploading ? 'Uploading...' : 'Upload Note'}
+            {uploading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Uploading... {uploadProgress}%</span>
+              </div>
+            ) : (
+              'Upload Note'
+            )}
           </button>
         </form>
       </div>
