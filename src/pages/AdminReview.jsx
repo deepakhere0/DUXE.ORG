@@ -30,6 +30,7 @@ const AdminReview = () => {
   const { user, isAdmin } = useAuth();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
   const [filter, setFilter] = useState('pending'); // pending, approved, rejected, all
 
   // Redirect non-admin users
@@ -111,29 +112,56 @@ const AdminReview = () => {
     }
   };
 
-  const handleDelete = async (noteId, fileUrl) => {
+  const handleDelete = async (noteId, fileUrl, filePath) => {
     if (!window.confirm('Are you sure you want to permanently delete this note?')) {
       return;
     }
 
+    console.log('🗑️ Deleting note:', { noteId, fileUrl, filePath });
+    setDeletingId(noteId);
+
     try {
       // Delete file from storage if it exists
-      if (fileUrl) {
+      if (fileUrl || filePath) {
         try {
-          const storageRef = ref(storage, fileUrl);
-          await deleteObject(storageRef);
+          let storagePath = filePath;
+          
+          // If no filePath provided, extract from URL
+          if (!storagePath && fileUrl) {
+            // Extract path from Firebase Storage URL
+            // URL format: https://firebasestorage.googleapis.com/v0/b/BUCKET/o/PATH?alt=media&token=...
+            const urlMatch = fileUrl.match(/\/o\/([^?]+)/);
+            if (urlMatch) {
+              storagePath = decodeURIComponent(urlMatch[1]);
+            }
+          }
+          
+          if (storagePath) {
+            console.log('📂 Storage path:', storagePath);
+            const storageRef = ref(storage, storagePath);
+            await deleteObject(storageRef);
+            console.log('✅ File deleted from storage');
+          } else {
+            console.warn('⚠️ Could not determine storage path, skipping file deletion');
+          }
         } catch (storageError) {
-          console.warn('Error deleting file from storage:', storageError);
+          console.error('❌ Error deleting file from storage:', storageError);
+          // Continue with Firestore deletion even if storage deletion fails
         }
       }
       
       // Delete document from Firestore
+      console.log('🗑️ Deleting Firestore document...');
       await deleteDoc(doc(db, 'notes', noteId));
+      console.log('✅ Document deleted from Firestore');
+      
       toast.success('Note deleted permanently');
-      fetchNotes();
+      await fetchNotes();
     } catch (error) {
-      console.error('Error deleting note:', error);
-      toast.error('Failed to delete note');
+      console.error('❌ Error deleting note:', error);
+      toast.error('Failed to delete note: ' + error.message);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -331,11 +359,21 @@ const AdminReview = () => {
                     )}
                     
                     <button
-                      onClick={() => handleDelete(note.id, note.fileUrl)}
-                      className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm flex items-center"
+                      onClick={() => handleDelete(note.id, note.fileUrl, note.filePath)}
+                      disabled={deletingId === note.id}
+                      className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <TrashIcon className="h-4 w-4 mr-1" />
-                      Delete
+                      {deletingId === note.id ? (
+                        <>
+                          <div className="animate-spin h-4 w-4 mr-1 border-2 border-white border-t-transparent rounded-full" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <TrashIcon className="h-4 w-4 mr-1" />
+                          Delete
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
