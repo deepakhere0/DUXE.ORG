@@ -12,38 +12,78 @@ import {
   ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { showToast } from '../common/Toast';
+import { testPDFUrl, suggestFix } from '../../utils/pdfDiagnostics';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Configure PDF.js worker with local fallback
+if (typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+}
 
 const NotePreviewModal = ({ isOpen, onClose, note }) => {
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [fileType, setFileType] = useState(null);
+  const [renderReady, setRenderReady] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
 
   useEffect(() => {
     if (isOpen && note?.fileUrl) {
-      setLoading(true);
+      console.group('📝 Preview Modal Opening');
+      console.log('Note:', note);
+      console.log('File URL:', note.fileUrl);
+      console.log('File Type:', note.fileType);
+      
+      // Lock body scroll when modal opens
+      document.body.style.overflow = 'hidden';
+      
       setError(null);
       setPageNumber(1);
       setScale(1.0);
+      setRenderReady(false);
+      setUseFallback(false);
       
-      // Detect file type
+      // Detect file type immediately
       const url = note.fileUrl.toLowerCase();
+      let detectedType;
       if (url.includes('.pdf') || note.fileType === 'application/pdf') {
+        detectedType = 'pdf';
         setFileType('pdf');
+        setLoading(true);
       } else if (url.match(/\.(jpg|jpeg|png|webp|gif)$/i) || note.fileType?.startsWith('image/')) {
+        detectedType = 'image';
         setFileType('image');
+        setLoading(true);
       } else {
-        setFileType('pdf'); // Default to PDF
+        detectedType = 'pdf (default)';
+        setFileType('pdf');
+        setLoading(true);
       }
+      
+      console.log('📄 Detected file type:', detectedType);
+      console.log('⏱️ Render will be ready in 100ms');
+      console.groupEnd();
+      
+      // Delay render slightly for smoother transition
+      setTimeout(() => {
+        console.log('✅ Render ready!');
+        setRenderReady(true);
+      }, 100);
+    } else {
+      setRenderReady(false);
+      // Unlock body scroll when modal closes
+      document.body.style.overflow = 'unset';
     }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen, note]);
 
   // Keyboard shortcuts
@@ -119,14 +159,31 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
   };
 
   const onDocumentLoadSuccess = ({ numPages }) => {
+    console.log('✅ PDF loaded successfully!', { numPages });
     setNumPages(numPages);
     setLoading(false);
   };
 
-  const onDocumentLoadError = (error) => {
-    console.error('Error loading PDF:', error);
-    setError('Failed to load PDF. Please try again.');
-    setLoading(false);
+  const onDocumentLoadError = async (error) => {
+    console.error('❌ PDF Load Error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
+    console.error('PDF URL:', note?.fileUrl);
+    
+    // Run diagnostics
+    if (note?.fileUrl) {
+      const diagnostics = await testPDFUrl(note.fileUrl);
+      const suggestion = suggestFix(diagnostics);
+      console.log('💡 Suggestion:', suggestion);
+    }
+    
+    // Try fallback iframe method for CORS issues
+    console.log('🔄 Attempting fallback iframe preview...');
+    setUseFallback(true);
+    setLoading(true); // Set loading for iframe
   };
 
   const formatDate = (timestamp) => {
@@ -151,18 +208,18 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center"
+        className="fixed inset-0 z-[9999] flex items-center justify-center"
         onClick={onClose}
       >
         {/* Backdrop with blur */}
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" style={{ zIndex: -1 }} />
 
         {/* Modal Container */}
         <motion.div
-          initial={{ scale: 0.95, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          transition={{ type: "spring", duration: 0.5 }}
+          initial={{ scale: 0.98, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.98, opacity: 0 }}
+          transition={{ duration: 0.15 }}
           className="relative w-full h-full md:w-[95vw] md:h-[95vh] md:max-w-7xl md:rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
@@ -236,15 +293,15 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-auto bg-gray-100 p-4">
-            {loading && (
+          <div className="flex-1 overflow-auto bg-gray-100 p-4" style={{ minHeight: '400px' }}>
+            {!renderReady ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-navy-600 border-r-transparent"></div>
-                  <p className="mt-4 text-gray-600">Loading preview...</p>
+                  <p className="mt-4 text-gray-600">Preparing preview...</p>
                 </div>
               </div>
-            )}
+            ) : null}
 
             {error && (
               <div className="flex items-center justify-center h-full">
@@ -266,30 +323,83 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
               </div>
             )}
 
-            {!loading && !error && (
+            {renderReady && !error ? (
               <div className="flex items-center justify-center min-h-full">
-                {fileType === 'pdf' ? (
-                  <div className="bg-white shadow-lg">
+                {console.log('📺 Rendering content...', { fileType, useFallback, noteUrl: note?.fileUrl })}
+                {fileType === 'pdf' && !useFallback ? (
+                  <div className="bg-white shadow-lg w-full h-full">
                     <Document
-                      file={note.fileUrl}
+                      file={{
+                        url: note.fileUrl,
+                        httpHeaders: {
+                          'Accept': 'application/pdf',
+                        },
+                        withCredentials: false,
+                      }}
                       onLoadSuccess={onDocumentLoadSuccess}
                       onLoadError={onDocumentLoadError}
                       loading={
                         <div className="flex items-center justify-center p-8">
                           <div className="animate-spin h-8 w-8 border-4 border-navy-600 border-r-transparent rounded-full"></div>
+                          <p className="ml-3 text-gray-600">Loading PDF...</p>
                         </div>
                       }
+                      options={{
+                        cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
+                        cMapPacked: true,
+                        standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+                        disableAutoFetch: false,
+                        disableStream: false,
+                        isEvalSupported: false,
+                      }}
                     >
                       <Page
                         pageNumber={pageNumber}
                         scale={scale}
-                        renderTextLayer={true}
-                        renderAnnotationLayer={true}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                        loading={
+                          <div className="flex items-center justify-center p-8">
+                            <div className="animate-spin h-6 w-6 border-2 border-navy-600 border-r-transparent rounded-full"></div>
+                          </div>
+                        }
                       />
                     </Document>
                   </div>
+                ) : fileType === 'pdf' && useFallback ? (
+                  <div className="w-full h-full bg-white flex items-center justify-center">
+                    {loading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+                        <div className="text-center">
+                          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-navy-600 border-r-transparent"></div>
+                          <p className="mt-4 text-gray-600">Loading PDF preview...</p>
+                        </div>
+                      </div>
+                    )}
+                    <iframe
+                      src={note.fileUrl}
+                      className="w-full h-full border-0"
+                      title={note.title || 'PDF Preview'}
+                      onLoad={() => {
+                        console.log('✅ Iframe loaded successfully');
+                        setLoading(false);
+                      }}
+                      onError={(e) => {
+                        console.error('❌ Iframe load error:', e);
+                        setError('Unable to load PDF preview. Please try downloading.');
+                        setLoading(false);
+                      }}
+                      sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                      allow="fullscreen"
+                    />
+                  </div>
                 ) : (
-                  <div className="max-w-full max-h-full flex items-center justify-center">
+                  <div className="max-w-full max-h-full flex items-center justify-center relative">
+                    {loading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                        <div className="animate-spin h-8 w-8 border-4 border-navy-600 border-r-transparent rounded-full"></div>
+                      </div>
+                    )}
                     <img
                       src={note.fileUrl}
                       alt={note.title}
@@ -304,7 +414,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
                   </div>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Bottom Pagination (PDF only) */}

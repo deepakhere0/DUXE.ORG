@@ -5,6 +5,7 @@ import SemesterDropdown from '../components/notes/SemesterDropdown';
 import SearchBar from '../components/notes/SearchBar';
 import NoteCard from '../components/notes/NoteCard';
 import { notesService } from '../services/notesService';
+import NotePreviewModal from '../components/notes/NotePreviewModal';
 
 const NotesPage = () => {
   // Filters and state
@@ -18,6 +19,10 @@ const NotesPage = () => {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [lastDoc, setLastDoc] = useState(null);
+  
+  // Preview modal state
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   // Stats
   const [stats, setStats] = useState({
@@ -135,9 +140,8 @@ const NotesPage = () => {
 
   // Handle view/preview
   const handleView = async (note) => {
-    if (note.fileUrl) {
-      window.open(note.fileUrl, '_blank');
-    }
+    setSelectedNote(note);
+    setIsPreviewOpen(true);
   };
 
   // Clear filters
@@ -253,6 +257,16 @@ const NotesPage = () => {
           </div>
         )}
       </div>
+
+      {/* Preview Modal */}
+      <NotePreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setSelectedNote(null);
+        }}
+        note={selectedNote}
+      />
     </div>
   );
 };
