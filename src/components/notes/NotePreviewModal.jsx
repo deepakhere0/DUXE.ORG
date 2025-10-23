@@ -39,23 +39,30 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
       console.log('Note:', note);
       console.log('File URL:', note.fileUrl);
       console.log('File Type:', note.fileType);
-      
+
       // Lock body scroll when modal opens
       document.body.style.overflow = 'hidden';
-      
+
       setError(null);
       setPageNumber(1);
       setScale(1.0);
       setRenderReady(false);
-      setUseFallback(false);
-      
-      // Detect file type immediately
+
+      // Detect file type and determine best preview method
       const url = note.fileUrl.toLowerCase();
       let detectedType;
+      let shouldUseFallback = false;
+
       if (url.includes('.pdf') || note.fileType === 'application/pdf') {
         detectedType = 'pdf';
         setFileType('pdf');
         setLoading(true);
+
+        // Use iframe directly for Firebase Storage URLs (CORS issues with PDF.js)
+        if (url.includes('firebasestorage.googleapis.com') || url.includes('firebase')) {
+          console.log('🔥 Firebase Storage detected - using iframe directly');
+          shouldUseFallback = true;
+        }
       } else if (url.match(/\.(jpg|jpeg|png|webp|gif)$/i) || note.fileType?.startsWith('image/')) {
         detectedType = 'image';
         setFileType('image');
@@ -64,9 +71,13 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
         detectedType = 'pdf (default)';
         setFileType('pdf');
         setLoading(true);
+        shouldUseFallback = true; // Default to iframe for unknown types
       }
-      
+
+      setUseFallback(shouldUseFallback);
+
       console.log('📄 Detected file type:', detectedType);
+      console.log('🔧 Use fallback iframe:', shouldUseFallback);
       console.log('⏱️ Render ready immediately');
       console.groupEnd();
 
@@ -77,7 +88,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
       // Unlock body scroll when modal closes
       document.body.style.overflow = 'unset';
     }
-    
+
     // Cleanup on unmount
     return () => {
       document.body.style.overflow = 'unset';
@@ -241,7 +252,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 ml-4">
-              {fileType === 'pdf' && (
+              {fileType === 'pdf' && !useFallback && (
                 <>
                   <button
                     onClick={handleZoomOut}
@@ -376,19 +387,14 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
                       </div>
                     )}
                     <iframe
-                      src={note.fileUrl}
+                      src={`${note.fileUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
                       className="w-full h-full border-0 min-h-[500px]"
                       title={note.title || 'PDF Preview'}
+                      style={{ display: loading ? 'none' : 'block' }}
                       onLoad={() => {
                         console.log('✅ Iframe loaded successfully');
-                        setLoading(false);
+                        setTimeout(() => setLoading(false), 500);
                       }}
-                      onError={(e) => {
-                        console.error('❌ Iframe load error:', e);
-                        setError('Unable to load PDF preview. Please try downloading.');
-                        setLoading(false);
-                      }}
-                      sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
                       allow="fullscreen"
                     />
                   </div>
@@ -416,8 +422,8 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
             ) : null}
           </div>
 
-          {/* Bottom Pagination (PDF only) */}
-          {fileType === 'pdf' && numPages && !error && (
+          {/* Bottom Pagination (PDF only - react-pdf mode) */}
+          {fileType === 'pdf' && !useFallback && numPages && !error && (
             <div className="flex items-center justify-center gap-4 px-6 py-3 bg-white border-t border-gray-200">
               <button
                 onClick={() => setPageNumber(prev => Math.max(prev - 1, 1))}
@@ -427,11 +433,11 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
               >
                 <ChevronLeftIcon className="h-5 w-5" />
               </button>
-              
+
               <span className="text-sm font-medium text-gray-700">
                 Page {pageNumber} of {numPages}
               </span>
-              
+
               <button
                 onClick={() => setPageNumber(prev => Math.min(prev + 1, numPages))}
                 disabled={pageNumber >= numPages}
