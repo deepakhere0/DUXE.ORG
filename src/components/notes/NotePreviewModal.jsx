@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { 
-  XMarkIcon, 
-  MagnifyingGlassPlusIcon, 
+import {
+  XMarkIcon,
+  MagnifyingGlassPlusIcon,
   MagnifyingGlassMinusIcon,
   ArrowsPointingOutIcon,
   ArrowsPointingInIcon,
@@ -38,23 +39,30 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
       console.log('Note:', note);
       console.log('File URL:', note.fileUrl);
       console.log('File Type:', note.fileType);
-      
+
       // Lock body scroll when modal opens
       document.body.style.overflow = 'hidden';
-      
+
       setError(null);
       setPageNumber(1);
       setScale(1.0);
       setRenderReady(false);
-      setUseFallback(false);
-      
-      // Detect file type immediately
+
+      // Detect file type and determine best preview method
       const url = note.fileUrl.toLowerCase();
       let detectedType;
+      let shouldUseFallback = false;
+
       if (url.includes('.pdf') || note.fileType === 'application/pdf') {
         detectedType = 'pdf';
         setFileType('pdf');
         setLoading(true);
+
+        // Use iframe directly for Firebase Storage URLs (CORS issues with PDF.js)
+        if (url.includes('firebasestorage.googleapis.com') || url.includes('firebase')) {
+          console.log('🔥 Firebase Storage detected - using iframe directly');
+          shouldUseFallback = true;
+        }
       } else if (url.match(/\.(jpg|jpeg|png|webp|gif)$/i) || note.fileType?.startsWith('image/')) {
         detectedType = 'image';
         setFileType('image');
@@ -63,23 +71,24 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
         detectedType = 'pdf (default)';
         setFileType('pdf');
         setLoading(true);
+        shouldUseFallback = true; // Default to iframe for unknown types
       }
-      
+
+      setUseFallback(shouldUseFallback);
+
       console.log('📄 Detected file type:', detectedType);
-      console.log('⏱️ Render will be ready in 100ms');
+      console.log('🔧 Use fallback iframe:', shouldUseFallback);
+      console.log('⏱️ Render ready immediately');
       console.groupEnd();
-      
-      // Delay render slightly for smoother transition
-      setTimeout(() => {
-        console.log('✅ Render ready!');
-        setRenderReady(true);
-      }, 100);
+
+      // Set render ready immediately for faster preview
+      setRenderReady(true);
     } else {
       setRenderReady(false);
       // Unlock body scroll when modal closes
       document.body.style.overflow = 'unset';
     }
-    
+
     // Cleanup on unmount
     return () => {
       document.body.style.overflow = 'unset';
@@ -202,17 +211,18 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
 
   if (!isOpen || !note) return null;
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[9999] flex items-center justify-center"
+        className="fixed inset-0 z-[99999] flex items-center justify-center"
+        style={{ isolation: 'isolate' }}
         onClick={onClose}
       >
         {/* Backdrop with blur */}
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" style={{ zIndex: -1 }} />
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
 
         {/* Modal Container */}
         <motion.div
@@ -242,7 +252,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 ml-4">
-              {fileType === 'pdf' && (
+              {fileType === 'pdf' && !useFallback && (
                 <>
                   <button
                     onClick={handleZoomOut}
@@ -293,7 +303,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-auto bg-gray-100 p-4" style={{ minHeight: '400px' }}>
+          <div className="flex-1 overflow-auto bg-gray-100 p-4" style={{ minHeight: '500px', height: 'calc(100vh - 160px)' }}>
             {!renderReady ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
@@ -324,10 +334,10 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
             )}
 
             {renderReady && !error ? (
-              <div className="flex items-center justify-center min-h-full">
+              <div className="flex items-center justify-center w-full h-full">
                 {console.log('📺 Rendering content...', { fileType, useFallback, noteUrl: note?.fileUrl })}
                 {fileType === 'pdf' && !useFallback ? (
-                  <div className="bg-white shadow-lg w-full h-full">
+                  <div className="bg-white shadow-lg w-full h-full flex items-center justify-center">
                     <Document
                       file={{
                         url: note.fileUrl,
@@ -367,7 +377,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
                     </Document>
                   </div>
                 ) : fileType === 'pdf' && useFallback ? (
-                  <div className="w-full h-full bg-white flex items-center justify-center">
+                  <div className="relative w-full h-full bg-white">
                     {loading && (
                       <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
                         <div className="text-center">
@@ -377,19 +387,14 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
                       </div>
                     )}
                     <iframe
-                      src={note.fileUrl}
-                      className="w-full h-full border-0"
+                      src={`${note.fileUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
+                      className="w-full h-full border-0 min-h-[500px]"
                       title={note.title || 'PDF Preview'}
+                      style={{ display: loading ? 'none' : 'block' }}
                       onLoad={() => {
                         console.log('✅ Iframe loaded successfully');
-                        setLoading(false);
+                        setTimeout(() => setLoading(false), 500);
                       }}
-                      onError={(e) => {
-                        console.error('❌ Iframe load error:', e);
-                        setError('Unable to load PDF preview. Please try downloading.');
-                        setLoading(false);
-                      }}
-                      sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
                       allow="fullscreen"
                     />
                   </div>
@@ -417,8 +422,8 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
             ) : null}
           </div>
 
-          {/* Bottom Pagination (PDF only) */}
-          {fileType === 'pdf' && numPages && !error && (
+          {/* Bottom Pagination (PDF only - react-pdf mode) */}
+          {fileType === 'pdf' && !useFallback && numPages && !error && (
             <div className="flex items-center justify-center gap-4 px-6 py-3 bg-white border-t border-gray-200">
               <button
                 onClick={() => setPageNumber(prev => Math.max(prev - 1, 1))}
@@ -428,11 +433,11 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
               >
                 <ChevronLeftIcon className="h-5 w-5" />
               </button>
-              
+
               <span className="text-sm font-medium text-gray-700">
                 Page {pageNumber} of {numPages}
               </span>
-              
+
               <button
                 onClick={() => setPageNumber(prev => Math.min(prev + 1, numPages))}
                 disabled={pageNumber >= numPages}
@@ -447,6 +452,9 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
       </motion.div>
     </AnimatePresence>
   );
+
+  // Render modal at document root using Portal
+  return createPortal(modalContent, document.body);
 };
 
 export default NotePreviewModal;
