@@ -1,0 +1,342 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Document, Page, pdfjs } from 'react-pdf';
+import { 
+  XMarkIcon, 
+  MagnifyingGlassPlusIcon, 
+  MagnifyingGlassMinusIcon,
+  ArrowsPointingOutIcon,
+  ArrowsPointingInIcon,
+  ArrowDownTrayIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
+} from '@heroicons/react/24/outline';
+import { showToast } from '../common/Toast';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+const NotePreviewModal = ({ isOpen, onClose, note }) => {
+  const [numPages, setNumPages] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [scale, setScale] = useState(1.0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [fileType, setFileType] = useState(null);
+
+  useEffect(() => {
+    if (isOpen && note?.fileUrl) {
+      setLoading(true);
+      setError(null);
+      setPageNumber(1);
+      setScale(1.0);
+      
+      // Detect file type
+      const url = note.fileUrl.toLowerCase();
+      if (url.includes('.pdf') || note.fileType === 'application/pdf') {
+        setFileType('pdf');
+      } else if (url.match(/\.(jpg|jpeg|png|webp|gif)$/i) || note.fileType?.startsWith('image/')) {
+        setFileType('image');
+      } else {
+        setFileType('pdf'); // Default to PDF
+      }
+    }
+  }, [isOpen, note]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyPress = (e) => {
+      switch(e.key) {
+        case 'Escape':
+          onClose();
+          break;
+        case 'ArrowLeft':
+          if (fileType === 'pdf' && pageNumber > 1) {
+            setPageNumber(prev => prev - 1);
+          }
+          break;
+        case 'ArrowRight':
+          if (fileType === 'pdf' && pageNumber < numPages) {
+            setPageNumber(prev => prev + 1);
+          }
+          break;
+        case '+':
+        case '=':
+          handleZoomIn();
+          break;
+        case '-':
+          handleZoomOut();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isOpen, pageNumber, numPages, fileType]);
+
+  const handleZoomIn = () => {
+    setScale(prev => Math.min(prev + 0.2, 3.0));
+  };
+
+  const handleZoomOut = () => {
+    setScale(prev => Math.max(prev - 0.2, 0.5));
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.();
+      setIsFullscreen(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(note.fileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = note.fileName || note.title || 'download';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      showToast('Download started', 'success');
+    } catch (err) {
+      console.error('Download failed:', err);
+      showToast('Download failed. Please try again.', 'error');
+    }
+  };
+
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages);
+    setLoading(false);
+  };
+
+  const onDocumentLoadError = (error) => {
+    console.error('Error loading PDF:', error);
+    setError('Failed to load PDF. Please try again.');
+    setLoading(false);
+  };
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'Unknown date';
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  if (!isOpen || !note) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        onClick={onClose}
+      >
+        {/* Backdrop with blur */}
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+        {/* Modal Container */}
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 20 }}
+          transition={{ type: "spring", duration: 0.5 }}
+          className="relative w-full h-full md:w-[95vw] md:h-[95vh] md:max-w-7xl md:rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Top Toolbar */}
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-navy-600 to-navy-500 text-white border-b border-navy-400">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl font-bold truncate">{note.title}</h2>
+              <div className="flex items-center gap-4 mt-1 text-sm text-gray-200">
+                <span className="flex items-center gap-1">
+                  <span className="font-medium">Subject:</span> {note.subject || 'N/A'}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="font-medium">Author:</span> {note.authorName || 'Anonymous'}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="font-medium">Uploaded:</span> {formatDate(note.createdAt)}
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 ml-4">
+              {fileType === 'pdf' && (
+                <>
+                  <button
+                    onClick={handleZoomOut}
+                    className="p-2 hover:bg-navy-400/30 rounded-lg transition-colors"
+                    title="Zoom Out (-)"
+                  >
+                    <MagnifyingGlassMinusIcon className="h-5 w-5" />
+                  </button>
+                  <span className="text-sm font-medium">{Math.round(scale * 100)}%</span>
+                  <button
+                    onClick={handleZoomIn}
+                    className="p-2 hover:bg-navy-400/30 rounded-lg transition-colors"
+                    title="Zoom In (+)"
+                  >
+                    <MagnifyingGlassPlusIcon className="h-5 w-5" />
+                  </button>
+                </>
+              )}
+              
+              <button
+                onClick={toggleFullscreen}
+                className="p-2 hover:bg-navy-400/30 rounded-lg transition-colors"
+                title="Toggle Fullscreen"
+              >
+                {isFullscreen ? (
+                  <ArrowsPointingInIcon className="h-5 w-5" />
+                ) : (
+                  <ArrowsPointingOutIcon className="h-5 w-5" />
+                )}
+              </button>
+              
+              <button
+                onClick={handleDownload}
+                className="p-2 hover:bg-navy-400/30 rounded-lg transition-colors"
+                title="Download"
+              >
+                <ArrowDownTrayIcon className="h-5 w-5" />
+              </button>
+              
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-red-500/30 rounded-lg transition-colors"
+                title="Close (ESC)"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="flex-1 overflow-auto bg-gray-100 p-4">
+            {loading && (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-navy-600 border-r-transparent"></div>
+                  <p className="mt-4 text-gray-600">Loading preview...</p>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center max-w-md p-6 bg-white rounded-lg shadow-lg">
+                  <div className="text-red-500 mb-4">
+                    <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Preview Not Available</h3>
+                  <p className="text-gray-600 mb-4">{error}</p>
+                  <button
+                    onClick={handleDownload}
+                    className="px-4 py-2 bg-navy-600 text-white rounded-lg hover:bg-navy-700"
+                  >
+                    Download Instead
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!loading && !error && (
+              <div className="flex items-center justify-center min-h-full">
+                {fileType === 'pdf' ? (
+                  <div className="bg-white shadow-lg">
+                    <Document
+                      file={note.fileUrl}
+                      onLoadSuccess={onDocumentLoadSuccess}
+                      onLoadError={onDocumentLoadError}
+                      loading={
+                        <div className="flex items-center justify-center p-8">
+                          <div className="animate-spin h-8 w-8 border-4 border-navy-600 border-r-transparent rounded-full"></div>
+                        </div>
+                      }
+                    >
+                      <Page
+                        pageNumber={pageNumber}
+                        scale={scale}
+                        renderTextLayer={true}
+                        renderAnnotationLayer={true}
+                      />
+                    </Document>
+                  </div>
+                ) : (
+                  <div className="max-w-full max-h-full flex items-center justify-center">
+                    <img
+                      src={note.fileUrl}
+                      alt={note.title}
+                      className="max-w-full max-h-full object-contain shadow-lg rounded-lg"
+                      style={{ transform: `scale(${scale})` }}
+                      onLoad={() => setLoading(false)}
+                      onError={() => {
+                        setError('Failed to load image');
+                        setLoading(false);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Pagination (PDF only) */}
+          {fileType === 'pdf' && numPages && !error && (
+            <div className="flex items-center justify-center gap-4 px-6 py-3 bg-white border-t border-gray-200">
+              <button
+                onClick={() => setPageNumber(prev => Math.max(prev - 1, 1))}
+                disabled={pageNumber <= 1}
+                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Previous Page (←)"
+              >
+                <ChevronLeftIcon className="h-5 w-5" />
+              </button>
+              
+              <span className="text-sm font-medium text-gray-700">
+                Page {pageNumber} of {numPages}
+              </span>
+              
+              <button
+                onClick={() => setPageNumber(prev => Math.min(prev + 1, numPages))}
+                disabled={pageNumber >= numPages}
+                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Next Page (→)"
+              >
+                <ChevronRightIcon className="h-5 w-5" />
+              </button>
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+export default NotePreviewModal;

@@ -14,6 +14,7 @@ import NoteDetail from './pages/NoteDetail';
 import Upload from './pages/Upload';
 import UploadDev from './pages/UploadDev'; // Temporary development upload
 import AdminReview from './pages/AdminReview';
+import Pending from './pages/Pending';
 import Tools from './pages/Tools';
 import Videos from './pages/Videos';
 import Internships from './pages/Internships';
@@ -70,6 +71,11 @@ function App() {
               <Route path="notes" element={<NotesPortal />} />
               <Route path="notes-old" element={<Notes />} />
               <Route path="notes/:noteId" element={<NoteDetail />} />
+              <Route path="/pending" element={
+  <ProtectedRoute>
+    <Pending />
+  </ProtectedRoute>
+} />
               <Route path="videos" element={<Videos />} />
               <Route path="internships" element={<Internships />} />
               <Route path="how-it-works" element={<HowItWorks />} />

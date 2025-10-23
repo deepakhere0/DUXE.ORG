@@ -81,8 +81,58 @@ export const Notes = {
     const docs = await listDocs(this.collection, { filters, sort: { field: 'createdAt', dir: 'desc' }, take: 50 });
     return queryText ? docs.filter((d) => (d.title || '').toLowerCase().includes(queryText.toLowerCase())) : docs;
   },
+  // ADD THESE NEW FUNCTIONS ↓↓↓
+  async listPending(userId) {
+    const filters = [
+      { field: 'createdBy', value: userId },
+      { field: 'status', value: 'pending' }
+    ];
+    return listDocs(this.collection, { filters,
+       sort: { field: 'createdAt', dir: 'desc' },
+        take: 100 });
+  },
+  async listByUser(userId) {
+    const filters = [{ field: 'createdBy', value: userId }];
+    return listDocs(this.collection, { filters, sort: { field: 'createdAt', dir: 'desc' }, take: 100 });
+  },
+  async listForReview() {
+    const filters = [{ field: 'status', value: 'pending' }];
+    return listDocs(this.collection, { filters, sort: { field: 'createdAt', dir: 'desc' }, take: 100 });
+  },
+  async listRejected(userId) {
+    const filters = [
+      { field: 'createdBy', value: userId },
+      { field: 'status', value: 'rejected' }
+    ];
+    return listDocs(this.collection, { filters, sort: { field: 'createdAt', dir: 'desc' }, take: 100 });
+  },
+
   async incrementDownload(id) { ensureDb(); await updateDoc(ref(this.collection, id), { downloads: increment(1) }); }
 };
+  // Note CRUD operations
+export const createNote = async (noteData) => {
+  return createDoc(Notes.collection, noteData);
+};
+
+export const getNoteById = async (noteId) => {
+  return readDoc(Notes.collection, noteId);
+};
+
+export const updateNote = async (noteId, updates) => {
+  return updateDocById(Notes.collection, noteId, updates);
+};
+export const deleteNote = async (noteId) => {
+  return deleteDocById(Notes.collection, noteId);
+};
+
+export const getPendingNotes = async (userId) => {
+  return Notes.listPending(userId);
+};
+
+export const getNotesForReview = async () => {
+  return Notes.listForReview();
+};
+
 
 export const AIJobs = {
   collection: 'aiJobs',

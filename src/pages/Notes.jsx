@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { collection, query, where, orderBy, limit, getDocs, startAfter } from 'firebase/firestore';
 import { db } from '../services/firebase';
@@ -20,13 +20,17 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import FilterBar from '../components/common/FilterBar';
 import LazyNoteCard from '../components/common/LazyNoteCard';
 import { SkeletonCard } from '../components/common/Skeleton';
+import NotePreviewModal from '../components/notes/NotePreviewModal';
 
 const Notes = () => {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({});
   const [sortBy, setSortBy] = useState('popular');
   const [page, setPage] = useState(1);
   const [lastVisible, setLastVisible] = useState(null);
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const notesPerPage = 12;
   
   // Fetch universities and departments from Firestore
@@ -254,8 +258,11 @@ const Notes = () => {
                   fileUrl: note.fileUrl || '',
                   thumbnailUrl: note.thumbnailUrl || 'https://via.placeholder.com/200x300',
                 }}
-                onPreview={() => (window.location.href = `/notes/${note.id}`)}
-                onDownload={() => console.log('download', note.id)}
+                onPreview={() => {
+                  setSelectedNote(note);
+                  setIsPreviewOpen(true);
+                }}
+    onDownload={() => console.log('download', note.id)}
                 onBookmark={() => console.log('bookmark', note.id)}
               />
             ))}
@@ -293,6 +300,16 @@ const Notes = () => {
           </div>
         )}
       </div>
+
+      {/* Preview Modal */}
+      <NotePreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setSelectedNote(null);
+        }}
+        note={selectedNote}
+      />
     </div>
   );
 };

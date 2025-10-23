@@ -1,620 +1,554 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  CloudArrowUpIcon,
-  DocumentTextIcon,
-  XMarkIcon,
-  CheckCircleIcon,
-  InformationCircleIcon,
-  ShieldExclamationIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline';
-import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
-import { db, storage, isFirebaseConfigured } from '../services/firebase';
-import toast from 'react-hot-toast';
+import { uploadFile } from '../services/storage';
+import { createNote } from '../services/firestoreData';
+import { showToast } from '../components/common/Toast';
+import { Upload as UploadIcon, File, X, CheckCircle, AlertCircle, Eye } from 'lucide-react';
+import NotePreviewModal from '../components/notes/NotePreviewModal';
 
 const Upload = () => {
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState('');
-  const [debugInfo, setDebugInfo] = useState([]);
+
   const [formData, setFormData] = useState({
     title: '',
-    university: '',
-    department: '',
+    courseCode: '',
     subject: '',
     semester: '',
-    courseCode: '',
+    universityId: 'uni1',
+    departmentId: 'dept1',
+    pages: '',
     description: '',
-    tags: ''
   });
 
-  // Debug logging helper
-  const addDebugInfo = (message, data = null) => {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = `[${timestamp}] ${message}`;
-    console.log(logEntry, data);
-    setDebugInfo(prev => [...prev, logEntry].slice(-10)); // Keep last 10 entries
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Check Firebase configuration on component mount
-  useEffect(() => {
-    if (!isFirebaseConfigured) {
-      addDebugInfo('⚠️ Firebase not properly configured');
-      toast.error('Firebase is not properly configured. Please check environment variables.');
-    } else {
-      addDebugInfo('✅ Firebase configuration verified');
-    }
-  }, []);
-
-  // Redirect non-admin users
-  useEffect(() => {
-    if (!isAdmin && user) {
-      addDebugInfo('❌ Access denied - user is not admin');
-      toast.error('Access denied. Admin privileges required.');
-      navigate('/notes');
-    } else if (isAdmin && user) {
-      addDebugInfo('✅ Admin access confirmed', { email: user.email, role: user.userData?.role });
-    }
-  }, [isAdmin, user, navigate]);
-
-  // Show loading while checking auth
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show access denied for non-admin users
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md">
-          <ShieldExclamationIcon className="h-24 w-24 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600 mb-6">
-            You don't have permission to access this page. Only administrators can upload notes.
-          </p>
-          <button 
-            onClick={() => navigate('/notes')} 
-            className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
-          >
-            Browse Notes
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
+  // Handle file selection
+  const handleFileChange = (selectedFile) => {
     if (selectedFile) {
-      // Check file size (max 50MB)
-      if (selectedFile.size > 50 * 1024 * 1024) {
-        toast.error('File size must be less than 50MB');
+      // Validate file size
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (selectedFile.size > maxSize) {
+        setError('File too large. Maximum size: 50MB');
         return;
       }
-      // Check file type
-      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
-      if (!allowedTypes.includes(selectedFile.type)) {
-        toast.error('Only PDF and image files are allowed');
+
+      // Validate file type
+      const allowedTypes = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.webp'];
+      const fileExt = '.' + selectedFile.name.split('.').pop().toLowerCase();
+      if (!allowedTypes.includes(fileExt)) {
+        setError('Invalid file type. Allowed: PDF, Word, Images');
         return;
       }
+
       setFile(selectedFile);
+      setError(null);
+      console.log('📎 File selected:', selectedFile.name);
     }
   };
 
+  // Handle preview before upload
+  const handlePreview = () => {
+    if (!file) {
+      showToast('Please select a file first', 'error');
+      return;
+    }
+
+    // Create temporary URL for preview
+    const fileUrl = URL.createObjectURL(file);
+    const previewNote = {
+      title: formData.title || 'Preview',
+      subject: formData.subject || 'N/A',
+      authorName: currentUser.displayName || currentUser.email || 'You',
+      createdAt: new Date(),
+      fileUrl: fileUrl,
+      fileName: file.name,
+      fileType: file.type,
+    };
+
+    setPreviewFile(previewNote);
+    setIsPreviewOpen(true);
+  };
+
+  // Handle drag events
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  // Handle drop
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileChange(e.dataTransfer.files[0]);
+    }
+  };
+
+  // Validate form
+  const validateForm = () => {
+    if (!file) {
+      showToast('Please select a file', 'error');
+      return false;
+    }
+
+    const required = ['title', 'courseCode', 'subject', 'semester', 'universityId', 'departmentId'];
+    for (const field of required) {
+      if (!formData[field]?.trim()) {
+        showToast(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`, 'error');
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Initial validation
-    if (!file) {
-      toast.error('Please select a file to upload');
-      return;
-    }
 
-    if (!isFirebaseConfigured) {
-      toast.error('Firebase is not properly configured. Cannot upload files.');
-      return;
-    }
+    console.log('🎯 Form submitted');
+    console.log('👤 Current user:', currentUser);
+    console.log('📄 File:', file);
 
-    if (!user || !isAdmin) {
-      toast.error('Admin authentication required');
-      return;
-    }
+    if (!validateForm()) return;
 
-    // Reset states
     setUploading(true);
     setUploadProgress(0);
-    setCurrentStep('Starting upload...');
-    addDebugInfo('🚀 Starting upload process', { fileName: file.name, fileSize: file.size });
-    
+    setError(null);
+
     try {
-      // Step 1: Validate user permissions in Firestore first
-      setCurrentStep('Validating admin permissions...');
-      addDebugInfo('🔐 Validating user permissions in database');
-      
-      // Skip database check if we already know user is admin from AuthContext
-      if (isAdmin) {
-        addDebugInfo('✅ Admin permissions verified from Auth Context');
-      } else {
-        // Double-check in database if AuthContext says not admin
-        const userDoc = doc(db, 'users', user.uid);
-        const userData = await import('firebase/firestore').then(({ getDoc }) => getDoc(userDoc));
-        
-        if (!userData.exists()) {
-          addDebugInfo('⚠️ User document not found in database, creating admin document');
-          // Create admin document for authenticated user
-          await import('firebase/firestore').then(({ setDoc }) => 
-            setDoc(doc(db, 'users', user.uid), {
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName || user.email,
-              role: 'admin',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              bookmarks: [],
-              skills: []
-            })
-          );
-          addDebugInfo('✅ Admin document created');
-        } else {
-          const userRole = userData.data().role;
-          const normalizedRole = userRole ? String(userRole).trim().toLowerCase() : 'user';
-          
-          if (normalizedRole !== 'admin') {
-            addDebugInfo(`❌ User role is '${userRole}' (normalized: '${normalizedRole}'), not admin`);
-            throw new Error(`Insufficient permissions. User role: ${userRole || 'not set'}. Please ensure your account has admin privileges.`);
-          }
-          addDebugInfo('✅ Admin permissions verified in database');
-        }
-      }
-      
-      // Step 2: Upload file to Firebase Storage with progress tracking
-      setCurrentStep('Uploading file to storage...');
-      const timestamp = Date.now();
-      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const fileName = `notes/${timestamp}_${sanitizedFileName}`;
-      
-      addDebugInfo('📁 Uploading file to storage', { path: fileName });
-      
-      let fileUrl = '';
-      
-      // Check if storage is available
-      if (!storage) {
-        addDebugInfo('⚠️ Storage service not available');
-        throw new Error('Firebase Storage service is not available');
-      }
-      
-      const storageRef = ref(storage, fileName);
-      
-      // Use resumable upload for better reliability
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      
-      fileUrl = await new Promise((resolve, reject) => {
-        uploadTask.on('state_changed', 
-          (snapshot) => {
-            // Progress tracking
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setUploadProgress(Math.round(progress));
-            setCurrentStep(`Uploading file: ${Math.round(progress)}%`);
-            addDebugInfo(`📄 Upload progress: ${Math.round(progress)}%`);
-          }, 
-          (error) => {
-            // Handle upload errors
-            addDebugInfo('❌ Storage upload failed', error);
-            reject(error);
-          }, 
-          async () => {
-            // Upload completed successfully
-            try {
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              addDebugInfo('✅ File uploaded successfully, URL obtained');
-              resolve(downloadURL);
-            } catch (urlError) {
-              addDebugInfo('❌ Failed to get download URL', urlError);
-              reject(urlError);
-            }
-          }
-        );
+      console.log('📤 Starting file upload...');
+
+      // Upload file to Storage
+      const uploadResult = await uploadFile(file, {
+        path: 'notes',
+        userId: currentUser.uid,
+        onProgress: (progress) => {
+          console.log('Progress:', progress + '%');
+          setUploadProgress(progress);
+        },
       });
-      
-      // Step 3: Create note document in Firestore
-      setCurrentStep('Saving note information...');
-      addDebugInfo('💾 Creating Firestore document');
-      
+
+      console.log('✅ File uploaded:', uploadResult);
+
+      // Create note in Firestore
       const noteData = {
-        title: formData.title,
-        universityId: formData.university,
-        departmentId: formData.department,
-        subject: formData.subject,
-        semester: parseInt(formData.semester),
-        courseCode: formData.courseCode,
-        description: formData.description,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-        status: 'approved', // Admin uploads are auto-approved
-        createdBy: user.uid,
-        authorName: user.displayName || user.email,
-        authorEmail: user.email,
-        fileUrl: fileUrl,
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        downloads: 0,
-        rating: 0,
-        ratingCount: 0,
+        title: formData.title.trim(),
+        courseCode: formData.courseCode.trim().toUpperCase(),
+        subject: formData.subject.trim(),
+        semester: formData.semester.trim(),
+        universityId: formData.universityId,
+        departmentId: formData.departmentId,
+        pages: parseInt(formData.pages) || 0,
+        description: formData.description.trim(),
+        fileUrl: uploadResult.downloadURL,
+        fileName: uploadResult.fileName,
+        filePath: uploadResult.fullPath,
+        fileSize: uploadResult.size,
+        fileType: uploadResult.type,
+        authorName: currentUser.displayName || currentUser.email,
+        createdBy: currentUser.uid,
+        status: 'pending',
         ratingAvg: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        ratingCount: 0,
+        downloads: 0,
+        views: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
-      
-      addDebugInfo('💾 Saving to Firestore', { title: noteData.title, status: noteData.status });
-      
-      const docRef = await addDoc(collection(db, 'notes'), noteData);
-      
-      addDebugInfo('✅ Document saved successfully', { documentId: docRef.id });
-      
-      // Success!
-      setUploadProgress(100);
-      setCurrentStep('Upload completed successfully!');
-      setUploading(false);
-      setUploadSuccess(true);
-      toast.success('🎉 Note uploaded successfully!');
-      
-      addDebugInfo('🎉 Upload process completed successfully');
-    } catch (error) {
-      // Log detailed error information
-      setCurrentStep('Error occurred');
-      addDebugInfo('❌ Upload failed', { 
-        message: error.message,
-        code: error.code || 'no_code',
-        stack: error.stack?.split('\n')[0] || 'no_stack'
+
+      console.log('💾 Creating note document:', noteData);
+
+      await createNote(noteData);
+
+      console.log('🎉 Note created successfully!');
+
+      showToast('Note submitted successfully! It will be reviewed by our team.', 'success');
+
+      // Reset form
+      setFormData({
+        title: '',
+        courseCode: '',
+        subject: '',
+        semester: '',
+        universityId: 'uni1',
+        departmentId: 'dept1',
+        pages: '',
+        description: '',
       });
-      
-      console.error('Upload error details:', error);
-      
-      // Provide specific error messages based on error type
-      let errorMessage = 'Upload failed: ';
-      let recoveryTip = '';
-      
-      if (error.code === 'storage/unauthorized') {
-        errorMessage += 'Permission denied.';
-        recoveryTip = 'Your account does not have permission to upload files. Please check your admin role or Firebase Storage rules.';
-        addDebugInfo('🛑 Storage permission denied');
-      } else if (error.code === 'storage/canceled') {
-        errorMessage += 'Upload was canceled.';
-        recoveryTip = 'Please try uploading again.';
-      } else if (error.code === 'storage/server-file-wrong-size') {
-        errorMessage += 'Upload failed due to network issues.';
-        recoveryTip = 'Try uploading a smaller file or check your internet connection.';
-      } else if (error.code === 'storage/retry-limit-exceeded') {
-        errorMessage += 'Upload timed out.';
-        recoveryTip = 'Try again with a more stable internet connection or a smaller file.';
-      } else if (error.code === 'storage/unknown' || error.message.includes('Firebase Storage')) {
-        errorMessage += 'Storage service error.';
-        recoveryTip = 'Check Firebase configuration and try again.';
-      } else if (error.message.includes('permission') || error.message.includes('Permission')) {
-        errorMessage += 'Permission issue detected.';
-        recoveryTip = 'Verify your admin status and permissions.';
-      } else if (error.message.includes('network') || error.message.includes('timeout')) {
-        errorMessage += 'Network issue detected.';
-        recoveryTip = 'Please check your internet connection and try again.';
-      } else {
-        errorMessage += error.message;
-      }
-      
-      // Show error toast with recovery tip
-      toast.error(errorMessage);
-      if (recoveryTip) {
-        setTimeout(() => {
-          toast(recoveryTip, {
-            icon: '❓',
-            duration: 6000
-          });
-        }, 1000);
-      }
-      
-      setUploading(false);
+      setFile(null);
       setUploadProgress(0);
+
+      // Redirect after delay
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+    } catch (err) {
+      console.error('❌ Upload failed:', err);
+      setError(err.message || 'Failed to upload. Please try again.');
+      showToast(err.message || 'Upload failed', 'error');
+    } finally {
+      setUploading(false);
     }
   };
 
-  if (uploadSuccess) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <CheckCircleIcon className="h-24 w-24 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Upload Successful!</h2>
-          <p className="text-gray-600 mb-6">Your note has been uploaded and is now available.</p>
-          <div className="space-x-4">
-            <button 
-              onClick={() => {
-                setUploadSuccess(false);
-                setFile(null);
-                setUploadProgress(0);
-                setCurrentStep('');
-                setDebugInfo([]);
-                setFormData({
-                  title: '',
-                  university: '',
-                  department: '',
-                  subject: '',
-                  semester: '',
-                  courseCode: '',
-                  description: '',
-                  tags: ''
-                });
-              }} 
-              className="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
-            >
-              Upload Another
-            </button>
-            <button 
-              onClick={() => navigate('/notes')} 
-              className="px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
-            >
-              View Notes
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Format file size
+  const formatSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-3xl mx-auto px-4">
-        {/* Admin Badge */}
-        <div className="mb-6 inline-flex items-center bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium">
-          <ShieldExclamationIcon className="h-5 w-5 mr-2" />
-          Admin Upload Panel
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Upload Study Material</h1>
+          <p className="mt-2 text-gray-600">
+            Share your notes with the community. All uploads are reviewed before publishing.
+          </p>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Upload Notes</h1>
-        
-        {/* Firebase Configuration Warning */}
-        {!isFirebaseConfigured && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-            <div className="flex">
-              <ExclamationTriangleIcon className="h-5 w-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-red-800">
-                <p className="font-medium mb-1">Firebase Configuration Required</p>
-                <p>Firebase services are not properly configured. Please check your environment variables before uploading files.</p>
-              </div>
+        {/* Development Mode Warning */}
+        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
+            <div>
+              <p className="font-medium text-yellow-800">Development Mode</p>
+              <p className="text-sm text-yellow-700">
+                Simplified upload without strict permission checking. For development only.
+              </p>
             </div>
           </div>
-        )}
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
+        </div>
+
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border p-8 space-y-8">
           {/* File Upload */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-4">
-              Upload File *
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
-              {file ? (
+          <div>
+            <h2 className="text-xl font-semibold mb-4">1. Upload Your File</h2>
+
+            {/* Drop Zone */}
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              className={`
+                border-2 border-dashed rounded-lg p-8 text-center transition-all
+                ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'}
+                ${file ? 'border-green-500 bg-green-50' : ''}
+                ${error ? 'border-red-500 bg-red-50' : ''}
+              `}
+            >
+              <input
+                type="file"
+                onChange={(e) => handleFileChange(e.target.files[0])}
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+                className="hidden"
+                id="file-input"
+                disabled={uploading}
+              />
+
+              {!file ? (
                 <div className="space-y-4">
-                  <DocumentTextIcon className="h-16 w-16 text-blue-600 mx-auto" />
-                  <p className="text-gray-900 font-medium">{file.name}</p>
-                  <p className="text-sm text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                  <button
-                    type="button"
-                    onClick={() => setFile(null)}
-                    className="px-4 py-2 border border-red-300 text-red-600 rounded-full hover:bg-red-50 transition-colors text-sm"
-                  >
-                    Remove File
-                  </button>
+                  <UploadIcon className="w-12 h-12 mx-auto text-gray-400" />
+                  <div>
+                    <p className="text-lg font-medium text-gray-700">
+                      Drop your file here or{' '}
+                      <label
+                        htmlFor="file-input"
+                        className="text-blue-600 hover:text-blue-700 cursor-pointer underline"
+                      >
+                        browse
+                      </label>
+                    </p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Supported formats: PDF, Word, Images (Max 50MB)
+                    </p>
+                  </div>
                 </div>
               ) : (
-                <>
-                  <CloudArrowUpIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <input
-                    type="file"
-                    onChange={handleFileChange}
-                    accept=".pdf,image/*"
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <label 
-                    htmlFor="file-upload" 
-                    className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors cursor-pointer inline-block"
-                  >
-                    Choose File
-                  </label>
-                  <p className="text-sm text-gray-500 mt-2">PDF or Image files only (Max 50MB)</p>
-                </>
+                <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+                  <div className="flex items-center space-x-3 flex-1">
+                    <File className="w-8 h-8 text-blue-500" />
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">{file.name}</p>
+                      <p className="text-sm text-gray-500">{formatSize(file.size)}</p>
+                    </div>
+                  </div>
+                  {!uploading && (
+                    <button
+                      type="button"
+                      onClick={() => setFile(null)}
+                      className="ml-4 p-1 hover:bg-gray-100 rounded"
+                    >
+                      <X className="w-5 h-5 text-gray-500" />
+                    </button>
+                  )}
+                  {uploading && uploadProgress === 100 && (
+                    <CheckCircle className="w-6 h-6 text-green-500 ml-4" />
+                  )}
+                </div>
+              )}
+
+              {/* Progress Bar */}
+              {uploading && (
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Uploading... {uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
               )}
             </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mt-4 flex items-start space-x-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-red-800">Upload Error</p>
+                  <p className="text-sm text-red-600 mt-1">{error}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Form Fields */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-                placeholder="e.g., Advanced Calculus Notes - Chapter 5"
-              />
-            </div>
+          <div>
+            <h2 className="text-xl font-semibold mb-4">2. Note Details</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">University *</label>
-                <select
-                  value={formData.university}
-                  onChange={(e) => setFormData({...formData, university: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Select University</option>
-                  <option value="MIT">MIT</option>
-                  <option value="Harvard">Harvard</option>
-                  <option value="Stanford">Stanford</option>
-                  <option value="Berkeley">UC Berkeley</option>
-                  <option value="Oxford">Oxford</option>
-                  <option value="Cambridge">Cambridge</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Department *</label>
-                <select
-                  value={formData.department}
-                  onChange={(e) => setFormData({...formData, department: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Select Department</option>
-                  <option value="Computer Science">Computer Science</option>
-                  <option value="Mathematics">Mathematics</option>
-                  <option value="Physics">Physics</option>
-                  <option value="Chemistry">Chemistry</option>
-                  <option value="Biology">Biology</option>
-                  <option value="Engineering">Engineering</option>
-                  <option value="Business">Business</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Title */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Title *
+                </label>
                 <input
                   type="text"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Data Structures Complete Notes"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
-                  placeholder="e.g., Calculus III"
+                  disabled={uploading}
                 />
               </div>
 
+              {/* Course Code */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Semester *</label>
-                <select
-                  value={formData.semester}
-                  onChange={(e) => setFormData({...formData, semester: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Select</option>
-                  {[1,2,3,4,5,6,7,8].map(sem => (
-                    <option key={sem} value={sem}>Semester {sem}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Course Code *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Course Code *
+                </label>
                 <input
                   type="text"
+                  name="courseCode"
                   value={formData.courseCode}
-                  onChange={(e) => setFormData({...formData, courseCode: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={handleInputChange}
                   placeholder="e.g., CS201"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
+                  disabled={uploading}
+                />
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Subject *
+                </label>
+                <input
+                  type="text"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Data Structures"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={uploading}
+                />
+              </div>
+
+              {/* Semester */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Semester *
+                </label>
+                <select
+                  name="semester"
+                  value={formData.semester}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={uploading}
+                >
+                  <option value="">Select Semester</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                    <option key={sem} value={sem}>
+                      Semester {sem}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Pages */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Number of Pages
+                </label>
+                <input
+                  type="number"
+                  name="pages"
+                  value={formData.pages}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 45"
+                  min="1"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  disabled={uploading}
+                />
+              </div>
+
+              {/* University */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  University *
+                </label>
+                <select
+                  name="universityId"
+                  value={formData.universityId}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={uploading}
+                >
+                  <option value="uni1">MIT</option>
+                  <option value="uni2">Stanford</option>
+                  <option value="uni3">Harvard</option>
+                </select>
+              </div>
+
+              {/* Department */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Department *
+                </label>
+                <select
+                  name="departmentId"
+                  value={formData.departmentId}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={uploading}
+                >
+                  <option value="dept1">Computer Science</option>
+                  <option value="dept2">Electronics</option>
+                  <option value="dept3">Mechanical</option>
+                </select>
+              </div>
+
+              {/* Description */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Add any additional details..."
+                  rows="4"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  disabled={uploading}
                 />
               </div>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32 resize-none"
-                required
-                placeholder="Provide a detailed description of the notes content..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma-separated)</label>
-              <input
-                type="text"
-                value={formData.tags}
-                onChange={(e) => setFormData({...formData, tags: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="e.g., algorithms, data structures, exam prep"
-              />
-            </div>
           </div>
 
-          {/* Info Box */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <div className="flex">
-              <InformationCircleIcon className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">Admin Upload</p>
-                <p>As an administrator, your uploads are automatically approved and immediately available to all users.</p>
-              </div>
-            </div>
+          {/* Submit Button */}
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={handlePreview}
+              disabled={!file || uploading}
+              className="flex items-center justify-center gap-2 py-3 px-6 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+            >
+              <Eye className="w-5 h-5" />
+              Preview
+            </button>
+
+            <button
+              type="submit"
+              disabled={uploading || !file}
+              className="flex-1 py-3 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+            >
+              {uploading ? `Uploading... ${uploadProgress}%` : 'Submit for Review'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setFormData({
+                  title: '',
+                  courseCode: '',
+                  subject: '',
+                  semester: '',
+                  universityId: 'uni1',
+                  departmentId: 'dept1',
+                  pages: '',
+                  description: '',
+                });
+                setFile(null);
+                setError(null);
+              }}
+              disabled={uploading}
+              className="py-3 px-6 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 font-medium"
+            >
+              Reset
+            </button>
           </div>
-
-          {/* Upload Progress */}
-          {uploading && (
-            <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Uploading Note</h3>
-                <p className="text-sm text-gray-600 mb-4">{currentStep}</p>
-                
-                {/* Progress Bar */}
-                <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-                  <div 
-                    className="bg-blue-600 h-3 rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
-                
-                <p className="text-sm text-gray-500">{uploadProgress}% completed</p>
-              </div>
-              
-              {/* Debug Information */}
-              {debugInfo.length > 0 && (
-                <div className="bg-gray-50 rounded-xl p-4 max-h-32 overflow-y-auto">
-                  <p className="text-xs font-medium text-gray-700 mb-2">Debug Information:</p>
-                  {debugInfo.map((info, index) => (
-                    <p key={index} className="text-xs text-gray-600 font-mono">{info}</p>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={uploading || !file}
-            className={`w-full py-3 px-4 rounded-full font-medium transition-colors ${
-              uploading || !file
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            {uploading ? (
-              <div className="flex items-center justify-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Uploading... {uploadProgress}%</span>
-              </div>
-            ) : (
-              'Upload Note'
-            )}
-          </button>
         </form>
+
+        {/* Preview Modal */}
+        <NotePreviewModal
+          isOpen={isPreviewOpen}
+          onClose={() => {
+            setIsPreviewOpen(false);
+            if (previewFile?.fileUrl) {
+              URL.revokeObjectURL(previewFile.fileUrl);
+            }
+            setPreviewFile(null);
+          }}
+          note={previewFile}
+        />
       </div>
     </div>
   );

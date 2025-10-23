@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   DocumentTextIcon,
   ArrowDownTrayIcon,
@@ -19,40 +19,56 @@ import { StarIcon as StarIconSolid, BookmarkIcon as BookmarkIconSolid } from '@h
 import { AIService } from '../services/aiService';
 import Toast from '../components/common/Toast';
 import AIResultModal from '../components/modals/AIResultModal';
+import { getNoteById } from '../services/firestoreData';
 
 const NoteDetail = () => {
   const { noteId } = useParams();
+  const navigate = useNavigate();
+  const [note, setNote] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [activeTab, setActiveTab] = useState('preview');
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiModal, setAiModal] = useState({ isOpen: false, type: null, data: null, isLoading: false, error: null });
 
-  // Mock data - replace with Firebase query
-  const note = {
-    id: noteId,
-    title: 'Data Structures Complete Notes',
-    courseCode: 'CS201',
-    university: 'MIT',
-    department: 'Computer Science',
-    subject: 'Data Structures',
-    semester: '3rd',
-    author: 'John Doe',
-    authorId: 'user123',
-    pages: 125,
-    rating: 4.8,
-    downloads: 1520,
-    views: 5230,
-    uploadedDate: '2024-01-15',
-    lastUpdated: '2024-01-20',
-    description: 'Comprehensive notes covering all data structures topics including arrays, linked lists, stacks, queues, trees, graphs, and advanced data structures. Perfect for exam preparation and concept revision.',
-    topics: ['Arrays', 'Linked Lists', 'Stacks & Queues', 'Trees', 'Graphs', 'Hashing', 'Heaps'],
-    fileUrl: 'https://example.com/notes.pdf',
-    previewImages: [
-      'https://via.placeholder.com/600x800',
-      'https://via.placeholder.com/600x800',
-      'https://via.placeholder.com/600x800'
-    ]
-  };
+// Fetch note from Firebase
+  React.useEffect(() => {
+    const fetchNote = async () => {
+      try {
+        setLoading(true);
+        const noteData = await getNoteById(noteId);
+        
+        if (!noteData) {
+          setError('Note not found');
+          return;
+        }
+
+        // Check if note is approved (allow admin/owner to view pending notes)
+if (noteData.status !== 'approved') {
+  console.warn('Note status:', noteData.status);
+  
+  // Only show error for non-admin users
+  // For now, let's allow viewing pending notes for testing
+  console.log('⚠️ Note is pending but allowing preview');
+  
+  // Uncomment below to restrict non-approved notes later:
+  // setError('This note is pending approval');
+  // setLoading(false);
+  // return;
+}
+
+        setNote(noteData);
+      } catch (err) {
+        console.error('Error fetching note:', err);
+        setError('Failed to load note');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNote();
+  }, [noteId]);
 
   const relatedNotes = [
     { id: 2, title: 'Advanced Algorithms', courseCode: 'CS301', rating: 4.9 },
@@ -66,8 +82,13 @@ const NoteDetail = () => {
   };
 
   const handleDownload = () => {
-    // Add download logic and analytics
-    console.log('Downloading note:', noteId);
+    if (note?.fileUrl) {
+      // Open file in new tab (browser will handle download)
+      window.open(note.fileUrl, '_blank');
+      
+      // Optionally: increment download counter
+      // incrementDownloadCount(noteId);
+    }
   };
 
   const handleShare = () => {
@@ -80,6 +101,36 @@ const NoteDetail = () => {
       });
     }
   };
+
+// Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading note...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !note) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <DocumentTextIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{error || 'Note not found'}</h2>
+          <button
+            onClick={() => navigate('/notes')}
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Back to Notes
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -98,7 +149,7 @@ const NoteDetail = () => {
                   {note.courseCode}
                 </span>
                 <span className="text-sm text-white/80">
-                  {note.university} • {note.department}
+                  {note.universityId} • {note.departmentId}
                 </span>
               </div>
               <h1 className="text-3xl font-bold mb-3">{note.title}</h1>
@@ -106,11 +157,11 @@ const NoteDetail = () => {
               <div className="flex flex-wrap items-center gap-4 text-sm text-white/80">
                 <div className="flex items-center">
                   <UserIcon className="h-4 w-4 mr-1" />
-                  {note.author}
+                  {note.authorName || 'Anonymous'}
                 </div>
                 <div className="flex items-center">
                   <CalendarIcon className="h-4 w-4 mr-1" />
-                  Updated {new Date(note.lastUpdated).toLocaleDateString()}
+                  Updated {new Date(note.updatedAt || note.createdAt).toLocaleDateString()}
                 </div>
                 <div className="flex items-center">
                   <AcademicCapIcon className="h-4 w-4 mr-1" />
@@ -179,17 +230,24 @@ const NoteDetail = () => {
 
               <div className="p-6">
                 {activeTab === 'preview' ? (
-                  <div className="space-y-4">
-                    {/* Preview Images */}
-                    {note.previewImages.map((image, index) => (
-                      <div key={index} className="bg-gray-100 rounded-xl p-4">
-                        <img
-                          src={image}
-                          alt={`Page ${index + 1}`}
-                          className="w-full rounded-lg"
+                 <div className="space-y-4">
+                    {/* PDF Preview */}
+                    {note.fileUrl && note.fileType === 'application/pdf' && (
+                      <div className="bg-gray-100 rounded-xl p-4">
+                        <iframe
+                          src={note.fileUrl}
+                          className="w-full h-96 border-0 rounded-lg"
+                          title="PDF Preview"
                         />
                       </div>
-                    ))}
+                    )}
+                    {/* No preview available */}
+                    {(!note.fileUrl || note.fileType !== 'application/pdf') && (
+                      <div className="bg-gray-100 rounded-xl p-8 text-center">
+                        <DocumentTextIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600">Preview not available for this file type</p>
+                      </div>
+                    )}
                     {/* AI Actions */}
                     <div className="bg-white rounded-xl border p-4 flex flex-wrap gap-3">
                       <button
@@ -272,16 +330,18 @@ const NoteDetail = () => {
                       <p className="text-gray-600">{note.description}</p>
                     </div>
 
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Topics Covered</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {note.topics.map((topic, index) => (
-                          <span key={index} className="chip chip-secondary">
-                            {topic}
-                          </span>
-                        ))}
+                    {note.topics && note.topics.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-2">Topics Covered</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {note.topics.map((topic, index) => (
+                            <span key={index} className="chip chip-secondary">
+                              {topic}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">Document Information</h3>
@@ -296,7 +356,9 @@ const NoteDetail = () => {
                         </div>
                         <div>
                           <dt className="text-gray-500">Size</dt>
-                          <dd className="font-medium text-gray-900">12.5 MB</dd>
+                          <dd className="font-medium text-gray-900">
+                            {note.fileSize ? `${(note.fileSize / (1024 * 1024)).toFixed(2)} MB` : 'Unknown'}
+                          </dd>
                         </div>
                         <div>
                           <dt className="text-gray-500">Language</dt>
@@ -419,8 +481,8 @@ const NoteDetail = () => {
                     <UserIcon className="h-6 w-6 text-navy-600" />
                   </div>
                   <div className="ml-3">
-                    <p className="font-medium text-gray-900">{note.author}</p>
-                    <p className="text-sm text-gray-500">15 uploads • 4.8 avg rating</p>
+                    <p className="font-medium text-gray-900">{note.authorName || 'Anonymous'}</p>
+                    <p className="text-sm text-gray-500">Contributor</p>
                   </div>
                 </div>
                 <Link
