@@ -9,6 +9,8 @@ import {
   BuildingLibraryIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
+import { Link } from 'react-router-dom';
+import { FiEye, FiDownload } from 'react-icons/fi';
 
 const NoteCard = ({ 
   note, 
@@ -192,29 +194,31 @@ const NoteCard = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-        <div className="flex items-center justify-between space-x-3">
-          <button
-            onClick={() => onView?.(note)}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 
-                     hover:text-gray-900 bg-white border border-gray-300 rounded-lg
-                     hover:bg-gray-50 transition-colors duration-200"
-          >
-            <EyeIcon className="h-4 w-4" />
-            <span>Preview</span>
-          </button>
+<div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+  <div className="flex items-center gap-2">
+    {/* Full-Screen Preview Button */}
+    <Link
+      to={`/preview/${note.id}`}
+      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white 
+               bg-orange-500 hover:bg-orange-600 rounded-lg
+               transition-colors duration-200 shadow-sm"
+    >
+      <FiEye className="h-5 w-5" />
+      <span>Preview</span>
+    </Link>
 
-          <button
-            onClick={() => onDownload?.(note)}
-            className="flex items-center space-x-2 px-6 py-2 text-sm font-medium text-white 
-                     bg-accent-600 hover:bg-accent-700 rounded-lg
-                     transition-colors duration-200 shadow-sm"
-          >
-            <DocumentArrowDownIcon className="h-4 w-4" />
-            <span>Download</span>
-          </button>
-        </div>
-      </div>
+    {/* Download Button */}
+    <button
+      onClick={() => onDownload?.(note)}
+      className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 
+               bg-white border border-gray-300 hover:bg-gray-50 rounded-lg
+               transition-colors duration-200"
+      title="Download PDF"
+    >
+      <DocumentArrowDownIcon className="h-5 w-5" />
+    </button>
+  </div>
+</div>
 
       {/* Status Badge (for pending/rejected notes) */}
       {note.status && note.status !== 'approved' && (

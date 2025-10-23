@@ -14,6 +14,7 @@ import NoteDetail from './pages/NoteDetail';
 import Upload from './pages/Upload';
 import UploadDev from './pages/UploadDev'; // Temporary development upload
 import AdminReview from './pages/AdminReview';
+import PDFPreview from './pages/PDFPreview';
 import Pending from './pages/Pending';
 import Tools from './pages/Tools';
 import Videos from './pages/Videos';
@@ -63,6 +64,7 @@ function App() {
             {/* Auth Pages (No Layout) */}
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<Signup />} />
+            <Route path="preview/:id" element={<PDFPreview />} />
             
             {/* Main App Routes with Layout */}
             <Route path="/" element={<Layout />}>
