@@ -1,6 +1,6 @@
 import React from 'react';
 import { useIntersectionObserver } from '../../hooks/useIntersectionObserver';
-import NoteCard from './NoteCard';
+import NoteCard from '../notes/NoteCard';
 import { SkeletonCard } from './Skeleton';
 
 const LazyNoteCard = ({ meta, onPreview, onDownload, onBookmark, userId }) => {
