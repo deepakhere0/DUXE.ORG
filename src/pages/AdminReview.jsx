@@ -339,18 +339,32 @@ const AdminReview = () => {
           <div className="space-y-4">
             {notes.map((note) => (
               <div key={note.id} className="bg-white rounded-2xl shadow-sm p-6">
-                <div className="flex items-start justify-between">
+                {/* Header Row with Status and Price Badge */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(note.status)}
+                    <span className="text-sm text-gray-500">
+                      {note.createdAt?.toDate?.().toLocaleDateString() || 'Unknown date'}
+                    </span>
+                  </div>
+                  {/* Price Badge */}
+                  <div className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+                    note.price && note.price > 0 
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white' 
+                      : 'bg-gray-100 text-gray-700'
+                  }`}>
+                    {note.price && note.price > 0 ? `₹${note.price}` : 'FREE'}
+                  </div>
+                </div>
+
+                {/* Title and Description */}
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">{note.title}</h3>
+                <p className="text-gray-600 mb-4">{note.description}</p>
+
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                   <div className="flex-1">
-                    <div className="flex items-center mb-2">
-                      {getStatusBadge(note.status)}
-                      <span className="ml-3 text-sm text-gray-500">
-                        {note.createdAt?.toDate?.().toLocaleDateString() || 'Unknown date'}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{note.title}</h3>
-                    <p className="text-gray-600 mb-4">{note.description}</p>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
                       <div>
                         <span className="text-gray-500">University:</span>
                         <p className="font-medium">{note.universityId}</p>
@@ -367,32 +381,24 @@ const AdminReview = () => {
                         <span className="text-gray-500">Course Code:</span>
                         <p className="font-medium">{note.courseCode}</p>
                       </div>
-                      <div>
-                        <span className="text-gray-500">Price:</span>
-                        <p className="font-medium text-orange-600">
-                          {note.price && note.price > 0 ? `₹${note.price}` : 'Free'}
-                        </p>
-                      </div>
                     </div>
 
-                    <div className="mt-4 flex items-center text-sm text-gray-600">
-                      <span>Uploaded by: {note.authorName || 'Unknown'}</span>
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                      <span>📤 {note.authorName || 'Unknown'}</span>
                       {note.fileSize && (
-                        <span className="ml-4">
-                          Size: {(note.fileSize / 1024 / 1024).toFixed(2)} MB
-                        </span>
+                        <span>📄 {(note.fileSize / 1024 / 1024).toFixed(2)} MB</span>
                       )}
-                      {note.purchaseCount !== undefined && note.price > 0 && (
+                      {note.price > 0 && (
                         <>
-                          <span className="ml-4">
-                            Sales: {note.purchaseCount || 0} • Revenue: ₹{note.totalRevenue || 0}
+                          <span className="font-medium text-green-600">
+                            💰 Sales: {note.purchaseCount || 0} | Revenue: ₹{note.totalRevenue || 0}
                           </span>
                           {note.purchaseCount > 0 && (
                             <button
                               onClick={() => handleViewPurchasers(note)}
-                              className="ml-4 text-blue-600 hover:text-blue-800 text-sm underline"
+                              className="text-blue-600 hover:text-blue-800 font-medium underline"
                             >
-                              View Purchasers
+                              👥 View Purchasers
                             </button>
                           )}
                         </>
@@ -400,42 +406,42 @@ const AdminReview = () => {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="ml-6 flex flex-col space-y-2">
+                  {/* Action Buttons - Vertical Stack */}
+                  <div className="flex lg:flex-col flex-row flex-wrap gap-2 lg:min-w-[140px]">
                     {note.fileUrl && (
                       <a
                         href={note.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center"
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap"
                       >
-                        <EyeIcon className="h-4 w-4 mr-1" />
+                        <EyeIcon className="h-4 w-4" />
                         View
                       </a>
                     )}
                     
                     <button
                       onClick={() => handleEditPrice(note)}
-                      className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm flex items-center"
+                      className="px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap"
                     >
-                      <CurrencyRupeeIcon className="h-4 w-4 mr-1" />
-                      Price
+                      <CurrencyRupeeIcon className="h-4 w-4" />
+                      Edit Price
                     </button>
                     
                     {note.status === 'pending' && (
                       <>
                         <button
                           onClick={() => handleApprove(note.id)}
-                          className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center"
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap"
                         >
-                          <CheckCircleIcon className="h-4 w-4 mr-1" />
+                          <CheckCircleIcon className="h-4 w-4" />
                           Approve
                         </button>
                         <button
                           onClick={() => handleReject(note.id)}
-                          className="px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm flex items-center"
+                          className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap"
                         >
-                          <XCircleIcon className="h-4 w-4 mr-1" />
+                          <XCircleIcon className="h-4 w-4" />
                           Reject
                         </button>
                       </>
@@ -444,17 +450,17 @@ const AdminReview = () => {
                     <button
                       onClick={() => handleDelete(note.id, note.fileUrl, note.filePath)}
                       disabled={deletingId === note.id}
-                      className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                     >
                       {deletingId === note.id ? (
                         <>
-                          <div className="animate-spin h-4 w-4 mr-1 border-2 border-white border-t-transparent rounded-full" />
-                          Deleting...
+                          <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                          <span>Deleting...</span>
                         </>
                       ) : (
                         <>
-                          <TrashIcon className="h-4 w-4 mr-1" />
-                          Delete
+                          <TrashIcon className="h-4 w-4" />
+                          <span>Delete</span>
                         </>
                       )}
                     </button>
