@@ -36,6 +36,8 @@ const AdminReview = () => {
   const [filter, setFilter] = useState('pending'); // pending, approved, rejected, all
   const [editingNote, setEditingNote] = useState(null);
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
+  const [selectedNoteForPurchasers, setSelectedNoteForPurchasers] = useState(null);
+  const [purchasers, setPurchasers] = useState([]);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -126,6 +128,42 @@ const AdminReview = () => {
     await fetchNotes();
     setEditingNote(null);
     setIsPriceModalOpen(false);
+  };
+
+  const handleViewPurchasers = async (note) => {
+    setSelectedNoteForPurchasers(note);
+    try {
+      // Query payments collection for this note
+      const q = query(
+        collection(db, 'payments'),
+        where('noteId', '==', note.id),
+        where('status', '==', 'completed')
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const purchasersList = [];
+      
+      querySnapshot.forEach((doc) => {
+        purchasersList.push({ id: doc.id, ...doc.data() });
+      });
+      
+      // Sort by payment date (newest first)
+      purchasersList.sort((a, b) => {
+        const aTime = a.paymentDate?.toDate?.() || new Date(0);
+        const bTime = b.paymentDate?.toDate?.() || new Date(0);
+        return bTime - aTime;
+      });
+      
+      setPurchasers(purchasersList);
+    } catch (error) {
+      console.error('Error fetching purchasers:', error);
+      toast.error('Failed to fetch purchasers');
+    }
+  };
+
+  const closePurchasersModal = () => {
+    setSelectedNoteForPurchasers(null);
+    setPurchasers([]);
   };
 
   const handleDelete = async (noteId, fileUrl, filePath) => {
@@ -345,9 +383,19 @@ const AdminReview = () => {
                         </span>
                       )}
                       {note.purchaseCount !== undefined && note.price > 0 && (
-                        <span className="ml-4">
-                          Sales: {note.purchaseCount || 0} • Revenue: ₹{note.totalRevenue || 0}
-                        </span>
+                        <>
+                          <span className="ml-4">
+                            Sales: {note.purchaseCount || 0} • Revenue: ₹{note.totalRevenue || 0}
+                          </span>
+                          {note.purchaseCount > 0 && (
+                            <button
+                              onClick={() => handleViewPurchasers(note)}
+                              className="ml-4 text-blue-600 hover:text-blue-800 text-sm underline"
+                            >
+                              View Purchasers
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -444,6 +492,111 @@ const AdminReview = () => {
           note={editingNote}
           onSuccess={handlePriceUpdateSuccess}
         />
+
+        {/* Purchasers Modal */}
+        {selectedNoteForPurchasers && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold">{selectedNoteForPurchasers.title}</h3>
+                    <p className="text-sm opacity-90 mt-1">
+                      {purchasers.length} {purchasers.length === 1 ? 'Purchase' : 'Purchases'} • 
+                      ₹{purchasers.reduce((sum, p) => sum + (p.amount || 0), 0).toLocaleString('en-IN')} Total Revenue
+                    </p>
+                  </div>
+                  <button
+                    onClick={closePurchasersModal}
+                    className="text-white hover:text-gray-200 transition-colors"
+                  >
+                    <XCircleIcon className="h-8 w-8" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="overflow-y-auto max-h-[calc(80vh-140px)]">
+                {purchasers.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No purchases found for this note</p>
+                  </div>
+                ) : (
+                  <table className="w-full">
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Student Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Transaction ID
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {purchasers.map((purchase) => (
+                        <tr key={purchase.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {purchase.userName || 'Unknown'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-600">
+                              {purchase.userEmail || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-green-600">
+                              ₹{purchase.amount || 0}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-600">
+                              {purchase.paymentDate?.toDate?.().toLocaleString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <code className="text-xs bg-gray-100 px-2 py-1 rounded">
+                              {purchase.transactionId?.substring(0, 20) || 'N/A'}...
+                            </code>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                <button
+                  onClick={closePurchasersModal}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
