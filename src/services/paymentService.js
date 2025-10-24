@@ -11,6 +11,7 @@ import {
   increment
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { razorpayConfig, loadRazorpayScript } from '../config/razorpayConfig';
 
 /**
  * Payment Service
@@ -78,31 +79,157 @@ export class PaymentService {
   }
 
   /**
-   * Mock payment processing
-   * In production, replace with actual payment gateway (Stripe, PayPal, Razorpay, etc.)
-   * @param {Object} paymentData - Payment information
-   * @returns {Promise<Object>} - Payment result
+   * Create Razorpay order
+   * This creates an order on Razorpay's side before payment
+   * In production, this should be done on your backend server for security
+   * @param {Object} orderData - Order information
+   * @returns {Promise<Object>} - Razorpay order details
    */
-  async processMockPayment(paymentData) {
-    const { amount, currency, noteId, userId, noteName } = paymentData;
+  async createRazorpayOrder(orderData) {
+    const { amount, currency, noteId, userId, noteName } = orderData;
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // For production: This should be an API call to your backend
+    // Your backend should create the order using Razorpay API with key_secret
+    // Example backend endpoint: POST /api/payments/create-order
+    
+    // For now, we'll create a local order ID (in production, this comes from Razorpay)
+    // IMPORTANT: In production, you MUST create orders from your backend
+    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    return {
+      id: orderId,
+      amount: amount * 100, // Razorpay expects amount in paise (smallest currency unit)
+      currency: currency || 'INR',
+      noteId,
+      userId,
+      noteName
+    };
+  }
 
-    // Mock payment success (90% success rate for testing)
-    const isSuccess = Math.random() > 0.1;
+  /**
+   * Initialize Razorpay payment
+   * Opens Razorpay checkout modal for payment
+   * @param {Object} paymentData - Payment information
+   * @param {Function} onSuccess - Success callback
+   * @param {Function} onFailure - Failure callback
+   * @returns {Promise<void>}
+   */
+  async initializeRazorpayPayment(paymentData, onSuccess, onFailure) {
+    try {
+      // Load Razorpay script
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error('Failed to load Razorpay SDK. Please check your internet connection.');
+      }
 
-    if (isSuccess) {
-      return {
-        success: true,
-        transactionId: `MOCK_TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        amount,
-        currency,
-        timestamp: new Date().toISOString(),
-        message: 'Payment successful'
+      // Create order
+      const order = await this.createRazorpayOrder(paymentData);
+
+      // Razorpay checkout options
+      const options = {
+        key: razorpayConfig.keyId, // Your Razorpay Key ID
+        amount: order.amount, // Amount in paise
+        currency: order.currency,
+        name: razorpayConfig.companyName,
+        description: `Purchase: ${paymentData.noteName}`,
+        order_id: order.id, // Order ID from backend
+        image: razorpayConfig.companyLogo,
+        
+        // Payment handler - called on successful payment
+        handler: async (response) => {
+          try {
+            // Razorpay response contains:
+            // - razorpay_payment_id: Payment ID
+            // - razorpay_order_id: Order ID
+            // - razorpay_signature: Signature for verification
+            
+            // IMPORTANT: In production, verify the signature on your backend
+            // to ensure payment authenticity before granting access
+            
+            console.log('Payment successful:', response);
+            
+            // Create payment record in Firestore
+            const paymentRecord = await this.createPaymentRecord({
+              userId: paymentData.userId,
+              noteId: paymentData.noteId,
+              amount: paymentData.amount,
+              currency: paymentData.currency,
+              transactionId: response.razorpay_payment_id,
+              orderId: response.razorpay_order_id,
+              signature: response.razorpay_signature,
+              status: 'completed',
+              paymentMethod: 'razorpay'
+            });
+            
+            // Call success callback
+            if (onSuccess) {
+              onSuccess({
+                success: true,
+                payment: paymentRecord,
+                razorpayResponse: response
+              });
+            }
+          } catch (error) {
+            console.error('Error processing payment success:', error);
+            if (onFailure) {
+              onFailure(error);
+            }
+          }
+        },
+        
+        // Prefill customer details
+        prefill: {
+          name: paymentData.userName || '',
+          email: paymentData.userEmail || '',
+          contact: paymentData.userPhone || ''
+        },
+        
+        // Payment methods to show
+        method: {
+          card: razorpayConfig.paymentMethods.card,
+          netbanking: razorpayConfig.paymentMethods.netbanking,
+          wallet: razorpayConfig.paymentMethods.wallet,
+          upi: razorpayConfig.paymentMethods.upi,
+        },
+        
+        // Theme
+        theme: razorpayConfig.theme,
+        
+        // Modal configuration
+        modal: {
+          ondismiss: () => {
+            console.log('Payment modal closed by user');
+            if (onFailure) {
+              onFailure(new Error('Payment cancelled by user'));
+            }
+          }
+        },
+        
+        // Notes (metadata)
+        notes: {
+          noteId: paymentData.noteId,
+          userId: paymentData.userId,
+          noteName: paymentData.noteName
+        }
       };
-    } else {
-      throw new Error('Payment failed. Please try again.');
+
+      // Open Razorpay checkout
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+      
+      // Handle payment failure
+      razorpay.on('payment.failed', (response) => {
+        console.error('Payment failed:', response.error);
+        if (onFailure) {
+          onFailure(new Error(response.error.description || 'Payment failed'));
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error initializing Razorpay payment:', error);
+      if (onFailure) {
+        onFailure(error);
+      }
     }
   }
 
@@ -119,8 +246,10 @@ export class PaymentService {
         amount,
         currency = 'INR',
         transactionId,
+        orderId,
+        signature,
         status = 'completed',
-        paymentMethod = 'mock'
+        paymentMethod = 'razorpay'
       } = paymentData;
 
       // Validate required fields
@@ -136,6 +265,8 @@ export class PaymentService {
         amount: parseFloat(amount),
         currency,
         transactionId,
+        orderId: orderId || null,
+        signature: signature || null,
         status,
         paymentMethod,
         paymentDate: serverTimestamp(),
@@ -178,13 +309,15 @@ export class PaymentService {
   }
 
   /**
-   * Process complete payment flow
+   * Process complete payment flow using Razorpay
+   * This method returns a Promise that resolves when payment UI is initiated
+   * Actual success/failure is handled via callbacks
    * @param {Object} data - Payment data
-   * @returns {Promise<Object>} - Payment result
+   * @returns {Promise<Object>} - Payment initialization result
    */
   async processPayment(data) {
     try {
-      const { userId, noteId, amount, currency, noteName } = data;
+      const { userId, noteId, amount, currency, noteName, userName, userEmail, userPhone } = data;
 
       // Check if already paid
       const alreadyPaid = await this.hasUserPaid(userId, noteId);
@@ -192,34 +325,58 @@ export class PaymentService {
         throw new Error('You have already purchased this note');
       }
 
-      // Process mock payment
-      const paymentResult = await this.processMockPayment({
-        amount,
-        currency,
-        noteId,
-        userId,
-        noteName
+      // Return a Promise that wraps the Razorpay payment flow
+      return new Promise((resolve, reject) => {
+        this.initializeRazorpayPayment(
+          {
+            userId,
+            noteId,
+            amount,
+            currency: currency || 'INR',
+            noteName,
+            userName,
+            userEmail,
+            userPhone
+          },
+          // Success callback
+          (result) => {
+            resolve(result);
+          },
+          // Failure callback
+          (error) => {
+            reject(error);
+          }
+        );
       });
-
-      // Create payment record
-      const paymentRecord = await this.createPaymentRecord({
-        userId,
-        noteId,
-        amount,
-        currency,
-        transactionId: paymentResult.transactionId,
-        status: 'completed',
-        paymentMethod: 'mock'
-      });
-
-      return {
-        success: true,
-        payment: paymentRecord,
-        transaction: paymentResult
-      };
     } catch (error) {
       console.error('Payment processing error:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Get payment details by transaction ID
+   * @param {string} transactionId - Razorpay payment ID
+   * @returns {Promise<Object|null>} - Payment record or null
+   */
+  async getPaymentByTransactionId(transactionId) {
+    try {
+      const paymentQuery = query(
+        collection(db, this.paymentsCollection),
+        where('transactionId', '==', transactionId)
+      );
+
+      const snapshot = await getDocs(paymentQuery);
+      if (snapshot.empty) return null;
+
+      const doc = snapshot.docs[0];
+      return {
+        id: doc.id,
+        ...doc.data()
+      };
+    } catch (error) {
+      console.error('Error fetching payment:', error);
+      return null;
     }
   }
 

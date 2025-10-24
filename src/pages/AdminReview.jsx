@@ -21,9 +21,11 @@ import {
   ClockIcon,
   TrashIcon,
   EyeIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  CurrencyRupeeIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import PriceEditModal from '../components/notes/PriceEditModal';
 
 const AdminReview = () => {
   const navigate = useNavigate();
@@ -32,6 +34,8 @@ const AdminReview = () => {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
   const [filter, setFilter] = useState('pending'); // pending, approved, rejected, all
+  const [editingNote, setEditingNote] = useState(null);
+  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -110,6 +114,18 @@ const AdminReview = () => {
       console.error('Error rejecting note:', error);
       toast.error('Failed to reject note');
     }
+  };
+
+  const handleEditPrice = (note) => {
+    setEditingNote(note);
+    setIsPriceModalOpen(true);
+  };
+
+  const handlePriceUpdateSuccess = async () => {
+    // Refresh notes list after price update
+    await fetchNotes();
+    setEditingNote(null);
+    setIsPriceModalOpen(false);
   };
 
   const handleDelete = async (noteId, fileUrl, filePath) => {
@@ -296,7 +312,7 @@ const AdminReview = () => {
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">{note.title}</h3>
                     <p className="text-gray-600 mb-4">{note.description}</p>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                       <div>
                         <span className="text-gray-500">University:</span>
                         <p className="font-medium">{note.universityId}</p>
@@ -313,6 +329,12 @@ const AdminReview = () => {
                         <span className="text-gray-500">Course Code:</span>
                         <p className="font-medium">{note.courseCode}</p>
                       </div>
+                      <div>
+                        <span className="text-gray-500">Price:</span>
+                        <p className="font-medium text-orange-600">
+                          {note.price && note.price > 0 ? `₹${note.price}` : 'Free'}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="mt-4 flex items-center text-sm text-gray-600">
@@ -320,6 +342,11 @@ const AdminReview = () => {
                       {note.fileSize && (
                         <span className="ml-4">
                           Size: {(note.fileSize / 1024 / 1024).toFixed(2)} MB
+                        </span>
+                      )}
+                      {note.purchaseCount !== undefined && note.price > 0 && (
+                        <span className="ml-4">
+                          Sales: {note.purchaseCount || 0} • Revenue: ₹{note.totalRevenue || 0}
                         </span>
                       )}
                     </div>
@@ -338,6 +365,14 @@ const AdminReview = () => {
                         View
                       </a>
                     )}
+                    
+                    <button
+                      onClick={() => handleEditPrice(note)}
+                      className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm flex items-center"
+                    >
+                      <CurrencyRupeeIcon className="h-4 w-4 mr-1" />
+                      Price
+                    </button>
                     
                     {note.status === 'pending' && (
                       <>
@@ -398,6 +433,17 @@ const AdminReview = () => {
             </div>
           </div>
         )}
+
+        {/* Price Edit Modal */}
+        <PriceEditModal
+          isOpen={isPriceModalOpen}
+          onClose={() => {
+            setIsPriceModalOpen(false);
+            setEditingNote(null);
+          }}
+          note={editingNote}
+          onSuccess={handlePriceUpdateSuccess}
+        />
       </div>
     </div>
   );

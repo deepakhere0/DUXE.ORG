@@ -78,9 +78,26 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
     
+    // Helper function to check if user has paid for a note
+    function hasUserPaidForNote(noteId, userId) {
+      return exists(/databases/$(database)/documents/payments/$(userId + '_' + noteId)) ||
+             exists(/databases/$(database)/documents/payments/$(noteId + '_' + userId));
+    }
+    
+    // Helper function to check if user can access note (free or paid)
+    function canAccessNote(noteId) {
+      let noteData = resource.data;
+      let isFreeNote = !('price' in noteData) || noteData.price == 0;
+      let hasPaid = hasUserPaidForNote(noteId, request.auth.uid);
+      let isOwner = noteData.createdBy == request.auth.uid;
+      
+      return isFreeNote || hasPaid || isOwner || isAdmin();
+    }
+    
     // Notes collection
     match /notes/{noteId} {
-      // Anyone can read approved notes
+      // Anyone can read approved notes metadata (title, description, price, etc.)
+      // But file URL access is controlled separately
       allow read: if resource.data.status == 'approved';
       
       // Owners can read their own notes regardless of status
@@ -102,11 +119,13 @@ service cloud.firestore {
       // Only admins can delete notes
       allow delete: if isAdmin();
       
-      // System updates for downloads and ratings (special case)
+      // System updates for downloads, ratings, and revenue (special case)
       allow update: if request.resource.data.diff(resource.data).affectedKeys()
                        .hasOnly(['downloads']) ||
                     request.resource.data.diff(resource.data).affectedKeys()
-                       .hasOnly(['ratingAvg', 'ratingCount']);
+                       .hasOnly(['ratingAvg', 'ratingCount']) ||
+                    request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['totalRevenue', 'purchaseCount']);
     }
     
     // AI Jobs collection

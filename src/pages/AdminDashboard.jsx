@@ -7,9 +7,12 @@ import {
   AcademicCapIcon,
   BuildingOfficeIcon,
   UserIcon,
-  CalendarIcon
+  CalendarIcon,
+  CurrencyRupeeIcon,
+  ShoppingCartIcon
 } from '@heroicons/react/24/outline';
 import { adminNotesService } from '../services/adminNotesService';
+import { paymentService } from '../services/paymentService';
 import { useAuth } from '../hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 
@@ -18,6 +21,7 @@ const AdminDashboard = () => {
   const [pendingNotes, setPendingNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
+  const [revenueStats, setRevenueStats] = useState({ totalRevenue: 0, totalTransactions: 0, averageTransaction: 0 });
   const [selectedNotes, setSelectedNotes] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -33,13 +37,15 @@ const AdminDashboard = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [notesData, statsData] = await Promise.all([
+      const [notesData, statsData, revenue] = await Promise.all([
         adminNotesService.getPendingNotes(),
-        adminNotesService.getNoteStats()
+        adminNotesService.getNoteStats(),
+        paymentService.getTotalRevenue()
       ]);
       
       setPendingNotes(notesData);
       setStats(statsData);
+      setRevenueStats(revenue);
     } catch (error) {
       console.error('Error loading data:', error);
       alert('Error loading data: ' + error.message);
@@ -170,7 +176,7 @@ const AdminDashboard = () => {
 
       <div className="container-custom py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center">
               <ClockIcon className="h-8 w-8 text-orange-600" />
@@ -210,7 +216,55 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
+          
+          <div className="bg-white rounded-xl p-6 shadow-sm border">
+            <div className="flex items-center">
+              <CurrencyRupeeIcon className="h-8 w-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm text-gray-500">Total Revenue</p>
+                <p className="text-2xl font-bold text-purple-600">₹{revenueStats.totalRevenue.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 shadow-sm border">
+            <div className="flex items-center">
+              <ShoppingCartIcon className="h-8 w-8 text-indigo-600" />
+              <div className="ml-4">
+                <p className="text-sm text-gray-500">Transactions</p>
+                <p className="text-2xl font-bold text-indigo-600">{revenueStats.totalTransactions}</p>
+              </div>
+            </div>
+          </div>
         </div>
+        
+        {/* Revenue Info Card */}
+        {revenueStats.totalRevenue > 0 && (
+          <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl p-6 shadow-lg mb-8 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Revenue Overview</h3>
+                <div className="grid grid-cols-3 gap-8">
+                  <div>
+                    <p className="text-purple-200 text-sm">Total Earned</p>
+                    <p className="text-3xl font-bold">₹{revenueStats.totalRevenue.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-purple-200 text-sm">Total Sales</p>
+                    <p className="text-3xl font-bold">{revenueStats.totalTransactions}</p>
+                  </div>
+                  <div>
+                    <p className="text-purple-200 text-sm">Avg Transaction</p>
+                    <p className="text-3xl font-bold">₹{revenueStats.averageTransaction.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white/20 rounded-full p-6">
+                <CurrencyRupeeIcon className="h-16 w-16" />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Pending Notes Section */}
         <div className="bg-white rounded-xl shadow-sm border">
