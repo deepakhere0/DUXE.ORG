@@ -6,6 +6,8 @@ import SearchBar from '../components/notes/SearchBar';
 import NoteCard from '../components/notes/NoteCard';
 import { notesService } from '../services/notesService';
 import NotePreviewModal from '../components/notes/NotePreviewModal';
+import { Link } from 'react-router-dom';
+import { FiEye, FiDownload } from 'react-icons/fi';
 
 const NotesPage = () => {
   // Filters and state

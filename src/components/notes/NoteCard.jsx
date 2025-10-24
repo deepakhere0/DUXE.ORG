@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   DocumentArrowDownIcon, 
   StarIcon, 
@@ -6,11 +6,15 @@ import {
   CalendarDaysIcon,
   UserIcon,
   AcademicCapIcon,
-  BuildingLibraryIcon
+  BuildingLibraryIcon,
+  CurrencyRupeeIcon,
+  CheckBadgeIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { Link } from 'react-router-dom';
 import { FiEye, FiDownload } from 'react-icons/fi';
+import { paymentService } from '../../services/paymentService';
+import PaymentModal from './PaymentModal';
 
 const NoteCard = ({ 
   note, 
@@ -18,9 +22,29 @@ const NoteCard = ({
   onBookmark, 
   onView,
   isBookmarked = false,
+  userId = null,
   className = "" 
 }) => {
   const [imageError, setImageError] = useState(false);
+  const [hasPaid, setHasPaid] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  
+  const notePrice = note.price || 0;
+  const isPaidNote = notePrice > 0;
+
+  // Check if user has already paid for this note
+  useEffect(() => {
+    const checkPaymentStatus = async () => {
+      if (userId && isPaidNote) {
+        setIsCheckingPayment(true);
+        const paid = await paymentService.hasUserPaid(userId, note.id);
+        setHasPaid(paid);
+        setIsCheckingPayment(false);
+      }
+    };
+    checkPaymentStatus();
+  }, [userId, note.id, isPaidNote]);
   
   const formatDate = (timestamp) => {
     if (!timestamp) return 'Unknown date';
@@ -82,12 +106,55 @@ const NoteCard = ({
     return stars;
   };
 
+  const handleAccessNote = () => {
+    if (!isPaidNote || hasPaid) {
+      // Free note or already paid - allow access
+      return;
+    } else {
+      // Paid note - show payment modal
+      setIsPaymentModalOpen(true);
+    }
+  };
+
+  const handleDownloadClick = () => {
+    if (!isPaidNote || hasPaid) {
+      // Free note or already paid - allow download
+      onDownload?.(note);
+    } else {
+      // Paid note - show payment modal
+      setIsPaymentModalOpen(true);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    setHasPaid(true);
+    setIsPaymentModalOpen(false);
+  };
+
   return (
-    <div className={`bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 ${className}`}>
+    <>
+    <div className={`bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 relative ${className}`}>
+      {/* Price Badge - Top Right */}
+      {isPaidNote && (
+        <div className="absolute top-3 right-3 z-10">
+          {hasPaid ? (
+            <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1 shadow-md">
+              <CheckBadgeIcon className="h-4 w-4" />
+              <span>Paid</span>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1 shadow-md">
+              <CurrencyRupeeIcon className="h-4 w-4" />
+              <span>₹{notePrice}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Note Header */}
       <div className="p-6">
         {/* Title and Course Code */}
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-3 pr-16">
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 truncate mb-1">
               {note.title || 'Untitled Note'}
@@ -197,23 +264,38 @@ const NoteCard = ({
 <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
   <div className="flex items-center gap-2">
     {/* Full-Screen Preview Button */}
-    <Link
-      to={`/preview/${note.id}`}
-      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white 
-               bg-orange-500 hover:bg-orange-600 rounded-lg
-               transition-colors duration-200 shadow-sm"
-    >
-      <FiEye className="h-5 w-5" />
-      <span>Preview</span>
-    </Link>
+    {(!isPaidNote || hasPaid) ? (
+      <Link
+        to={`/preview/${note.id}`}
+        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white 
+                 bg-orange-500 hover:bg-orange-600 rounded-lg
+                 transition-colors duration-200 shadow-sm"
+      >
+        <FiEye className="h-5 w-5" />
+        <span>Preview</span>
+      </Link>
+    ) : (
+      <button
+        onClick={handleAccessNote}
+        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white 
+                 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg
+                 transition-all duration-200 shadow-sm"
+      >
+        <CurrencyRupeeIcon className="h-5 w-5" />
+        <span>Purchase ₹{notePrice}</span>
+      </button>
+    )}
 
     {/* Download Button */}
     <button
-      onClick={() => onDownload?.(note)}
-      className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 
-               bg-white border border-gray-300 hover:bg-gray-50 rounded-lg
-               transition-colors duration-200"
-      title="Download PDF"
+      onClick={handleDownloadClick}
+      className={`flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium 
+               ${(!isPaidNote || hasPaid) 
+                 ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50' 
+                 : 'text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed'} 
+               rounded-lg transition-colors duration-200`}
+      title={(!isPaidNote || hasPaid) ? "Download PDF" : "Purchase to download"}
+      disabled={isPaidNote && !hasPaid}
     >
       <DocumentArrowDownIcon className="h-5 w-5" />
     </button>
@@ -222,7 +304,7 @@ const NoteCard = ({
 
       {/* Status Badge (for pending/rejected notes) */}
       {note.status && note.status !== 'approved' && (
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-4 left-4">
           <span className={`px-2 py-1 text-xs font-medium rounded-full ${
             note.status === 'pending' 
               ? 'bg-yellow-100 text-yellow-800' 
@@ -235,6 +317,16 @@ const NoteCard = ({
         </div>
       )}
     </div>
+
+    {/* Payment Modal */}
+    <PaymentModal
+      isOpen={isPaymentModalOpen}
+      onClose={() => setIsPaymentModalOpen(false)}
+      note={note}
+      userId={userId}
+      onPaymentSuccess={handlePaymentSuccess}
+    />
+    </>
   );
 };
 

@@ -23,7 +23,7 @@ import { SkeletonCard } from '../components/common/Skeleton';
 import NotePreviewModal from '../components/notes/NotePreviewModal';
 
 const Notes = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const navigate = useNavigate();
   const [filters, setFilters] = useState({});
   const [sortBy, setSortBy] = useState('popular');
@@ -257,7 +257,9 @@ const Notes = () => {
                   ratingAvg: note.ratingAvg || note.rating || 0,
                   fileUrl: note.fileUrl || '',
                   thumbnailUrl: note.thumbnailUrl || 'https://via.placeholder.com/200x300',
+                  price: note.price || 0,
                 }}
+                userId={user?.uid}
                 onPreview={() => {
                   setSelectedNote(note);
                   setIsPreviewOpen(true);

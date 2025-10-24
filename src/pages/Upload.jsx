@@ -20,6 +20,7 @@ const Upload = () => {
     departmentId: 'dept1',
     pages: '',
     description: '',
+    price: '0',
   });
 
   const [file, setFile] = useState(null);
@@ -161,6 +162,7 @@ const Upload = () => {
         departmentId: formData.departmentId,
         pages: parseInt(formData.pages) || 0,
         description: formData.description.trim(),
+        price: parseFloat(formData.price) || 0,
         fileUrl: uploadResult.downloadURL,
         fileName: uploadResult.fileName,
         filePath: uploadResult.fullPath,
@@ -173,6 +175,8 @@ const Upload = () => {
         ratingCount: 0,
         downloads: 0,
         views: 0,
+        totalRevenue: 0,
+        purchaseCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -195,6 +199,7 @@ const Upload = () => {
         departmentId: 'dept1',
         pages: '',
         description: '',
+        price: '0',
       });
       setFile(null);
       setUploadProgress(0);
@@ -475,6 +480,30 @@ const Upload = () => {
                 </select>
               </div>
 
+              {/* Price */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Price (INR)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                    className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    disabled={uploading}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Set to 0 for free notes. Students must pay before accessing paid notes.
+                </p>
+              </div>
+
               {/* Description */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -525,6 +554,7 @@ const Upload = () => {
                   departmentId: 'dept1',
                   pages: '',
                   description: '',
+                  price: '0',
                 });
                 setFile(null);
                 setError(null);
