@@ -27,6 +27,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
+// Admin Review Component
 const AdminReview = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
