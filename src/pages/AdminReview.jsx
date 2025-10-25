@@ -21,7 +21,9 @@ import {
   ClockIcon,
   TrashIcon,
   EyeIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  CurrencyRupeeIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -32,6 +34,8 @@ const AdminReview = () => {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
   const [filter, setFilter] = useState('pending'); // pending, approved, rejected, all
+  const [editingPriceId, setEditingPriceId] = useState(null);
+  const [priceInputValue, setPriceInputValue] = useState('');
 
   // Redirect non-admin users
   useEffect(() => {
@@ -111,7 +115,51 @@ const AdminReview = () => {
       toast.error('Failed to reject note');
     }
   };
+  };
 
+  /**
+   * Handle price editing
+   * Opens inline price editor
+   */
+  const handleStartPriceEdit = (note) => {
+    setEditingPriceId(note.id);
+    setPriceInputValue(note.price || 0);
+  };
+
+  /**
+   * Save price changes
+   * Updates note price in Firestore
+   */
+  const handleSavePrice = async (noteId) => {
+    try {
+      const newPrice = parseFloat(priceInputValue);
+      
+      if (isNaN(newPrice) || newPrice < 0) {
+        toast.error('Please enter a valid price');
+        return;
+      }
+
+      await updateDoc(doc(db, 'notes', noteId), {
+        price: newPrice,
+        updatedAt: serverTimestamp()
+      });
+
+      toast.success(`Price updated to ₹${newPrice}`);
+      setEditingPriceId(null);
+      await fetchNotes();
+    } catch (error) {
+      console.error('Error updating price:', error);
+      toast.error('Failed to update price');
+    }
+  };
+
+  /**
+   * Cancel price editing
+   */
+  const handleCancelPriceEdit = () => {
+    setEditingPriceId(null);
+    setPriceInputValue('');
+  };
 
   const handleDelete = async (noteId, fileUrl, filePath) => {
     if (!window.confirm('Are you sure you want to permanently delete this note?')) {
@@ -286,13 +334,71 @@ const AdminReview = () => {
           <div className="space-y-4">
             {notes.map((note) => (
               <div key={note.id} className="bg-white rounded-2xl shadow-sm p-6">
-                {/* Header Row with Status */}
-                <div className="flex items-center mb-3">
+                {/* Header Row with Status and Price */}
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     {getStatusBadge(note.status)}
                     <span className="text-sm text-gray-500">
                       {note.createdAt?.toDate?.().toLocaleDateString() || 'Unknown date'}
                     </span>
+                  </div>
+                  
+                  {/* Price Display/Editor */}
+                  <div className="flex items-center gap-2">
+                    {editingPriceId === note.id ? (
+                      // Price editing mode
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center">
+                          <CurrencyRupeeIcon className="h-4 w-4 text-gray-500" />
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={priceInputValue}
+                            onChange={(e) => setPriceInputValue(e.target.value)}
+                            className="w-24 px-2 py-1 text-sm border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            autoFocus
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleSavePrice(note.id)}
+                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelPriceEdit}
+                          className="px-2 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      // Price display mode
+                      <div className="flex items-center gap-2">
+                        <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold ${
+                          note.price > 0 
+                            ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white' 
+                            : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {note.price > 0 ? (
+                            <>
+                              <CurrencyRupeeIcon className="h-4 w-4" />
+                              <span>{note.price}</span>
+                            </>
+                          ) : (
+                            <span>FREE</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleStartPriceEdit(note)}
+                          className="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                          title="Edit price"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -326,6 +432,12 @@ const AdminReview = () => {
                       <span>📤 {note.authorName || 'Unknown'}</span>
                       {note.fileSize && (
                         <span>📄 {(note.fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                      )}
+                      {/* Revenue Stats for Paid Notes */}
+                      {note.price > 0 && (
+                        <span className="font-medium text-green-600">
+                          💰 Sales: {note.purchaseCount || 0} | Revenue: ₹{note.totalRevenue || 0}
+                        </span>
                       )}
                     </div>
                   </div>
