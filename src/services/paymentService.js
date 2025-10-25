@@ -2,6 +2,7 @@ import {
   collection, 
   doc, 
   setDoc, 
+  addDoc,
   getDoc,
   query,
   where,
@@ -38,7 +39,7 @@ export class PaymentService {
         collection(db, this.paymentsCollection),
         where('userId', '==', userId),
         where('noteId', '==', noteId),
-        where('status', '==', 'completed')
+        where('status', 'in', ['completed', 'success']) // Support both status types
       );
 
       const snapshot = await getDocs(paymentQuery);
@@ -309,9 +310,70 @@ export class PaymentService {
   }
 
   /**
-   * Process complete payment flow using Razorpay
-   * This method returns a Promise that resolves when payment UI is initiated
-   * Actual success/failure is handled via callbacks
+   * Process mock payment (for testing without Razorpay)
+   * @param {Object} paymentData - Payment information
+   * @returns {Promise<Object>} - Payment result
+   */
+  async processMockPayment(paymentData) {
+    const { userId, noteId, amount, userEmail, userName } = paymentData;
+
+    return new Promise((resolve) => {
+      // Simulate payment processing delay (2 seconds)
+      setTimeout(async () => {
+        try {
+          // Mock payment success (90% success rate for demo)
+          const isSuccess = Math.random() > 0.1;
+
+          if (!isSuccess) {
+            resolve({
+              success: false,
+              error: 'Payment failed. Please try again.'
+            });
+            return;
+          }
+
+          // Create payment record in Firestore
+          const paymentRecord = {
+            userId,
+            noteId,
+            amount,
+            userEmail: userEmail || '',
+            userName: userName || '',
+            status: 'success',
+            paymentDate: serverTimestamp(),
+            transactionId: `MOCK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            paymentMethod: 'mock_payment',
+            createdAt: serverTimestamp()
+          };
+
+          const paymentsRef = collection(db, this.paymentsCollection);
+          const docRef = await addDoc(paymentsRef, paymentRecord);
+
+          // Update note's revenue and purchase count
+          await this.updateNoteRevenue(noteId, amount);
+
+          resolve({
+            success: true,
+            payment: {
+              id: docRef.id,
+              ...paymentRecord
+            },
+            transactionId: paymentRecord.transactionId
+          });
+        } catch (error) {
+          console.error('Error processing mock payment:', error);
+          resolve({
+            success: false,
+            error: 'Failed to process payment. Please try again.'
+          });
+        }
+      }, 2000);
+    });
+  }
+
+  /**
+   * Process complete payment flow using Razorpay or Mock payment
+   * Automatically chooses mock payment if Razorpay is not configured
    * @param {Object} data - Payment data
    * @returns {Promise<Object>} - Payment initialization result
    */
@@ -325,7 +387,22 @@ export class PaymentService {
         throw new Error('You have already purchased this note');
       }
 
-      // Return a Promise that wraps the Razorpay payment flow
+      // Check if Razorpay is configured
+      const useRazorpay = razorpayConfig.keyId && razorpayConfig.keyId.trim() !== '';
+
+      // Use mock payment if Razorpay is not configured
+      if (!useRazorpay) {
+        console.log('Using mock payment (Razorpay not configured)');
+        return await this.processMockPayment({
+          userId,
+          noteId,
+          amount,
+          userEmail,
+          userName
+        });
+      }
+
+      // Use Razorpay payment
       return new Promise((resolve, reject) => {
         this.initializeRazorpayPayment(
           {

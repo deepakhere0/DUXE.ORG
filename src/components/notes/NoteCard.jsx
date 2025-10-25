@@ -13,8 +13,8 @@ import {
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { Link } from 'react-router-dom';
 import { FiEye, FiDownload } from 'react-icons/fi';
-import { paymentService } from '../../services/payment.service';
-import PaymentModal from '../payment/PaymentModal';
+import { paymentService } from '../../services/paymentService';
+import PaymentModal from './PaymentModal';
 
 const NoteCard = ({ 
   note, 

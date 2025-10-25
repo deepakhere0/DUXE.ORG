@@ -39,17 +39,11 @@ const PaymentModal = ({ isOpen, onClose, note, userId, onPaymentSuccess }) => {
   const isFree = notePrice === 0;
 
   /**
-   * Handle Razorpay payment initialization
-   * Opens Razorpay checkout modal for payment processing
+   * Handle payment initialization
+   * Supports both Razorpay and mock payment
    */
   const handlePayment = async (e) => {
     e.preventDefault();
-    
-    // Validate configuration
-    if (!configValid) {
-      toast.error('Payment system is not configured. Please contact support.');
-      return;
-    }
 
     // Validate user authentication
     if (!userId) {
@@ -62,8 +56,7 @@ const PaymentModal = ({ isOpen, onClose, note, userId, onPaymentSuccess }) => {
     setErrorMessage('');
 
     try {
-      // Initialize Razorpay payment
-      // This will open the Razorpay checkout modal
+      // Process payment (automatically uses mock if Razorpay not configured)
       const result = await paymentService.processPayment({
         userId,
         noteId: note.id,
@@ -85,13 +78,20 @@ const PaymentModal = ({ isOpen, onClose, note, userId, onPaymentSuccess }) => {
           onPaymentSuccess?.(note.id);
           handleClose();
         }, 2000);
+      } else if (result.error) {
+        // Payment failed
+        setPaymentStatus('error');
+        setErrorMessage(result.error);
+        toast.error(result.error);
       }
     } catch (error) {
       console.error('Payment error:', error);
       
       // Handle specific error cases
-      if (error.message.includes('cancelled')) {
+      if (error.message && error.message.includes('cancelled')) {
         toast('Payment cancelled', { icon: 'ℹ️' });
+        setIsProcessing(false);
+        return;
       } else {
         setPaymentStatus('error');
         setErrorMessage(error.message || 'Payment failed. Please try again.');

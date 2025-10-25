@@ -8,8 +8,10 @@ import { notesService } from '../services/notesService';
 import NotePreviewModal from '../components/notes/NotePreviewModal';
 import { Link } from 'react-router-dom';
 import { FiEye, FiDownload } from 'react-icons/fi';
+import { useAuth } from '../contexts/AuthContext';
 
 const NotesPage = () => {
+  const { user } = useAuth();
   // Filters and state
   const [selectedUniversity, setSelectedUniversity] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -239,6 +241,7 @@ const NotesPage = () => {
               <NoteCard 
                 key={note.id}
                 note={note}
+                userId={user?.uid}
                 onDownload={handleDownload}
                 onView={handleView}
               />
