@@ -8,6 +8,7 @@ dotenv.config();
 
 // Import routes
 const aiRoutes = require('./routes/aiRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,6 +28,7 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/ai', aiRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -47,6 +49,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend server running on http://localhost:${PORT}`);
   console.log(`🔒 CORS enabled for: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
   console.log(`🤖 OpenAI API Key: ${process.env.OPENAI_API_KEY ? 'Configured ✅' : 'Not configured ❌'}`);
+  console.log(`💳 Razorpay Integration: ${process.env.RAZORPAY_KEY_ID ? 'Configured ✅' : 'Not configured ❌'}`);
 });
 
 module.exports = app;

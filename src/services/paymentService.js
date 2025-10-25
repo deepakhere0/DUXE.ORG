@@ -81,30 +81,43 @@ export class PaymentService {
 
   /**
    * Create Razorpay order
-   * This creates an order on Razorpay's side before payment
-   * In production, this should be done on your backend server for security
+   * Calls backend API to securely create order using Razorpay API
    * @param {Object} orderData - Order information
    * @returns {Promise<Object>} - Razorpay order details
    */
   async createRazorpayOrder(orderData) {
     const { amount, currency, noteId, userId, noteName } = orderData;
 
-    // For production: This should be an API call to your backend
-    // Your backend should create the order using Razorpay API with key_secret
-    // Example backend endpoint: POST /api/payments/create-order
-    
-    // For now, we'll create a local order ID (in production, this comes from Razorpay)
-    // IMPORTANT: In production, you MUST create orders from your backend
-    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    return {
-      id: orderId,
-      amount: amount * 100, // Razorpay expects amount in paise (smallest currency unit)
-      currency: currency || 'INR',
-      noteId,
-      userId,
-      noteName
-    };
+    try {
+      // Get backend API URL from environment
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      
+      // Call backend API to create Razorpay order
+      const response = await fetch(`${apiBaseUrl}/payments/create-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount,
+          currency: currency || 'INR',
+          noteId,
+          userId,
+          noteName
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to create order');
+      }
+
+      return data.order;
+    } catch (error) {
+      console.error('Error creating Razorpay order:', error);
+      throw new Error('Failed to create payment order. Please try again.');
+    }
   }
 
   /**
