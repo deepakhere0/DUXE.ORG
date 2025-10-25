@@ -9,8 +9,14 @@ dotenv.config();
 // Import routes
 const aiRoutes = require('./routes/aiRoutes');
 
+// Import middleware
+const { rateLimiter, getRateLimitStats } = require('./middleware/rateLimiter');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Trust proxy (important for rate limiting with reverse proxies)
+app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors({
@@ -20,13 +26,37 @@ app.use(cors({
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
+// Request logging middleware (development)
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      console.log(`${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
+    });
+    next();
+  });
+}
+
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Backend server is running' });
+  res.json({
+    status: 'OK',
+    message: 'Backend server is running',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
-// API Routes
-app.use('/api/ai', aiRoutes);
+// Rate limit stats endpoint (for monitoring)
+app.get('/api/admin/rate-limits', (req, res) => {
+  // In production, add authentication here
+  const stats = getRateLimitStats();
+  res.json(stats);
+});
+
+// API Routes with rate limiting
+app.use('/api/ai', rateLimiter, aiRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
