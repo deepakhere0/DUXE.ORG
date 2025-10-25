@@ -325,7 +325,7 @@ const NoteCard = ({
       isOpen={isPaymentModalOpen}
       onClose={() => setIsPaymentModalOpen(false)}
       note={note}
-      user={userId ? { uid: userId } : null}
+      userId={userId}
       onPaymentSuccess={handlePaymentSuccess}
     />
     </>
