@@ -36,6 +36,8 @@ const AdminReview = () => {
   const [filter, setFilter] = useState('pending'); // pending, approved, rejected, all
   const [editingPriceId, setEditingPriceId] = useState(null);
   const [priceInputValue, setPriceInputValue] = useState('');
+  const [priceModalOpen, setPriceModalOpen] = useState(false);
+  const [selectedNoteForPrice, setSelectedNoteForPrice] = useState(null);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -119,11 +121,57 @@ const AdminReview = () => {
 
   /**
    * Handle price editing
-   * Opens inline price editor
+   * Opens inline price editor (top of card)
    */
   const handleStartPriceEdit = (note) => {
     setEditingPriceId(note.id);
     setPriceInputValue(note.price || 0);
+  };
+
+  /**
+   * Open price modal (from Price button)
+   */
+  const handleOpenPriceModal = (note) => {
+    setSelectedNoteForPrice(note);
+    setPriceInputValue(note.price || 0);
+    setPriceModalOpen(true);
+  };
+
+  /**
+   * Close price modal
+   */
+  const handleClosePriceModal = () => {
+    setPriceModalOpen(false);
+    setSelectedNoteForPrice(null);
+    setPriceInputValue('');
+  };
+
+  /**
+   * Save price from modal
+   */
+  const handleSavePriceFromModal = async () => {
+    if (!selectedNoteForPrice) return;
+    
+    try {
+      const newPrice = parseFloat(priceInputValue);
+      
+      if (isNaN(newPrice) || newPrice < 0) {
+        toast.error('Please enter a valid price (0 or greater)');
+        return;
+      }
+
+      await updateDoc(doc(db, 'notes', selectedNoteForPrice.id), {
+        price: newPrice,
+        updatedAt: serverTimestamp()
+      });
+
+      toast.success(`Price updated to ₹${newPrice}`);
+      handleClosePriceModal();
+      await fetchNotes();
+    } catch (error) {
+      console.error('Error updating price:', error);
+      toast.error('Failed to update price');
+    }
   };
 
   /**
@@ -474,6 +522,15 @@ const AdminReview = () => {
                       </>
                     )}
                     
+                    {/* Price Button */}
+                    <button
+                      onClick={() => handleOpenPriceModal(note)}
+                      className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap"
+                    >
+                      <CurrencyRupeeIcon className="h-4 w-4" />
+                      Price
+                    </button>
+                    
                     <button
                       onClick={() => handleDelete(note.id, note.fileUrl, note.filePath)}
                       disabled={deletingId === note.id}
@@ -508,6 +565,7 @@ const AdminReview = () => {
                 <ul className="list-disc list-inside space-y-1">
                   <li>Approve: Makes the note visible to all users</li>
                   <li>Reject: Hides the note from public view</li>
+                  <li>Price: Set or update the note price (₹0 = free)</li>
                   <li>Delete: Permanently removes the note and its file</li>
                 </ul>
               </div>
@@ -515,6 +573,110 @@ const AdminReview = () => {
           </div>
         )}
       </div>
+
+      {/* Price Modal */}
+      {priceModalOpen && selectedNoteForPrice && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="price-modal" role="dialog" aria-modal="true">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+            onClick={handleClosePriceModal}
+          />
+
+          {/* Modal */}
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <CurrencyRupeeIcon className="h-8 w-8" />
+                    <h3 className="text-2xl font-bold">Set Note Price</h3>
+                  </div>
+                  <button
+                    onClick={handleClosePriceModal}
+                    className="text-white hover:text-gray-200 transition-colors"
+                    aria-label="Close modal"
+                  >
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Note Details */}
+              <div className="p-6 border-b border-gray-200">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-1">
+                    {selectedNoteForPrice.title}
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    {selectedNoteForPrice.courseCode} • {selectedNoteForPrice.subject}
+                  </p>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-700">Current Price:</span>
+                    <span className="font-bold text-orange-600">
+                      {selectedNoteForPrice.price > 0 ? `₹${selectedNoteForPrice.price}` : 'FREE'}
+                    </span>
+                  </div>
+                  {selectedNoteForPrice.price > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="flex items-center justify-between text-xs text-gray-600">
+                        <span>Sales: {selectedNoteForPrice.purchaseCount || 0}</span>
+                        <span>Revenue: ₹{selectedNoteForPrice.totalRevenue || 0}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Price Input Form */}
+              <div className="p-6">
+                <label htmlFor="price-input" className="block text-sm font-medium text-gray-700 mb-2">
+                  New Price (₹)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <CurrencyRupeeIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="price-input"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={priceInputValue}
+                    onChange={(e) => setPriceInputValue(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg font-semibold"
+                    placeholder="Enter price (0 for free)"
+                    autoFocus
+                  />
+                </div>
+                <p className="mt-2 text-sm text-gray-500">
+                  💡 Tip: Set to 0 to make the note free for everyone
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="p-6 bg-gray-50 rounded-b-2xl flex gap-3">
+                <button
+                  onClick={handleClosePriceModal}
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSavePriceFromModal}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-colors font-semibold flex items-center justify-center gap-2"
+                >
+                  <CurrencyRupeeIcon className="h-5 w-5" />
+                  Save Price
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
