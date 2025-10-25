@@ -36,6 +36,7 @@ import Feedback from './pages/Feedback';
 import DataConnectTest from './components/DataConnectTest';
 import Debug from './pages/Debug';
 import AdminDashboard from './pages/AdminDashboard';
+import PaymentAnalytics from './components/admin/PaymentAnalytics';
 
 // Auth Pages
 import Login from './pages/Login';
@@ -126,10 +127,20 @@ function App() {
               
               {/* Public Routes */}
               <Route path="tools" element={<Tools />} />
-              
+
               {/* Admin Routes */}
               <Route path="admin/dashboard" element={<AdminDashboard />} />
-              
+              <Route path="admin/payments" element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-gray-50 py-8">
+                    <div className="container-custom">
+                      <h1 className="text-3xl font-bold mb-6">Payment Analytics</h1>
+                      <PaymentAnalytics />
+                    </div>
+                  </div>
+                </ProtectedRoute>
+              } />
+
               {/* Catch all - 404 */}
               <Route path="*" element={<NotFound />} />
             </Route>

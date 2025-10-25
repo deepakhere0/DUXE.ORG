@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  CheckCircleIcon, 
-  XCircleIcon, 
+import {
+  CheckCircleIcon,
+  XCircleIcon,
   ClockIcon,
   DocumentTextIcon,
   AcademicCapIcon,
@@ -9,15 +9,17 @@ import {
   UserIcon,
   CalendarIcon,
   CurrencyRupeeIcon,
-  ShoppingCartIcon
+  ShoppingCartIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 import { adminNotesService } from '../services/adminNotesService';
 import { paymentService } from '../services/paymentService';
 import { useAuth } from '../hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [pendingNotes, setPendingNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
@@ -242,7 +244,7 @@ const AdminDashboard = () => {
         {revenueStats.totalRevenue > 0 && (
           <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl p-6 shadow-lg mb-8 text-white">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <h3 className="text-lg font-semibold mb-2">Revenue Overview</h3>
                 <div className="grid grid-cols-3 gap-8">
                   <div>
@@ -257,6 +259,15 @@ const AdminDashboard = () => {
                     <p className="text-purple-200 text-sm">Avg Transaction</p>
                     <p className="text-3xl font-bold">₹{revenueStats.averageTransaction.toFixed(2)}</p>
                   </div>
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={() => navigate('/admin/payments')}
+                    className="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-medium flex items-center gap-2"
+                  >
+                    <ChartBarIcon className="h-5 w-5" />
+                    View Detailed Analytics
+                  </button>
                 </div>
               </div>
               <div className="bg-white/20 rounded-full p-6">
