@@ -117,7 +117,6 @@ const AdminReview = () => {
       toast.error('Failed to reject note');
     }
   };
-  };
 
   /**
    * Handle price editing
@@ -321,6 +320,50 @@ const AdminReview = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+        {/* TEST BUTTONS - Temporary */}
+    <div style={{
+      position: 'fixed',
+      top: '80px',
+      right: '20px',
+      zIndex: 9999,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px'
+    }}>
+      <button
+        onClick={() => alert('Test works!')}
+        style={{
+          background: 'orange',
+          color: 'white',
+          padding: '10px 20px',
+          borderRadius: '8px',
+          border: 'none',
+          cursor: 'pointer',
+          fontWeight: 'bold'
+        }}
+      >
+        🧪 TEST RENDER
+      </button>
+      
+      <button
+        onClick={() => {
+          if (notes[0]) {
+            handleOpenPriceModal(notes[0]);
+          }
+        }}
+        style={{
+          background: 'purple',
+          color: 'white',
+          padding: '10px 20px',
+          borderRadius: '8px',
+          border: 'none',
+          cursor: 'pointer',
+          fontWeight: 'bold'
+        }}
+      >
+        🧪 TEST MODAL
+      </button>
+    </div>
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
@@ -490,65 +533,111 @@ const AdminReview = () => {
                     </div>
                   </div>
 
-                  {/* Action Buttons - Vertical Stack */}
-                  <div className="flex lg:flex-col flex-row flex-wrap gap-2 lg:min-w-[140px]">
-                    {note.fileUrl && (
-                      <a
-                        href={note.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap"
-                      >
-                        <EyeIcon className="h-4 w-4" />
-                        View
-                      </a>
-                    )}
-                    {note.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleApprove(note.id)}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap"
-                        >
-                          <CheckCircleIcon className="h-4 w-4" />
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleReject(note.id)}
-                          className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap"
-                        >
-                          <XCircleIcon className="h-4 w-4" />
-                          Reject
-                        </button>
-                      </>
-                    )}
-                    
-                    {/* Price Button */}
-                    <button
-                      onClick={() => handleOpenPriceModal(note)}
-                      className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap"
-                    >
-                      <CurrencyRupeeIcon className="h-4 w-4" />
-                      Price
-                    </button>
-                    
-                    <button
-                      onClick={() => handleDelete(note.id, note.fileUrl, note.filePath)}
-                      disabled={deletingId === note.id}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                    >
-                      {deletingId === note.id ? (
-                        <>
-                          <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                          <span>Deleting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <TrashIcon className="h-4 w-4" />
-                          <span>Delete</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  
+                 {/* Action Buttons - FIXED VERSION */}
+<div style={{
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8px',
+  minWidth: '140px'
+}}>
+  
+  {/* View */}
+  {note.fileUrl && (
+    <a
+      href={note.fileUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        padding: '8px 16px',
+        background: '#f3f4f6',
+        color: '#374151',
+        borderRadius: '8px',
+        textAlign: 'center',
+        textDecoration: 'none',
+        fontSize: '14px',
+        fontWeight: '500'
+      }}
+    >
+      View
+    </a>
+  )}
+  
+  {/* Approve (pending only) */}
+  {note.status === 'pending' && (
+    <button
+      onClick={() => handleApprove(note.id)}
+      style={{
+        padding: '8px 16px',
+        background: '#16a34a',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        fontSize: '14px',
+        fontWeight: '500',
+        cursor: 'pointer'
+      }}
+    >
+      Approve
+    </button>
+  )}
+  
+  {/* Reject (pending only) */}
+  {note.status === 'pending' && (
+    <button
+      onClick={() => handleReject(note.id)}
+      style={{
+        padding: '8px 16px',
+        background: '#ca8a04',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        fontSize: '14px',
+        fontWeight: '500',
+        cursor: 'pointer'
+      }}
+    >
+      Reject
+    </button>
+  )}
+  
+  {/* PRICE - ALWAYS VISIBLE */}
+  <button
+    onClick={() => handleOpenPriceModal(note)}
+    style={{
+      padding: '8px 16px',
+      background: 'linear-gradient(to right, #f97316, #ea580c)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      fontSize: '14px',
+      fontWeight: '500',
+      cursor: 'pointer'
+    }}
+  >
+    💰 Set Price
+  </button>
+  
+  {/* Delete */}
+  <button
+    onClick={() => handleDelete(note.id, note.fileUrl, note.filePath)}
+    disabled={deletingId === note.id}
+    style={{
+      padding: '8px 16px',
+      background: deletingId === note.id ? '#9ca3af' : '#dc2626',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      fontSize: '14px',
+      fontWeight: '500',
+      cursor: deletingId === note.id ? 'not-allowed' : 'pointer',
+      opacity: deletingId === note.id ? 0.5 : 1
+    }}
+  >
+    {deletingId === note.id ? 'Deleting...' : 'Delete'}
+  </button>
+  
+</div>
                 </div>
               </div>
             ))}
