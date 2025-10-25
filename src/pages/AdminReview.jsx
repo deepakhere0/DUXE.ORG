@@ -320,50 +320,6 @@ const AdminReview = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-        {/* TEST BUTTONS - Temporary */}
-    <div style={{
-      position: 'fixed',
-      top: '80px',
-      right: '20px',
-      zIndex: 9999,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '10px'
-    }}>
-      <button
-        onClick={() => alert('Test works!')}
-        style={{
-          background: 'orange',
-          color: 'white',
-          padding: '10px 20px',
-          borderRadius: '8px',
-          border: 'none',
-          cursor: 'pointer',
-          fontWeight: 'bold'
-        }}
-      >
-        🧪 TEST RENDER
-      </button>
-      
-      <button
-        onClick={() => {
-          if (notes[0]) {
-            handleOpenPriceModal(notes[0]);
-          }
-        }}
-        style={{
-          background: 'purple',
-          color: 'white',
-          padding: '10px 20px',
-          borderRadius: '8px',
-          border: 'none',
-          cursor: 'pointer',
-          fontWeight: 'bold'
-        }}
-      >
-        🧪 TEST MODAL
-      </button>
-    </div>
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
