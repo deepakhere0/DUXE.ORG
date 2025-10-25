@@ -8,6 +8,18 @@
   NPM_VERSION = "9"
   # Disable secrets scanning entirely since Firebase config is meant to be public
   SECRETS_SCAN_ENABLED = "false"
+  # Firebase Configuration
+  VITE_FIREBASE_API_KEY = "AIzaSyB13RVT0Fvxmp4g1Vp2BM8PQtTO1bsprMs"
+  VITE_FIREBASE_AUTH_DOMAIN = "duxe-5c071.firebaseapp.com"
+  VITE_FIREBASE_PROJECT_ID = "duxe-5c071"
+  VITE_FIREBASE_STORAGE_BUCKET = "duxe-5c071.appspot.com"
+  VITE_FIREBASE_MESSAGING_SENDER_ID = "976144847500"
+  VITE_FIREBASE_APP_ID = "1:976144847500:web:08de97c6f42024650161a9"
+  VITE_FIREBASE_MEASUREMENT_ID = "G-RPKC7R4W2L"
+  VITE_GEMINI_API_KEY = "AIzaSyAgrAxI8lSgnGyVnwkPD1iRNQuNaRtyklY"
+  VITE_FIREBASE_DATACONNECT_SERVICE_ID = "student-platform"
+  VITE_FIREBASE_DATACONNECT_LOCATION = "us-central1"
+  VITE_USE_EMULATOR = "false"
 
 # Headers for security
 [[headers]]
