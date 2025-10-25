@@ -342,8 +342,7 @@ const AdminReview = () => {
                         <EyeIcon className="h-4 w-4" />
                         View
                       </a>
-                    )
-                    
+                    )}
                     {note.status === 'pending' && (
                       <>
                         <button
