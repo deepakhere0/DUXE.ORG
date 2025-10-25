@@ -14,7 +14,7 @@ import NoteDetail from './pages/NoteDetail';
 import Upload from './pages/Upload';
 import UploadDev from './pages/UploadDev'; // Temporary development upload
 import AdminReview from './pages/AdminReview';
-import PDFPreview from './pages/PDFPreview';
+import PDFPreview from './pages/PDFPreview.jsx';
 import Pending from './pages/Pending';
 import Tools from './pages/Tools';
 import Videos from './pages/Videos';
