@@ -3,21 +3,24 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
-import { 
-  FiArrowLeft, 
-  FiDownload, 
-  FiZoomIn, 
-  FiZoomOut, 
-  FiChevronLeft, 
+import {
+  FiArrowLeft,
+  FiDownload,
+  FiZoomIn,
+  FiZoomOut,
+  FiChevronLeft,
   FiChevronRight,
   FiMaximize,
   FiMinimize
 } from 'react-icons/fi';
 import { getNoteById } from '../services/firestoreData';
 import toast from 'react-hot-toast';
+import { testPDFUrl, suggestFix } from '../utils/pdfDiagnostics';
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Configure PDF.js worker with CDN fallback
+if (typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+}
 
 function PDFPreview() {
   const { id } = useParams();
@@ -30,13 +33,15 @@ function PDFPreview() {
   const [scale, setScale] = useState(1.0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [error, setError] = useState(null);
+  const [useFallback, setUseFallback] = useState(false);
+  const [iframeLoading, setIframeLoading] = useState(false);
 
   useEffect(() => {
     const fetchNote = async () => {
       try {
         setLoading(true);
         const noteData = await getNoteById(id);
-        
+
         if (!noteData) {
           setError('Note not found');
           toast.error('Note not found');
@@ -49,6 +54,22 @@ function PDFPreview() {
           return;
         }
 
+        console.group('📝 PDF Preview Loading');
+        console.log('Note:', noteData);
+        console.log('File URL:', noteData.fileUrl);
+
+        // Detect Firebase Storage URLs and use iframe fallback for CORS issues
+        const url = noteData.fileUrl.toLowerCase();
+        if (url.includes('firebasestorage.googleapis.com') || url.includes('firebase')) {
+          console.log('🔥 Firebase Storage detected - using iframe fallback');
+          setUseFallback(true);
+          setIframeLoading(true);
+        } else {
+          console.log('📄 Using PDF.js renderer');
+          setUseFallback(false);
+        }
+
+        console.groupEnd();
         setNote(noteData);
       } catch (err) {
         console.error('Error fetching note:', err);
@@ -65,14 +86,32 @@ function PDFPreview() {
   }, [id]);
 
   const onDocumentLoadSuccess = ({ numPages }) => {
+    console.log('✅ PDF loaded successfully!', { numPages });
     setNumPages(numPages);
     setPageNumber(1);
   };
 
-  const onDocumentLoadError = (error) => {
-    console.error('PDF Load Error:', error);
-    setError('Failed to load PDF');
-    toast.error('Failed to load PDF file');
+  const onDocumentLoadError = async (error) => {
+    console.error('❌ PDF Load Error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
+    console.error('PDF URL:', note?.fileUrl);
+
+    // Run diagnostics
+    if (note?.fileUrl) {
+      const diagnostics = await testPDFUrl(note.fileUrl);
+      const suggestion = suggestFix(diagnostics);
+      console.log('💡 Suggestion:', suggestion);
+    }
+
+    // Try fallback iframe method for CORS issues
+    console.log('🔄 Attempting fallback iframe preview...');
+    setUseFallback(true);
+    setIframeLoading(true);
+    toast.error('Switching to alternate preview mode...');
   };
 
   const changePage = (offset) => {
@@ -278,32 +317,79 @@ function PDFPreview() {
         {/* PDF Viewer */}
         <div className="flex-1 overflow-auto bg-gray-900 p-4">
           <div className="flex justify-center">
-            <div className="shadow-2xl">
-              <Document
-                file={note.fileUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={onDocumentLoadError}
-                loading={
-                  <div className="flex items-center justify-center p-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500"></div>
+            {!useFallback ? (
+              <div className="shadow-2xl">
+                <Document
+                  file={{
+                    url: note.fileUrl,
+                    httpHeaders: {
+                      'Accept': 'application/pdf',
+                    },
+                    withCredentials: false,
+                  }}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  onLoadError={onDocumentLoadError}
+                  loading={
+                    <div className="flex items-center justify-center p-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500"></div>
+                      <p className="text-gray-300 ml-3">Loading PDF...</p>
+                    </div>
+                  }
+                  error={
+                    <div className="bg-red-900/20 border border-red-500 rounded-lg p-6 text-center">
+                      <p className="text-red-400 font-medium">Failed to load PDF</p>
+                      <p className="text-red-300 text-sm mt-2">Switching to alternate preview mode...</p>
+                    </div>
+                  }
+                  options={{
+                    cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
+                    cMapPacked: true,
+                    standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+                    disableAutoFetch: false,
+                    disableStream: false,
+                    isEvalSupported: false,
+                  }}
+                >
+                  <Page
+                    pageNumber={pageNumber}
+                    scale={scale}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                    className="shadow-xl"
+                  />
+                </Document>
+              </div>
+            ) : (
+              <div className="w-full h-full bg-white rounded-lg shadow-2xl overflow-hidden relative">
+                {iframeLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500 mx-auto mb-4"></div>
+                      <p className="text-gray-300">Loading PDF preview...</p>
+                    </div>
                   </div>
-                }
-                error={
-                  <div className="bg-red-900/20 border border-red-500 rounded-lg p-6 text-center">
-                    <p className="text-red-400 font-medium">Failed to load PDF</p>
-                    <p className="text-red-300 text-sm mt-2">Please try refreshing the page</p>
-                  </div>
-                }
-              >
-                <Page
-                  pageNumber={pageNumber}
-                  scale={scale}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
-                  className="shadow-xl"
+                )}
+                <iframe
+                  src={`${note.fileUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
+                  className="w-full h-full border-0"
+                  title={note.title || 'PDF Preview'}
+                  style={{
+                    display: iframeLoading ? 'none' : 'block',
+                    minHeight: '800px'
+                  }}
+                  onLoad={() => {
+                    console.log('✅ Iframe loaded successfully');
+                    setTimeout(() => setIframeLoading(false), 500);
+                  }}
+                  onError={() => {
+                    console.error('❌ Iframe failed to load');
+                    setError('Failed to load PDF preview');
+                    setIframeLoading(false);
+                  }}
+                  allow="fullscreen"
                 />
-              </Document>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
