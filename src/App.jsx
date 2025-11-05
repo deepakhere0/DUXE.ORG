@@ -37,6 +37,7 @@ import DataConnectTest from './components/DataConnectTest';
 import Debug from './pages/Debug';
 import AdminDashboard from './pages/AdminDashboard';
 import PaymentAnalytics from './components/admin/PaymentAnalytics';
+import FixNotes from './pages/FixNotes';
 
 // Auth Pages
 import Login from './pages/Login';
@@ -104,8 +105,11 @@ function App() {
               {import.meta.env.DEV && (
                 <Route path="debug" element={<Debug />} />
               )}
-              
-              
+
+              {/* Fix Notes Route - Admin Tool */}
+              <Route path="fix-notes" element={<FixNotes />} />
+
+
               {/* Protected Routes */}
               <Route path="dashboard" element={
                 <ProtectedRoute>
