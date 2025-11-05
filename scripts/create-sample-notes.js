@@ -19,7 +19,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Sample pending notes data
+// Sample pending notes data with real working PDF URLs
 const sampleNotes = [
   {
     title: 'Data Structures and Algorithms - Complete Notes',
@@ -30,7 +30,9 @@ const sampleNotes = [
     authorName: 'Rahul Sharma',
     createdBy: 'sample_student_uid_1',
     status: 'pending',
-    fileUrl: 'https://example.com/sample-file-1.pdf',
+    // Using Mozilla's PDF.js sample PDF (publicly accessible)
+    fileUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf',
+    fileType: 'application/pdf',
     description: 'Comprehensive notes covering arrays, linked lists, trees, and sorting algorithms',
     pages: 45,
     fileSize: 2048576, // 2MB
@@ -47,7 +49,9 @@ const sampleNotes = [
     authorName: 'Priya Singh',
     createdBy: 'sample_student_uid_2',
     status: 'pending',
-    fileUrl: 'https://example.com/sample-file-2.pdf',
+    // Using a public PDF from the web
+    fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    fileType: 'application/pdf',
     description: 'Complete guide to database design, normalization, and query optimization',
     pages: 78,
     fileSize: 3145728, // 3MB
@@ -64,7 +68,9 @@ const sampleNotes = [
     authorName: 'Arjun Patel',
     createdBy: 'sample_student_uid_3',
     status: 'pending',
-    fileUrl: 'https://example.com/sample-file-3.pdf',
+    // Using PDF.js sample
+    fileUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf',
+    fileType: 'application/pdf',
     description: 'Introduction to ML algorithms, supervised and unsupervised learning',
     pages: 92,
     fileSize: 4194304, // 4MB
@@ -81,7 +87,8 @@ const sampleNotes = [
     authorName: 'Sneha Gupta',
     createdBy: 'sample_student_uid_4',
     status: 'pending',
-    fileUrl: 'https://example.com/sample-file-4.pdf',
+    fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    fileType: 'application/pdf',
     description: 'Process management, memory management, and file systems',
     pages: 67,
     fileSize: 2621440, // 2.5MB
@@ -98,7 +105,8 @@ const sampleNotes = [
     authorName: 'Vikram Kumar',
     createdBy: 'sample_student_uid_5',
     status: 'pending',
-    fileUrl: 'https://example.com/sample-file-5.pdf',
+    fileUrl: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf',
+    fileType: 'application/pdf',
     description: 'Network protocols, OSI model, and cybersecurity fundamentals',
     pages: 55,
     fileSize: 2883584, // 2.75MB
