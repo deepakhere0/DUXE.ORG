@@ -69,15 +69,22 @@ function PDFPreview() {
         console.log('Note:', noteData);
         console.log('File URL:', noteData.fileUrl);
 
-        // Validate URL before proceeding
+        // Validate URL before proceeding (warn but don't block)
+        let urlWarning = null;
         try {
           const urlObj = new URL(noteData.fileUrl);
           console.log('✅ Valid URL detected:', urlObj.hostname);
+
+          // Warn about fake URLs
+          if (urlObj.hostname.includes('example.com') || urlObj.hostname.includes('placeholder')) {
+            console.warn('⚠️ Fake/placeholder URL detected - will try to load anyway');
+            urlWarning = 'This note may use a test URL';
+            toast.error('⚠️ This note has an invalid URL. Run: node scripts/fix-note-urls.js to fix it permanently.');
+          }
         } catch (urlError) {
           console.error('❌ Invalid URL format:', noteData.fileUrl);
-          setError('Invalid PDF URL');
-          toast.error('Invalid PDF file URL');
-          return;
+          // Don't block - let PDF.js handle the error gracefully
+          urlWarning = 'URL format may be invalid';
         }
 
         // Detect Firebase Storage URLs and use iframe fallback for CORS issues
@@ -122,7 +129,20 @@ function PDFPreview() {
     });
     console.error('PDF URL:', note?.fileUrl);
 
-    // Run diagnostics
+    // Check if it's a fake URL error
+    const isFakeUrl = note?.fileUrl?.includes('example.com') ||
+                     note?.fileUrl?.includes('placeholder') ||
+                     !note?.fileUrl?.startsWith('http');
+
+    if (isFakeUrl) {
+      console.error('🚨 This note has a fake/placeholder URL!');
+      console.error('💡 Solution: Run `node scripts/fix-note-urls.js` to fix all notes');
+      setError('This note has an invalid URL. Please run the fix script to update all notes with valid PDFs.');
+      toast.error('⚠️ Invalid URL detected. Check console for fix instructions.');
+      return; // Don't try to load fake URLs
+    }
+
+    // Run diagnostics for real URLs
     if (note?.fileUrl) {
       const diagnostics = await testPDFUrl(note.fileUrl);
       const suggestion = suggestFix(diagnostics);

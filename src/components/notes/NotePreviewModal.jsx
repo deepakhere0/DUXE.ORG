@@ -48,25 +48,21 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
       setScale(1.0);
       setRenderReady(false);
 
-      // Validate URL first
+      // Validate URL and warn about potential issues
+      let urlWarning = null;
       try {
         const urlObj = new URL(note.fileUrl);
-        console.log('✅ Valid URL detected:', urlObj.hostname);
+        console.log('✅ Valid URL format detected:', urlObj.hostname);
 
-        // Check for fake/placeholder URLs
+        // Check for fake/placeholder URLs but don't block - just warn
         if (urlObj.hostname.includes('example.com') || urlObj.hostname.includes('placeholder')) {
-          console.error('❌ Fake/placeholder URL detected!');
-          setError('This note uses a placeholder URL. Please contact the administrator to fix this note.');
-          setRenderReady(false);
-          console.groupEnd();
-          return;
+          console.warn('⚠️ Fake/placeholder URL detected - will attempt to load anyway');
+          urlWarning = 'This note may use a test URL. If preview fails, please contact administrator.';
         }
       } catch (urlError) {
         console.error('❌ Invalid URL format:', note.fileUrl);
-        setError('Invalid PDF URL. The file link is not properly formatted.');
-        setRenderReady(false);
-        console.groupEnd();
-        return;
+        // Don't block - try to load anyway, the iframe/pdf.js will fail gracefully
+        urlWarning = 'URL format may be invalid. Preview might not work.';
       }
 
       // Detect file type and determine best preview method
@@ -207,14 +203,27 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
       stack: error.stack
     });
     console.error('PDF URL:', note?.fileUrl);
-    
-    // Run diagnostics
+
+    // Check if it's a fake URL error
+    const isFakeUrl = note?.fileUrl?.includes('example.com') ||
+                     note?.fileUrl?.includes('placeholder') ||
+                     !note?.fileUrl?.startsWith('http');
+
+    if (isFakeUrl) {
+      console.error('🚨 This note has a fake/placeholder URL!');
+      console.error('💡 Solution: Run `node scripts/fix-note-urls.js` to fix all notes');
+      setError('This note has an invalid URL. The PDF file cannot be loaded. Please run the fix script: node scripts/fix-note-urls.js');
+      setLoading(false);
+      return;
+    }
+
+    // Run diagnostics for real URLs
     if (note?.fileUrl) {
       const diagnostics = await testPDFUrl(note.fileUrl);
       const suggestion = suggestFix(diagnostics);
       console.log('💡 Suggestion:', suggestion);
     }
-    
+
     // Try fallback iframe method for CORS issues
     console.log('🔄 Attempting fallback iframe preview...');
     setUseFallback(true);
