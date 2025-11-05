@@ -48,6 +48,27 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
       setScale(1.0);
       setRenderReady(false);
 
+      // Validate URL first
+      try {
+        const urlObj = new URL(note.fileUrl);
+        console.log('✅ Valid URL detected:', urlObj.hostname);
+
+        // Check for fake/placeholder URLs
+        if (urlObj.hostname.includes('example.com') || urlObj.hostname.includes('placeholder')) {
+          console.error('❌ Fake/placeholder URL detected!');
+          setError('This note uses a placeholder URL. Please contact the administrator to fix this note.');
+          setRenderReady(false);
+          console.groupEnd();
+          return;
+        }
+      } catch (urlError) {
+        console.error('❌ Invalid URL format:', note.fileUrl);
+        setError('Invalid PDF URL. The file link is not properly formatted.');
+        setRenderReady(false);
+        console.groupEnd();
+        return;
+      }
+
       // Detect file type and determine best preview method
       const url = note.fileUrl.toLowerCase();
       let detectedType;
@@ -83,6 +104,11 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
 
       // Set render ready immediately for faster preview
       setRenderReady(true);
+    } else if (isOpen && !note?.fileUrl) {
+      console.error('❌ Note opened without fileUrl:', note);
+      setError('This note does not have a file attached.');
+      setRenderReady(false);
+      document.body.style.overflow = 'hidden';
     } else {
       setRenderReady(false);
       // Unlock body scroll when modal closes
