@@ -40,15 +40,26 @@ function PDFPreview() {
     const fetchNote = async () => {
       try {
         setLoading(true);
+
+        // Add detailed logging for debugging
+        console.group('📝 PDF Preview - Fetching Note');
+        console.log('Note ID from URL params:', id);
+        console.log('ID type:', typeof id);
+
         const noteData = await getNoteById(id);
 
+        console.log('Fetched note data:', noteData);
+        console.groupEnd();
+
         if (!noteData) {
+          console.error('❌ Note not found for ID:', id);
           setError('Note not found');
-          toast.error('Note not found');
+          toast.error(`Note not found (ID: ${id})`);
           return;
         }
 
         if (!noteData.fileUrl) {
+          console.error('❌ PDF file URL missing for note:', noteData);
           setError('PDF file not available');
           toast.error('PDF file not available');
           return;
@@ -57,6 +68,17 @@ function PDFPreview() {
         console.group('📝 PDF Preview Loading');
         console.log('Note:', noteData);
         console.log('File URL:', noteData.fileUrl);
+
+        // Validate URL before proceeding
+        try {
+          const urlObj = new URL(noteData.fileUrl);
+          console.log('✅ Valid URL detected:', urlObj.hostname);
+        } catch (urlError) {
+          console.error('❌ Invalid URL format:', noteData.fileUrl);
+          setError('Invalid PDF URL');
+          toast.error('Invalid PDF file URL');
+          return;
+        }
 
         // Detect Firebase Storage URLs and use iframe fallback for CORS issues
         const url = noteData.fileUrl.toLowerCase();

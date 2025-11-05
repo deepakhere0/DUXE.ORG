@@ -115,7 +115,15 @@ export const createNote = async (noteData) => {
 };
 
 export const getNoteById = async (noteId) => {
-  return readDoc(Notes.collection, noteId);
+  console.log('🔍 getNoteById called with ID:', noteId);
+  try {
+    const result = await readDoc(Notes.collection, noteId);
+    console.log('✅ getNoteById result:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ getNoteById error:', error);
+    throw error;
+  }
 };
 
 export const updateNote = async (noteId, updates) => {
