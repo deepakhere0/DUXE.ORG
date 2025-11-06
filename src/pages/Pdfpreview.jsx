@@ -16,6 +16,7 @@ import {
 import { getNoteById } from '../services/firestoreData';
 import toast from 'react-hot-toast';
 import { testPDFUrl, suggestFix } from '../utils/pdfDiagnostics';
+import { getDownloadUrlFromPath } from '../services/storageHelpers'; // Import URL resolver helper
 
 // Configure PDF.js worker with CDN fallback
 if (typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
@@ -35,6 +36,7 @@ function PDFPreview() {
   const [error, setError] = useState(null);
   const [useFallback, setUseFallback] = useState(false);
   const [iframeLoading, setIframeLoading] = useState(false);
+  const [resolvedFileUrl, setResolvedFileUrl] = useState(null); // Store resolved HTTPS URL
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -67,12 +69,17 @@ function PDFPreview() {
 
         console.group('📝 PDF Preview Loading');
         console.log('Note:', noteData);
-        console.log('File URL:', noteData.fileUrl);
+        console.log('File URL (original):', noteData.fileUrl);
 
-        // Validate URL before proceeding
+        // Resolve file URL to downloadable HTTPS format (handles gs://, storage paths, etc.)
         try {
-          const urlObj = new URL(noteData.fileUrl);
-          console.log('✅ Valid URL detected:', urlObj.hostname);
+          console.log('🔄 Resolving file URL...');
+          const downloadUrl = await getDownloadUrlFromPath(noteData.fileUrl);
+          console.log('✅ Resolved URL:', downloadUrl);
+
+          // Validate resolved URL
+          const urlObj = new URL(downloadUrl);
+          console.log('✅ Valid HTTPS URL:', urlObj.hostname);
 
           // Check for fake/placeholder URLs
           if (urlObj.hostname.includes('example.com') || urlObj.hostname.includes('placeholder')) {
@@ -82,27 +89,32 @@ function PDFPreview() {
             console.groupEnd();
             return;
           }
+
+          // Store resolved URL
+          setResolvedFileUrl(downloadUrl);
+
+          // Detect Firebase Storage URLs and use iframe fallback for CORS issues
+          const url = downloadUrl.toLowerCase();
+          if (url.includes('firebasestorage.googleapis.com') || url.includes('firebase')) {
+            console.log('🔥 Firebase Storage detected - using iframe fallback');
+            setUseFallback(true);
+            setIframeLoading(true);
+          } else {
+            console.log('📄 Using PDF.js renderer');
+            setUseFallback(false);
+          }
+
+          console.groupEnd();
+          setNote(noteData);
         } catch (urlError) {
-          console.error('❌ Invalid URL format:', noteData.fileUrl);
-          setError('Invalid PDF URL. The file link is not properly formatted.');
-          toast.error('Invalid PDF file URL');
+          console.error('❌ URL resolution failed:', urlError);
+          console.error('Original URL:', noteData.fileUrl);
+          const errorMsg = `Failed to load PDF: ${urlError.message}`;
+          setError(errorMsg);
+          toast.error(errorMsg);
           console.groupEnd();
           return;
         }
-
-        // Detect Firebase Storage URLs and use iframe fallback for CORS issues
-        const url = noteData.fileUrl.toLowerCase();
-        if (url.includes('firebasestorage.googleapis.com') || url.includes('firebase')) {
-          console.log('🔥 Firebase Storage detected - using iframe fallback');
-          setUseFallback(true);
-          setIframeLoading(true);
-        } else {
-          console.log('📄 Using PDF.js renderer');
-          setUseFallback(false);
-        }
-
-        console.groupEnd();
-        setNote(noteData);
       } catch (err) {
         console.error('Error fetching note:', err);
         setError('Failed to load note');
@@ -132,9 +144,10 @@ function PDFPreview() {
     });
     console.error('PDF URL:', note?.fileUrl);
 
-    // Run diagnostics
-    if (note?.fileUrl) {
-      const diagnostics = await testPDFUrl(note.fileUrl);
+    // Run diagnostics (use resolved URL if available)
+    const urlToTest = resolvedFileUrl || note?.fileUrl;
+    if (urlToTest) {
+      const diagnostics = await testPDFUrl(urlToTest);
       const suggestion = suggestFix(diagnostics);
       console.log('💡 Suggestion:', suggestion);
     }
@@ -174,8 +187,10 @@ function PDFPreview() {
   };
 
   const handleDownload = () => {
-    if (note?.fileUrl) {
-      window.open(note.fileUrl, '_blank');
+    // Use resolved URL for download (ensures valid HTTPS URL)
+    const downloadUrl = resolvedFileUrl || note?.fileUrl;
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank');
       toast.success('Opening download...');
     }
   };
@@ -353,7 +368,7 @@ function PDFPreview() {
               <div className="shadow-2xl">
                 <Document
                   file={{
-                    url: note.fileUrl,
+                    url: resolvedFileUrl || note.fileUrl, // Use resolved URL for PDF.js
                     httpHeaders: {
                       'Accept': 'application/pdf',
                     },
@@ -402,7 +417,7 @@ function PDFPreview() {
                   </div>
                 )}
                 <iframe
-                  src={`${note.fileUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
+                  src={`${resolvedFileUrl || note.fileUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`} {/* Use resolved URL for iframe */}
                   className="w-full h-full border-0"
                   title={note.title || 'PDF Preview'}
                   style={{

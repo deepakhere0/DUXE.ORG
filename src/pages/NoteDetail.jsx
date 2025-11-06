@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { 
+import {
   DocumentTextIcon,
   ArrowDownTrayIcon,
   BookmarkIcon,
@@ -20,6 +20,7 @@ import { AIService } from '../services/aiService';
 import Toast from '../components/common/Toast';
 import AIResultModal from '../components/modals/AIResultModal';
 import { getNoteById } from '../services/firestoreData';
+import { getDownloadUrlFromPath } from '../services/storageHelpers'; // Import URL resolver helper
 
 const NoteDetail = () => {
   const { noteId } = useParams();
@@ -31,6 +32,7 @@ const NoteDetail = () => {
   const [activeTab, setActiveTab] = useState('preview');
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiModal, setAiModal] = useState({ isOpen: false, type: null, data: null, isLoading: false, error: null });
+  const [resolvedFileUrl, setResolvedFileUrl] = useState(null); // Store resolved HTTPS URL
 
 // Fetch note from Firebase
   React.useEffect(() => {
@@ -59,6 +61,20 @@ if (noteData.status !== 'approved') {
 }
 
         setNote(noteData);
+
+        // Resolve file URL if available (handles gs://, storage paths, etc.)
+        if (noteData.fileUrl) {
+          try {
+            console.log('🔄 Resolving file URL for note detail...');
+            const downloadUrl = await getDownloadUrlFromPath(noteData.fileUrl);
+            setResolvedFileUrl(downloadUrl);
+            console.log('✅ File URL resolved:', downloadUrl);
+          } catch (urlError) {
+            console.error('❌ Failed to resolve file URL:', urlError);
+            // Don't block the page, just log the error
+            // User can still try to download/view using original URL
+          }
+        }
       } catch (err) {
         console.error('Error fetching note:', err);
         setError('Failed to load note');
@@ -82,10 +98,12 @@ if (noteData.status !== 'approved') {
   };
 
   const handleDownload = () => {
-    if (note?.fileUrl) {
+    // Use resolved URL for download (ensures valid HTTPS URL)
+    const downloadUrl = resolvedFileUrl || note?.fileUrl;
+    if (downloadUrl) {
       // Open file in new tab (browser will handle download)
-      window.open(note.fileUrl, '_blank');
-      
+      window.open(downloadUrl, '_blank');
+
       // Optionally: increment download counter
       // incrementDownloadCount(noteId);
     }
@@ -235,7 +253,7 @@ if (noteData.status !== 'approved') {
                     {note.fileUrl && note.fileType === 'application/pdf' && (
                       <div className="bg-gray-100 rounded-xl p-4">
                         <iframe
-                          src={note.fileUrl}
+                          src={resolvedFileUrl || note.fileUrl} {/* Use resolved URL for iframe preview */}
                           className="w-full h-96 border-0 rounded-lg"
                           title="PDF Preview"
                         />

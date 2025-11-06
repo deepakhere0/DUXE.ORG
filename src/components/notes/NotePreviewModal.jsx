@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { showToast } from '../common/Toast';
 import { testPDFUrl, suggestFix } from '../../utils/pdfDiagnostics';
+import { getDownloadUrlFromPath } from '../../services/storageHelpers'; // Import URL resolver helper
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
@@ -32,12 +33,13 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
   const [fileType, setFileType] = useState(null);
   const [renderReady, setRenderReady] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
+  const [resolvedFileUrl, setResolvedFileUrl] = useState(null); // Store resolved HTTPS URL
 
   useEffect(() => {
     if (isOpen && note?.fileUrl) {
       console.group('📝 Preview Modal Opening');
       console.log('Note:', note);
-      console.log('File URL:', note.fileUrl);
+      console.log('File URL (original):', note.fileUrl);
       console.log('File Type:', note.fileType);
 
       // Lock body scroll when modal opens
@@ -47,63 +49,85 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
       setPageNumber(1);
       setScale(1.0);
       setRenderReady(false);
+      setResolvedFileUrl(null);
 
-      // Validate URL first
-      try {
-        const urlObj = new URL(note.fileUrl);
-        console.log('✅ Valid URL detected:', urlObj.hostname);
+      // Resolve file URL to downloadable HTTPS format (handles gs://, storage paths, etc.)
+      const resolveUrl = async () => {
+        try {
+          console.log('🔄 Resolving file URL...');
+          const downloadUrl = await getDownloadUrlFromPath(note.fileUrl);
+          console.log('✅ Resolved URL:', downloadUrl);
 
-        // Check for fake/placeholder URLs
-        if (urlObj.hostname.includes('example.com') || urlObj.hostname.includes('placeholder')) {
-          console.error('❌ Fake/placeholder URL detected!');
-          setError('This note uses a placeholder URL. Please contact the administrator to fix this note.');
+          // Validate resolved URL
+          const urlObj = new URL(downloadUrl);
+          console.log('✅ Valid HTTPS URL:', urlObj.hostname);
+
+          // Check for fake/placeholder URLs
+          if (urlObj.hostname.includes('example.com') || urlObj.hostname.includes('placeholder')) {
+            console.error('❌ Fake/placeholder URL detected!');
+            setError('This note uses a placeholder URL. Please contact the administrator to fix this note.');
+            setRenderReady(false);
+            console.groupEnd();
+            return;
+          }
+
+          // Store resolved URL
+          setResolvedFileUrl(downloadUrl);
+
+          // Detect file type and determine best preview method
+          const url = downloadUrl.toLowerCase();
+          let detectedType;
+          let shouldUseFallback = false;
+
+          if (url.includes('.pdf') || note.fileType === 'application/pdf') {
+            detectedType = 'pdf';
+            setFileType('pdf');
+            setLoading(true);
+
+            // Use iframe directly for Firebase Storage URLs (CORS issues with PDF.js)
+            if (url.includes('firebasestorage.googleapis.com') || url.includes('firebase')) {
+              console.log('🔥 Firebase Storage detected - using iframe directly');
+              shouldUseFallback = true;
+            }
+          } else if (url.match(/\.(jpg|jpeg|png|webp|gif)$/i) || note.fileType?.startsWith('image/')) {
+            detectedType = 'image';
+            setFileType('image');
+            setLoading(true);
+          } else {
+            detectedType = 'pdf (default)';
+            setFileType('pdf');
+            setLoading(true);
+            shouldUseFallback = true; // Default to iframe for unknown types
+          }
+
+          setUseFallback(shouldUseFallback);
+
+          console.log('📄 Detected file type:', detectedType);
+          console.log('🔧 Use fallback iframe:', shouldUseFallback);
+          console.log('⏱️ Render ready immediately');
+          console.groupEnd();
+
+          // Set render ready immediately for faster preview
+          setRenderReady(true);
+        } catch (urlError) {
+          console.error('❌ URL resolution failed:', urlError);
+          console.error('Original URL:', note.fileUrl);
+          console.error('Error details:', {
+            message: urlError.message,
+            stack: urlError.stack
+          });
+
+          // Provide detailed error message with troubleshooting info
+          const errorMsg = `Failed to load file: ${urlError.message}. Original URL: ${note.fileUrl}`;
+          setError(errorMsg);
           setRenderReady(false);
           console.groupEnd();
           return;
         }
-      } catch (urlError) {
-        console.error('❌ Invalid URL format:', note.fileUrl);
-        setError('Invalid PDF URL. The file link is not properly formatted.');
-        setRenderReady(false);
-        console.groupEnd();
-        return;
-      }
+      };
 
-      // Detect file type and determine best preview method
-      const url = note.fileUrl.toLowerCase();
-      let detectedType;
-      let shouldUseFallback = false;
-
-      if (url.includes('.pdf') || note.fileType === 'application/pdf') {
-        detectedType = 'pdf';
-        setFileType('pdf');
-        setLoading(true);
-
-        // Use iframe directly for Firebase Storage URLs (CORS issues with PDF.js)
-        if (url.includes('firebasestorage.googleapis.com') || url.includes('firebase')) {
-          console.log('🔥 Firebase Storage detected - using iframe directly');
-          shouldUseFallback = true;
-        }
-      } else if (url.match(/\.(jpg|jpeg|png|webp|gif)$/i) || note.fileType?.startsWith('image/')) {
-        detectedType = 'image';
-        setFileType('image');
-        setLoading(true);
-      } else {
-        detectedType = 'pdf (default)';
-        setFileType('pdf');
-        setLoading(true);
-        shouldUseFallback = true; // Default to iframe for unknown types
-      }
-
-      setUseFallback(shouldUseFallback);
-
-      console.log('📄 Detected file type:', detectedType);
-      console.log('🔧 Use fallback iframe:', shouldUseFallback);
-      console.log('⏱️ Render ready immediately');
-      console.groupEnd();
-
-      // Set render ready immediately for faster preview
-      setRenderReady(true);
+      // Execute URL resolution
+      resolveUrl();
     } else if (isOpen && !note?.fileUrl) {
       console.error('❌ Note opened without fileUrl:', note);
       setError('This note does not have a file attached.');
@@ -176,7 +200,9 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(note.fileUrl);
+      // Use resolved URL for download (ensures valid HTTPS URL)
+      const downloadUrl = resolvedFileUrl || note.fileUrl;
+      const response = await fetch(downloadUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -208,9 +234,10 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
     });
     console.error('PDF URL:', note?.fileUrl);
     
-    // Run diagnostics
-    if (note?.fileUrl) {
-      const diagnostics = await testPDFUrl(note.fileUrl);
+    // Run diagnostics (use resolved URL if available)
+    const urlToTest = resolvedFileUrl || note?.fileUrl;
+    if (urlToTest) {
+      const diagnostics = await testPDFUrl(urlToTest);
       const suggestion = suggestFix(diagnostics);
       console.log('💡 Suggestion:', suggestion);
     }
@@ -361,12 +388,12 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
 
             {renderReady && !error ? (
               <div className="flex items-center justify-center w-full h-full">
-                {console.log('📺 Rendering content...', { fileType, useFallback, noteUrl: note?.fileUrl })}
+                {console.log('📺 Rendering content...', { fileType, useFallback, resolvedUrl: resolvedFileUrl })}
                 {fileType === 'pdf' && !useFallback ? (
                   <div className="bg-white shadow-lg w-full h-full flex items-center justify-center">
                     <Document
                       file={{
-                        url: note.fileUrl,
+                        url: resolvedFileUrl || note.fileUrl, // Use resolved URL for PDF.js
                         httpHeaders: {
                           'Accept': 'application/pdf',
                         },
@@ -413,7 +440,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
                       </div>
                     )}
                     <iframe
-                      src={`${note.fileUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`}
+                      src={`${resolvedFileUrl || note.fileUrl}#toolbar=1&navpanes=0&scrollbar=1&view=FitH`} {/* Use resolved URL for iframe */}
                       className="w-full h-full border-0 min-h-[500px]"
                       title={note.title || 'PDF Preview'}
                       style={{ display: loading ? 'none' : 'block' }}
@@ -432,7 +459,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
                       </div>
                     )}
                     <img
-                      src={note.fileUrl}
+                      src={resolvedFileUrl || note.fileUrl} {/* Use resolved URL for image */}
                       alt={note.title}
                       className="max-w-full max-h-full object-contain shadow-lg rounded-lg"
                       style={{ transform: `scale(${scale})` }}
