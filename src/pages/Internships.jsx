@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { BriefcaseIcon, MapPinIcon, CurrencyDollarIcon, ClockIcon, BookmarkIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useQuery } from '@tanstack/react-query';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { collection, getDocs, query, orderBy, limit, addDoc, deleteDoc, doc, where } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { Internships as InternshipsService } from '../services/firestoreData';
 import { AIService } from '../services/aiService';
+import { useAuth } from '../contexts/AuthContext';
 import Toast from '../components/common/Toast';
 
 const Internships = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [userSkills, setUserSkills] = useState(['React', 'JavaScript', 'Node.js']);
   const [newSkill, setNewSkill] = useState('');
   const [showSkillInput, setShowSkillInput] = useState(false);
@@ -71,6 +75,56 @@ const Internships = () => {
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
+
+  // Fetch user's bookmarked internships
+  const { data: bookmarks = [] } = useQuery({
+    queryKey: ['internshipBookmarks', user?.uid],
+    queryFn: async () => {
+      if (!user) return [];
+      try {
+        const q = query(
+          collection(db, 'internshipBookmarks'),
+          where('userId', '==', user.uid)
+        );
+        const snapshot = await getDocs(q);
+        const bookmarksList = [];
+        snapshot.forEach((doc) => {
+          bookmarksList.push({ id: doc.id, ...doc.data() });
+        });
+        return bookmarksList;
+      } catch (err) {
+        console.error('Error fetching bookmarks:', err);
+        return [];
+      }
+    },
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+  });
+
+  // Bookmark mutation
+  const bookmarkMutation = useMutation({
+    mutationFn: async ({ internshipId, isBookmarked }) => {
+      if (!user) throw new Error('User not authenticated');
+
+      if (isBookmarked) {
+        // Remove bookmark
+        const bookmark = bookmarks.find(b => b.internshipId === internshipId);
+        if (bookmark) {
+          await deleteDoc(doc(db, 'internshipBookmarks', bookmark.id));
+        }
+      } else {
+        // Add bookmark
+        await addDoc(collection(db, 'internshipBookmarks'), {
+          userId: user.uid,
+          internshipId: internshipId,
+          createdAt: new Date()
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['internshipBookmarks', user?.uid] });
+    },
+  });
   
   // Apply AI matching when internships or skills change
   useEffect(() => {
@@ -105,12 +159,20 @@ const Internships = () => {
   };
   
   const handleBookmark = async (internshipId) => {
-    if (!currentUser) {
-      Toast.error('Please login to bookmark');
+    if (!user) {
+      Toast.error('Please login to bookmark internships');
       return;
     }
-    // TODO: Implement bookmark functionality
-    Toast.success('Bookmarked');
+
+    const isBookmarked = bookmarks.some(b => b.internshipId === internshipId);
+
+    try {
+      await bookmarkMutation.mutateAsync({ internshipId, isBookmarked });
+      Toast.success(isBookmarked ? 'Bookmark removed' : 'Internship bookmarked');
+    } catch (error) {
+      console.error('Error bookmarking internship:', error);
+      Toast.error('Failed to bookmark internship');
+    }
   };
 
   return (
@@ -266,17 +328,26 @@ const Internships = () => {
                     )}
 
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => handleApply(internship)}
                         className="btn btn-primary btn-sm flex-1"
                       >
                         Apply Now
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleBookmark(internship.id)}
-                        className="btn btn-secondary btn-sm"
+                        className={`btn btn-sm ${
+                          bookmarks.some(b => b.internshipId === internship.id)
+                            ? 'btn-primary'
+                            : 'btn-secondary'
+                        }`}
+                        disabled={bookmarkMutation.isPending}
                       >
-                        <BookmarkIcon className="h-4 w-4" />
+                        {bookmarks.some(b => b.internshipId === internship.id) ? (
+                          <BookmarkSolidIcon className="h-4 w-4" />
+                        ) : (
+                          <BookmarkIcon className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
