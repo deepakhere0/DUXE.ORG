@@ -73,10 +73,20 @@ function PDFPreview() {
         try {
           const urlObj = new URL(noteData.fileUrl);
           console.log('✅ Valid URL detected:', urlObj.hostname);
+
+          // Check for fake/placeholder URLs
+          if (urlObj.hostname.includes('example.com') || urlObj.hostname.includes('placeholder')) {
+            console.error('❌ Fake/placeholder URL detected!');
+            setError('This note uses a placeholder URL. Please contact the administrator to fix this note.');
+            toast.error('Invalid PDF URL - placeholder detected');
+            console.groupEnd();
+            return;
+          }
         } catch (urlError) {
           console.error('❌ Invalid URL format:', noteData.fileUrl);
-          setError('Invalid PDF URL');
+          setError('Invalid PDF URL. The file link is not properly formatted.');
           toast.error('Invalid PDF file URL');
+          console.groupEnd();
           return;
         }
 

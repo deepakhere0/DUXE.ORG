@@ -3,6 +3,63 @@
  * Tests if a PDF URL is accessible and identifies issues
  */
 
+/**
+ * Validates if a PDF URL is valid and not a placeholder
+ * @param {string} url - The URL to validate
+ * @returns {object} - { isValid: boolean, error: string|null }
+ */
+export const validatePDFUrl = (url) => {
+  if (!url || typeof url !== 'string') {
+    return { isValid: false, error: 'URL is required' };
+  }
+
+  // Check if URL is properly formatted
+  try {
+    const urlObj = new URL(url);
+
+    // Check for fake/placeholder URLs
+    if (urlObj.hostname.includes('example.com') || urlObj.hostname.includes('placeholder')) {
+      return {
+        isValid: false,
+        error: 'Placeholder URLs are not allowed. Please provide a real PDF file URL.'
+      };
+    }
+
+    // Ensure it's HTTP(S)
+    if (!urlObj.protocol.startsWith('http')) {
+      return {
+        isValid: false,
+        error: 'URL must use HTTP or HTTPS protocol'
+      };
+    }
+
+    return { isValid: true, error: null };
+  } catch (error) {
+    return {
+      isValid: false,
+      error: 'Invalid URL format. Please provide a valid URL.'
+    };
+  }
+};
+
+/**
+ * Checks if a URL points to a fake/placeholder domain
+ * @param {string} url - The URL to check
+ * @returns {boolean} - True if URL is fake/placeholder
+ */
+export const isFakeUrl = (url) => {
+  if (!url) return true;
+
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.includes('example.com') ||
+           urlObj.hostname.includes('placeholder') ||
+           !url.startsWith('http');
+  } catch {
+    return true; // Invalid URLs are considered fake
+  }
+};
+
 export const testPDFUrl = async (url) => {
   console.group('🔍 PDF Diagnostics');
   console.log('Testing URL:', url);
