@@ -252,8 +252,9 @@ if (noteData.status !== 'approved') {
                     {/* PDF Preview */}
                     {note.fileUrl && note.fileType === 'application/pdf' && (
                       <div className="bg-gray-100 rounded-xl p-4">
+                        {/* Use resolved URL for iframe preview */}
                         <iframe
-                          src={resolvedFileUrl || note.fileUrl} {/* Use resolved URL for iframe preview */}
+                          src={resolvedFileUrl || note.fileUrl}
                           className="w-full h-96 border-0 rounded-lg"
                           title="PDF Preview"
                         />
