@@ -50,14 +50,15 @@ async function createSampleNote() {
     semester: "Fall 2024",
     pages: 25,
     authorName: "Test Author",
-    fileUrl: "https://example.com/sample.pdf",
+    fileUrl: "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf", // Real working PDF URL
+    fileType: "application/pdf",
     status: "approved",
     ratingAvg: 4.8,
     downloads: 100,
     createdAt: serverTimestamp(),
     createdBy: "user1"
   };
-  
+
   const docRef = await addDoc(collection(db, "notes"), data);
   console.log('✅ Created notes/' + docRef.id);
 }

@@ -157,17 +157,24 @@ async function initDepartments() {
 async function initNotes() {
   console.log('\n📚 Initializing Notes Collection...');
   
+  // Real working PDF URLs for sample data
+  const workingPDFs = [
+    'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf',
+    'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+  ];
+
   const notes = [
     {
       title: "Introduction to Algorithms - Sorting",
       courseCode: "6.006",
       universityId: "mit",
-      departmentId: "mit-cs", 
+      departmentId: "mit-cs",
       subject: "Computer Science",
       semester: "Fall 2024",
       pages: 25,
       authorName: "Prof. Erik Demaine",
-      fileUrl: "https://example.com/notes/algorithms-sorting.pdf",
+      fileUrl: workingPDFs[0], // Real PDF URL
+      fileType: "application/pdf",
       status: "approved",
       ratingAvg: 4.8,
       downloads: 1250,
@@ -181,11 +188,12 @@ async function initNotes() {
       courseCode: "18.06",
       universityId: "mit",
       departmentId: "mit-math",
-      subject: "Mathematics", 
+      subject: "Mathematics",
       semester: "Spring 2024",
       pages: 45,
       authorName: "Prof. Gilbert Strang",
-      fileUrl: "https://example.com/notes/linear-algebra.pdf",
+      fileUrl: workingPDFs[1], // Real PDF URL
+      fileType: "application/pdf",
       status: "approved",
       ratingAvg: 4.9,
       downloads: 2100,
@@ -197,13 +205,14 @@ async function initNotes() {
     {
       title: "Machine Learning Basics",
       courseCode: "CS229",
-      universityId: "stanford", 
+      universityId: "stanford",
       departmentId: "stanford-cs",
       subject: "Computer Science",
       semester: "Fall 2024",
       pages: 60,
       authorName: "Prof. Andrew Ng",
-      fileUrl: "https://example.com/notes/ml-basics.pdf",
+      fileUrl: workingPDFs[0], // Real PDF URL
+      fileType: "application/pdf",
       status: "pending",
       ratingAvg: 0,
       downloads: 0,
@@ -218,10 +227,11 @@ async function initNotes() {
       universityId: "mit",
       departmentId: "mit-me",
       subject: "Mechanical Engineering",
-      semester: "Fall 2024", 
+      semester: "Fall 2024",
       pages: 30,
       authorName: "Prof. John Brisson",
-      fileUrl: "https://example.com/notes/thermodynamics.pdf",
+      fileUrl: workingPDFs[1], // Real PDF URL
+      fileType: "application/pdf",
       status: "approved",
       ratingAvg: 4.3,
       downloads: 850,
@@ -238,8 +248,9 @@ async function initNotes() {
       subject: "Computer Science",
       semester: "Spring 2024",
       pages: 40,
-      authorName: "Prof. Joe Hellerstein", 
-      fileUrl: "https://example.com/notes/database-systems.pdf",
+      authorName: "Prof. Joe Hellerstein",
+      fileUrl: workingPDFs[0], // Real PDF URL
+      fileType: "application/pdf",
       status: "rejected",
       ratingAvg: 0,
       downloads: 0,
