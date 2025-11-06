@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Notes URLs - DUXE</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .info { background: #e3f2fd; border-left: 4px solid #2196F3; color: #0d47a1; }
+        .success { background: #e8f5e9; border-left: 4px solid #4caf50; color: #1b5e20; }
+        .warning { background: #fff3e0; border-left: 4px solid #ff9800; color: #e65100; }
+        .error { background: #ffebee; border-left: 4px solid #f44336; color: #c62828; }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .log-success { color: #4caf50; }
+        .log-error { color: #f44336; }
+        .log-warning { color: #ff9800; }
+        .log-info { color: #2196F3; }
+        .summary {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+        .summary-label {
+            font-weight: 600;
+            color: #333;
+        }
+        .summary-value {
+            color: #667eea;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix Notes URLs</h1>
+        <p class="subtitle">Automatically fix notes with fake/placeholder PDF URLs</p>
+
+        <div id="status" class="status info">
+            <strong>ℹ️ Ready to fix URLs</strong><br>
+            Click the button below to scan and fix all notes with invalid URLs.
+        </div>
+
+        <button id="fixBtn" onclick="fixURLs()">🚀 Start Fixing URLs</button>
+
+        <div id="logContainer" class="log-container" style="display:none;">
+            <div id="logs"></div>
+        </div>
+
+        <div id="summary" class="summary" style="display:none;">
+            <h3 style="margin-top:0;">📊 Summary</h3>
+            <div class="summary-item">
+                <span class="summary-label">Total Notes:</span>
+                <span class="summary-value" id="totalNotes">0</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Fixed:</span>
+                <span class="summary-value" id="fixedCount">0</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Already Valid:</span>
+                <span class="summary-value" id="validCount">0</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Failed:</span>
+                <span class="summary-value" id="failedCount">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getFirestore, collection, getDocs, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        // Firebase configuration - uses the same config as your app
+        const firebaseConfig = {
+            apiKey: "AIzaSyB13RVT0Fvxmp4g1Vp2BM8PQtTO1bsprMs",
+            authDomain: "duxe-5c071.firebaseapp.com",
+            projectId: "duxe-5c071",
+            storageBucket: "duxe-5c071.firebasestorage.app",
+            messagingSenderId: "976144847500",
+            appId: "1:976144847500:web:08de97c6f42024650161a9",
+            measurementId: "G-RPKC7R4W2L"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Real working PDF URLs
+        const workingPDFs = [
+            'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf',
+            'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        ];
+
+        function addLog(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            logsDiv.appendChild(logEntry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function setStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+
+        function isFakeUrl(url) {
+            if (!url) return true;
+            try {
+                const urlObj = new URL(url);
+                return urlObj.hostname.includes('example.com') ||
+                       urlObj.hostname.includes('placeholder') ||
+                       !url.startsWith('http');
+            } catch {
+                return true;
+            }
+        }
+
+        window.fixURLs = async function() {
+            const btn = document.getElementById('fixBtn');
+            const logContainer = document.getElementById('logContainer');
+            const summaryDiv = document.getElementById('summary');
+
+            btn.disabled = true;
+            btn.textContent = '🔄 Fixing URLs...';
+            logContainer.style.display = 'block';
+            summaryDiv.style.display = 'none';
+            document.getElementById('logs').innerHTML = '';
+
+            setStatus('<strong>🔄 Scanning database...</strong><br>Please wait while we check all notes.', 'info');
+            addLog('Starting URL fix process...', 'info');
+
+            try {
+                // Get all notes
+                addLog('Fetching notes from database...', 'info');
+                const notesRef = collection(db, 'notes');
+                const snapshot = await getDocs(notesRef);
+
+                if (snapshot.empty) {
+                    setStatus('<strong>❌ No notes found</strong><br>The database is empty. Create some notes first.', 'error');
+                    addLog('No notes found in database', 'error');
+                    btn.disabled = false;
+                    btn.textContent = '🚀 Start Fixing URLs';
+                    return;
+                }
+
+                addLog(`Found ${snapshot.size} notes in database`, 'success');
+
+                let fixedCount = 0;
+                let validCount = 0;
+                let failedCount = 0;
+                const notesToFix = [];
+
+                // Check each note
+                snapshot.forEach((docSnap) => {
+                    const noteData = docSnap.data();
+                    const fileUrl = noteData.fileUrl || '';
+
+                    if (isFakeUrl(fileUrl)) {
+                        notesToFix.push({
+                            id: docSnap.id,
+                            title: noteData.title || 'Untitled',
+                            currentUrl: fileUrl || 'NO URL',
+                        });
+                        addLog(`❌ Found fake URL: ${noteData.title}`, 'warning');
+                    } else {
+                        validCount++;
+                        addLog(`✅ Valid URL: ${noteData.title}`, 'success');
+                    }
+                });
+
+                if (notesToFix.length === 0) {
+                    setStatus('<strong>🎉 All URLs are valid!</strong><br>No fake URLs found. All notes are properly configured.', 'success');
+                    addLog('No notes need fixing - all URLs are valid!', 'success');
+                } else {
+                    addLog(`Found ${notesToFix.length} notes that need fixing`, 'warning');
+                    setStatus(`<strong>🔧 Fixing ${notesToFix.length} notes...</strong><br>Updating URLs with working PDFs.`, 'info');
+
+                    // Fix each note
+                    for (let i = 0; i < notesToFix.length; i++) {
+                        const note = notesToFix[i];
+                        const newUrl = workingPDFs[i % workingPDFs.length];
+
+                        try {
+                            addLog(`Fixing: ${note.title}`, 'info');
+                            const noteRef = doc(db, 'notes', note.id);
+                            await updateDoc(noteRef, {
+                                fileUrl: newUrl,
+                                fileType: 'application/pdf',
+                                updatedAt: new Date().toISOString()
+                            });
+                            fixedCount++;
+                            addLog(`✅ Fixed: ${note.title} -> ${newUrl}`, 'success');
+                        } catch (error) {
+                            failedCount++;
+                            addLog(`❌ Failed to fix: ${note.title} - ${error.message}`, 'error');
+                        }
+                    }
+
+                    if (fixedCount > 0) {
+                        setStatus(`<strong>✨ Success!</strong><br>Fixed ${fixedCount} notes. All preview buttons should work now!`, 'success');
+                        addLog('All fixes completed successfully!', 'success');
+                    } else {
+                        setStatus(`<strong>⚠️ No notes were fixed</strong><br>Check the logs for errors.`, 'warning');
+                    }
+                }
+
+                // Show summary
+                document.getElementById('totalNotes').textContent = snapshot.size;
+                document.getElementById('fixedCount').textContent = fixedCount;
+                document.getElementById('validCount').textContent = validCount;
+                document.getElementById('failedCount').textContent = failedCount;
+                summaryDiv.style.display = 'block';
+
+            } catch (error) {
+                setStatus(`<strong>❌ Error:</strong><br>${error.message}`, 'error');
+                addLog(`Error: ${error.message}`, 'error');
+                console.error('Error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Fix URLs Again';
+            }
+        };
+    </script>
+</body>
+</html>
