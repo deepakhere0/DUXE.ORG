@@ -8,13 +8,11 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Pages
 import Home from './pages/Home';
-import Notes from './pages/Notes';
 import NotesPortal from './pages/NotesPortal';
 import NoteDetail from './pages/NoteDetail';
 import Upload from './pages/Upload';
-import UploadDev from './pages/UploadDev'; // Temporary development upload
 import AdminReview from './pages/AdminReview';
-import PDFPreview from './pages/Pdfpreview';
+import PDFPreview from './pages/PdfPreview';
 import Pending from './pages/Pending';
 import Tools from './pages/Tools';
 import Videos from './pages/Videos';
@@ -72,7 +70,6 @@ function App() {
               {/* Public Routes */}
               <Route index element={<Home />} />
               <Route path="notes" element={<NotesPortal />} />
-              <Route path="notes-old" element={<Notes />} />
               <Route path="notes/:noteId" element={<NoteDetail />} />
               <Route path="/pending" element={
   <ProtectedRoute>
@@ -116,7 +113,7 @@ function App() {
               {/* Admin Only Routes */}
               <Route path="upload" element={
                 <ProtectedRoute>
-                  <UploadDev />
+                  <Upload />
                 </ProtectedRoute>
               } />
               <Route path="admin/review" element={
