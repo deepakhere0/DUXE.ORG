@@ -1,10 +1,11 @@
-import { 
-  collection, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
+import { NOTE_STATUS } from '../constants/status';
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
   startAfter,
   doc,
   updateDoc,
@@ -27,7 +28,7 @@ export class NotesService {
       const queryConstraints = [];
 
       // Always filter for approved notes
-      queryConstraints.push(where('status', '==', 'approved'));
+      queryConstraints.push(where('status', '==', NOTE_STATUS.APPROVED));
 
       // Apply filters
       if (filters.universityId) {
@@ -88,7 +89,7 @@ export class NotesService {
       const queryConstraints = [];
 
       // Always filter for approved notes
-      queryConstraints.push(where('status', '==', 'approved'));
+      queryConstraints.push(where('status', '==', NOTE_STATUS.APPROVED));
 
       // Apply additional filters
       if (filters.universityId) {
@@ -156,7 +157,7 @@ export class NotesService {
     try {
       const notesQuery = query(
         collection(db, this.notesCollection),
-        where('status', '==', 'approved'),
+        where('status', '==', NOTE_STATUS.APPROVED),
         orderBy('downloads', 'desc'),
         orderBy('ratingAvg', 'desc'),
         limit(limitCount)
@@ -184,7 +185,7 @@ export class NotesService {
     try {
       const notesQuery = query(
         collection(db, this.notesCollection),
-        where('status', '==', 'approved'),
+        where('status', '==', NOTE_STATUS.APPROVED),
         orderBy('createdAt', 'desc'),
         limit(limitCount)
       );
@@ -254,7 +255,7 @@ export class NotesService {
   async getNotesStats() {
     try {
       const [notesSnapshot, universitiesSnapshot, departmentsSnapshot] = await Promise.all([
-        getDocs(query(collection(db, this.notesCollection), where('status', '==', 'approved'))),
+        getDocs(query(collection(db, this.notesCollection), where('status', '==', NOTE_STATUS.APPROVED))),
         getDocs(query(collection(db, this.universitiesCollection), where('active', '==', true))),
         getDocs(query(collection(db, this.departmentsCollection), where('active', '==', true)))
       ]);
@@ -288,7 +289,7 @@ export class NotesService {
     try {
       const notesQuery = query(
         collection(db, this.notesCollection),
-        where('status', '==', 'approved'),
+        where('status', '==', NOTE_STATUS.APPROVED),
         where('universityId', '==', universityId),
         orderBy('createdAt', 'desc'),
         limit(limitCount)
@@ -316,7 +317,7 @@ export class NotesService {
     try {
       const notesQuery = query(
         collection(db, this.notesCollection),
-        where('status', '==', 'approved'),
+        where('status', '==', NOTE_STATUS.APPROVED),
         where('departmentId', '==', departmentId),
         orderBy('createdAt', 'desc'),
         limit(limitCount)

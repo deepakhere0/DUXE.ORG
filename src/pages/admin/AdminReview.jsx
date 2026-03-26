@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  doc, 
-  updateDoc, 
+import { NOTE_STATUS } from '../../constants/status';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
   deleteDoc,
   serverTimestamp 
 } from 'firebase/firestore';
@@ -90,7 +91,7 @@ const AdminReview = () => {
   const handleApprove = async (noteId) => {
     try {
       await updateDoc(doc(db, 'notes', noteId), {
-        status: 'approved',
+        status: NOTE_STATUS.APPROVED,
         reviewedBy: user.uid,
         reviewedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -106,7 +107,7 @@ const AdminReview = () => {
   const handleReject = async (noteId) => {
     try {
       await updateDoc(doc(db, 'notes', noteId), {
-        status: 'rejected',
+        status: NOTE_STATUS.REJECTED,
         reviewedBy: user.uid,
         reviewedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -353,9 +354,9 @@ const AdminReview = () => {
                 }`}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                {tab === 'pending' && notes.filter(n => n.status === 'pending').length > 0 && (
+                {tab === 'pending' && notes.filter(n => n.status === NOTE_STATUS.PENDING).length > 0 && (
                   <span className="ml-2 bg-white text-blue-600 px-2 py-0.5 rounded-full text-xs">
-                    {notes.filter(n => n.status === 'pending').length}
+                    {notes.filter(n => n.status === NOTE_STATUS.PENDING).length}
                   </span>
                 )}
               </button>
@@ -521,7 +522,7 @@ const AdminReview = () => {
   )}
   
   {/* Approve (pending only) */}
-  {note.status === 'pending' && (
+  {note.status === NOTE_STATUS.PENDING && (
     <button
       onClick={() => handleApprove(note.id)}
       style={{
@@ -540,7 +541,7 @@ const AdminReview = () => {
   )}
   
   {/* Reject (pending only) */}
-  {note.status === 'pending' && (
+  {note.status === NOTE_STATUS.PENDING && (
     <button
       onClick={() => handleReject(note.id)}
       style={{
