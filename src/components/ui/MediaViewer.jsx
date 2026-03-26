@@ -2,7 +2,9 @@ import React, { useEffect } from 'react';
 
 const MediaViewer = ({ open, onClose, type = 'pdf', src, title }) => {
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose?.();
+    };
     if (open) window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
@@ -14,8 +16,12 @@ const MediaViewer = ({ open, onClose, type = 'pdf', src, title }) => {
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <div className="bg-white w-full h-full md:h-[90%] md:w-[90%] rounded-2xl shadow-glass overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-2 border-b">
-            <h3 className="font-semibold text-gray-900 truncate">{title || (type.toUpperCase() + ' Preview')}</h3>
-            <button className="btn btn-secondary btn-sm" onClick={onClose}>Close</button>
+            <h3 className="font-semibold text-gray-900 truncate">
+              {title || type.toUpperCase() + ' Preview'}
+            </h3>
+            <button className="btn btn-secondary btn-sm" onClick={onClose}>
+              Close
+            </button>
           </div>
           <div className="flex-1 bg-gray-50">
             {type === 'pdf' ? (
@@ -33,4 +39,3 @@ const MediaViewer = ({ open, onClose, type = 'pdf', src, title }) => {
 };
 
 export default MediaViewer;
-

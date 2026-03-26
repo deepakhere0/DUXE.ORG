@@ -1,8 +1,8 @@
-import { 
-  getDataConnect, 
+import {
+  getDataConnect,
   connectDataConnectEmulator,
   executeQuery,
-  executeMutation
+  executeMutation,
 } from 'firebase/data-connect';
 import app, { isFirebaseConfigured } from './firebase';
 
@@ -20,7 +20,7 @@ if (isFirebaseConfigured && app && !dataConnectInitialized) {
   try {
     dataConnectInitialized = true;
     dataConnect = getDataConnect(app, DATA_CONNECT_CONFIG);
-    
+
     // Connect to emulator in development
     if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATOR === 'true') {
       const emulatorHost = import.meta.env.VITE_DATACONNECT_EMULATOR_HOST || 'localhost';
@@ -28,7 +28,7 @@ if (isFirebaseConfigured && app && !dataConnectInitialized) {
       connectDataConnectEmulator(dataConnect, emulatorHost, emulatorPort);
       console.log(`🤖 DataConnect connected to emulator at ${emulatorHost}:${emulatorPort}`);
     }
-    
+
     console.log('🤖 DataConnect initialized successfully');
   } catch (error) {
     console.error('🤖 DataConnect initialization failed:', error);
@@ -45,11 +45,11 @@ export const query = async (queryString, variables = {}) => {
     console.warn('DataConnect not initialized - returning empty data');
     return { data: [] };
   }
-  
+
   try {
     const result = await executeQuery(dataConnect, {
       query: queryString,
-      variables
+      variables,
     });
     return result.data;
   } catch (error) {
@@ -64,11 +64,11 @@ export const mutate = async (mutationString, variables = {}) => {
     console.warn('DataConnect not initialized - mutation skipped');
     return { data: null };
   }
-  
+
   try {
     const result = await executeMutation(dataConnect, {
       mutation: mutationString,
-      variables
+      variables,
     });
     return result.data;
   } catch (error) {
@@ -126,14 +126,14 @@ export const queries = {
         }
       }
     `;
-    
+
     return query(queryString, {
       universityId: filters.universityId || null,
       departmentId: filters.departmentId || null,
       semester: filters.semester || null,
       limit: filters.limit || 12,
       offset: filters.offset || 0,
-      sortBy: filters.sortBy || 'downloads'
+      sortBy: filters.sortBy || 'downloads',
     });
   },
 
@@ -189,7 +189,7 @@ export const queries = {
         }
       }
     `;
-    
+
     return query(queryString, { id });
   },
 
@@ -219,7 +219,7 @@ export const queries = {
         }
       }
     `;
-    
+
     return query(queryString, { userId, status });
   },
 
@@ -256,7 +256,7 @@ export const queries = {
         }
       }
     `;
-    
+
     return query(queryString, { searchText, limit });
   },
 
@@ -273,12 +273,13 @@ export const queries = {
         }
       }
     `;
-    
+
     return query(queryString);
   },
 
   getDepartments: (universityId = null) => {
-    const queryString = universityId ? `
+    const queryString = universityId
+      ? `
       query GetDepartmentsByUniversity($universityId: ID!) {
         departments(
           where: { universityId: { eq: $universityId } }
@@ -290,7 +291,8 @@ export const queries = {
           description
         }
       }
-    ` : `
+    `
+      : `
       query GetAllDepartments {
         departments(orderBy: [{ field: "name", direction: ASC }]) {
           id
@@ -301,7 +303,7 @@ export const queries = {
         }
       }
     `;
-    
+
     return query(queryString, universityId ? { universityId } : {});
   },
 
@@ -335,11 +337,11 @@ export const queries = {
         }
       }
     `;
-    
+
     return query(queryString, {
       status: filters.status || 'ACTIVE',
       limit: filters.limit || 20,
-      offset: filters.offset || 0
+      offset: filters.offset || 0,
     });
   },
 
@@ -372,12 +374,12 @@ export const queries = {
         }
       }
     `;
-    
+
     return query(queryString, {
       subject: filters.subject || null,
       difficulty: filters.difficulty || null,
       limit: filters.limit || 20,
-      offset: filters.offset || 0
+      offset: filters.offset || 0,
     });
   },
 
@@ -399,7 +401,7 @@ export const queries = {
         }
       }
     `;
-    
+
     return query(queryString, { userId });
   },
 
@@ -427,9 +429,9 @@ export const queries = {
         }
       }
     `;
-    
+
     return query(queryString, { userId, status });
-  }
+  },
 };
 
 // Pre-defined mutations
@@ -478,7 +480,7 @@ export const mutations = {
         }
       }
     `;
-    
+
     return mutate(mutationString, noteData);
   },
 
@@ -499,7 +501,7 @@ export const mutations = {
         }
       }
     `;
-    
+
     return mutate(mutationString, { noteId, status, moderationNotes });
   },
 
@@ -517,7 +519,7 @@ export const mutations = {
         }
       }
     `;
-    
+
     return mutate(mutationString, { noteId });
   },
 
@@ -535,7 +537,7 @@ export const mutations = {
         }
       }
     `;
-    
+
     return mutate(mutationString, { noteId });
   },
 
@@ -558,7 +560,7 @@ export const mutations = {
         }
       }
     `;
-    
+
     return mutate(mutationString, { noteId, userId, rating, comment });
   },
 
@@ -588,7 +590,7 @@ export const mutations = {
         }
       }
     `;
-    
+
     return mutate(mutationString, userData);
   },
 
@@ -606,7 +608,7 @@ export const mutations = {
         }
       }
     `;
-    
+
     return mutate(mutationString, { userId, updates });
   },
 
@@ -636,7 +638,7 @@ export const mutations = {
         }
       }
     `;
-    
+
     return mutate(mutationString, jobData);
   },
 
@@ -658,7 +660,7 @@ export const mutations = {
         }
       }
     `;
-    
+
     return mutate(mutationString, { jobId, status, outputData, error });
   },
 
@@ -680,12 +682,12 @@ export const mutations = {
         }
       }
     `;
-    
+
     const variables = { userId };
     if (resourceType === 'note') variables.noteId = resourceId;
     if (resourceType === 'video') variables.videoId = resourceId;
     if (resourceType === 'internship') variables.internshipId = resourceId;
-    
+
     return mutate(mutationString, variables);
   },
 
@@ -697,9 +699,9 @@ export const mutations = {
         }
       }
     `;
-    
+
     return mutate(mutationString, { bookmarkId });
-  }
+  },
 };
 
 // Export the Data Connect instance for direct use if needed
@@ -713,5 +715,5 @@ export default {
   mutate,
   queries,
   mutations,
-  isConfigured: isDataConnectConfigured
+  isConfigured: isDataConnectConfigured,
 };

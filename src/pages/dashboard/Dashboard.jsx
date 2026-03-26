@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminStatusChecker from '../../components/AdminStatusChecker';
-import { 
+import {
   AcademicCapIcon,
   BookOpenIcon,
   BeakerIcon,
@@ -10,7 +10,7 @@ import {
   UserIcon,
   ChartBarIcon,
   ClockIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 
 /**
@@ -27,29 +27,29 @@ const Dashboard = () => {
       description: 'Access study materials',
       href: '/notes',
       icon: BookOpenIcon,
-      color: 'bg-navy-500'
+      color: 'bg-navy-500',
     },
     {
       name: 'AI Tools',
       description: 'Study with AI assistance',
       href: '/tools',
       icon: BeakerIcon,
-      color: 'bg-accent-500'
+      color: 'bg-accent-500',
     },
     {
       name: 'Internships',
       description: 'Find opportunities',
       href: '/internships',
       icon: BriefcaseIcon,
-      color: 'bg-green-500'
-    }
+      color: 'bg-green-500',
+    },
   ];
 
   // Recent activity (mock data for now)
   const recentActivity = [
     { action: 'Downloaded', item: 'Advanced Calculus Notes', time: '2 hours ago' },
     { action: 'Generated', item: 'MCQ Quiz from Physics Notes', time: '5 hours ago' },
-    { action: 'Bookmarked', item: 'Data Structures Study Guide', time: '1 day ago' }
+    { action: 'Bookmarked', item: 'Data Structures Study Guide', time: '1 day ago' },
   ];
 
   return (
@@ -57,15 +57,14 @@ const Dashboard = () => {
       <div className="container-custom">
         {/* Admin Status Checker */}
         <AdminStatusChecker />
-        
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-navy-700 mb-2">
-            Welcome back, {user?.userData?.displayName || user?.email?.split('@')[0] || 'Student'}! 👋
+            Welcome back, {user?.userData?.displayName || user?.email?.split('@')[0] || 'Student'}!
+            👋
           </h1>
-          <p className="text-gray-600">
-            Here's what's happening with your learning journey today.
-          </p>
+          <p className="text-gray-600">Here's what's happening with your learning journey today.</p>
         </div>
 
         {/* Stats Cards */}
@@ -128,7 +127,9 @@ const Dashboard = () => {
                     className="group flex items-center p-4 border-2 border-gray-200 rounded-xl
                       hover:border-navy-500 hover:shadow-md transition-all duration-200"
                   >
-                    <div className={`p-3 ${action.color} rounded-lg group-hover:scale-110 transition-transform`}>
+                    <div
+                      className={`p-3 ${action.color} rounded-lg group-hover:scale-110 transition-transform`}
+                    >
                       <action.icon className="h-6 w-6 text-white" />
                     </div>
                     <div className="ml-4">
@@ -147,7 +148,10 @@ const Dashboard = () => {
               <h2 className="text-xl font-bold text-navy-700 mb-6">Recent Activity</h2>
               <div className="space-y-4">
                 {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-3 pb-4 border-b last:border-b-0">
+                  <div
+                    key={index}
+                    className="flex items-start space-x-3 pb-4 border-b last:border-b-0"
+                  >
                     <CheckCircleIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm text-navy-700">
@@ -176,23 +180,30 @@ const Dashboard = () => {
                   {user?.userData?.role || 'Student'}
                 </div>
               </div>
-              
+
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between items-center">
                   <span className="text-navy-200 text-sm">Member since</span>
                   <span className="font-semibold text-sm">
-                    {user?.metadata?.creationTime 
-                      ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                    {user?.metadata?.creationTime
+                      ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', {
+                          month: 'short',
+                          year: 'numeric',
+                        })
                       : 'Recently'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-navy-200 text-sm">Bookmarks</span>
-                  <span className="font-semibold text-sm">{user?.userData?.bookmarks?.length || 0}</span>
+                  <span className="font-semibold text-sm">
+                    {user?.userData?.bookmarks?.length || 0}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-navy-200 text-sm">Skills</span>
-                  <span className="font-semibold text-sm">{user?.userData?.skills?.length || 0}</span>
+                  <span className="font-semibold text-sm">
+                    {user?.userData?.skills?.length || 0}
+                  </span>
                 </div>
               </div>
 

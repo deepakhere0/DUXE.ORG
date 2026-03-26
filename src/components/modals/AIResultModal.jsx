@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  XMarkIcon, 
-  ArrowDownTrayIcon, 
+import {
+  XMarkIcon,
+  ArrowDownTrayIcon,
   ClipboardDocumentIcon,
   CheckIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 
-const AIResultModal = ({ 
-  isOpen, 
-  onClose, 
-  title, 
+const AIResultModal = ({
+  isOpen,
+  onClose,
+  title,
   type, // 'summary' | 'mcq' | 'flashcard'
   data,
   isLoading,
   error,
   onRetry,
-  onSave
+  onSave,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -35,19 +35,22 @@ const AIResultModal = ({
 
   const handleCopy = () => {
     let textToCopy = '';
-    
+
     if (type === 'summary' && data) {
       textToCopy = `${data.tldr || ''}\n\nKey Points:\n${(data.keyPoints || []).join('\n')}\n\nMain Terms:\n${(data.mainTerms || []).join(', ')}`;
     } else if (type === 'mcq' && data) {
-      textToCopy = data.map((q, i) => 
-        `Q${i + 1}: ${q.question}\n${q.choices.map((c, j) => `  ${String.fromCharCode(65 + j)}. ${c}`).join('\n')}\nAnswer: ${q.correctAnswer}\nExplanation: ${q.explanation || 'N/A'}`
-      ).join('\n\n');
+      textToCopy = data
+        .map(
+          (q, i) =>
+            `Q${i + 1}: ${q.question}\n${q.choices.map((c, j) => `  ${String.fromCharCode(65 + j)}. ${c}`).join('\n')}\nAnswer: ${q.correctAnswer}\nExplanation: ${q.explanation || 'N/A'}`
+        )
+        .join('\n\n');
     } else if (type === 'flashcard' && data) {
-      textToCopy = data.map((card, i) => 
-        `Card ${i + 1}:\nFront: ${card.front}\nBack: ${card.back}`
-      ).join('\n\n');
+      textToCopy = data
+        .map((card, i) => `Card ${i + 1}:\nFront: ${card.front}\nBack: ${card.back}`)
+        .join('\n\n');
     }
-    
+
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -56,7 +59,7 @@ const AIResultModal = ({
   const handleExport = () => {
     let content = '';
     let filename = '';
-    
+
     if (type === 'summary') {
       content = `${data.tldr || ''}\n\nKey Points:\n${(data.keyPoints || []).join('\n')}\n\nMain Terms:\n${(data.mainTerms || []).join(', ')}`;
       filename = 'summary.txt';
@@ -65,12 +68,14 @@ const AIResultModal = ({
       filename = 'mcqs.json';
     } else if (type === 'flashcard') {
       // Export as CSV for Anki import
-      content = 'Front,Back\n' + data.map(card => 
-        `"${card.front.replace(/"/g, '""')}","${card.back.replace(/"/g, '""')}"`
-      ).join('\n');
+      content =
+        'Front,Back\n' +
+        data
+          .map((card) => `"${card.front.replace(/"/g, '""')}","${card.back.replace(/"/g, '""')}"`)
+          .join('\n');
       filename = 'flashcards.csv';
     }
-    
+
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -86,7 +91,7 @@ const AIResultModal = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
-        <div 
+        <div
           className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
           onClick={onClose}
         />
@@ -117,10 +122,7 @@ const AIResultModal = ({
               <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                 <p className="text-red-800 mb-3">{error}</p>
                 {onRetry && (
-                  <button
-                    onClick={onRetry}
-                    className="btn btn-secondary btn-sm"
-                  >
+                  <button onClick={onRetry} className="btn btn-secondary btn-sm">
                     <ArrowPathIcon className="w-4 h-4 mr-1" />
                     Retry
                   </button>
@@ -136,7 +138,7 @@ const AIResultModal = ({
                       <h4 className="font-semibold text-accent-900 mb-2">TL;DR</h4>
                       <p className="text-gray-700">{data.tldr || 'No summary available'}</p>
                     </div>
-                    
+
                     {data.keyPoints && data.keyPoints.length > 0 && (
                       <div>
                         <h4 className="font-semibold text-gray-900 mb-2">Key Points</h4>
@@ -150,7 +152,7 @@ const AIResultModal = ({
                         </ul>
                       </div>
                     )}
-                    
+
                     {data.mainTerms && data.mainTerms.length > 0 && (
                       <div>
                         <h4 className="font-semibold text-gray-900 mb-2">Main Terms</h4>
@@ -174,18 +176,16 @@ const AIResultModal = ({
                           <span className="bg-accent-100 text-accent-700 px-2 py-1 rounded-lg text-sm font-medium mr-3">
                             Q{i + 1}
                           </span>
-                          <p className="font-medium text-gray-900 flex-1">
-                            {question.question}
-                          </p>
+                          <p className="font-medium text-gray-900 flex-1">{question.question}</p>
                         </div>
-                        
+
                         <div className="space-y-2 ml-8 mb-3">
                           {question.choices.map((choice, j) => (
-                            <div 
+                            <div
                               key={j}
                               className={`p-2 rounded-lg ${
-                                choice === question.correctAnswer 
-                                  ? 'bg-green-50 border border-green-200' 
+                                choice === question.correctAnswer
+                                  ? 'bg-green-50 border border-green-200'
                                   : 'bg-gray-50'
                               }`}
                             >
@@ -199,11 +199,12 @@ const AIResultModal = ({
                             </div>
                           ))}
                         </div>
-                        
+
                         {question.explanation && (
                           <div className="ml-8 p-3 bg-blue-50 rounded-lg">
                             <p className="text-sm text-blue-900">
-                              <span className="font-medium">Explanation:</span> {question.explanation}
+                              <span className="font-medium">Explanation:</span>{' '}
+                              {question.explanation}
                             </p>
                           </div>
                         )}
@@ -215,8 +216,8 @@ const AIResultModal = ({
                 {type === 'flashcard' && Array.isArray(data) && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {data.map((card, i) => (
-                      <div 
-                        key={i} 
+                      <div
+                        key={i}
                         className="border rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer group"
                       >
                         <div className="flex items-center justify-between mb-2">
@@ -247,10 +248,7 @@ const AIResultModal = ({
           {!isLoading && !error && data && (
             <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50">
               <div className="flex gap-2">
-                <button
-                  onClick={handleCopy}
-                  className="btn btn-secondary btn-sm"
-                >
+                <button onClick={handleCopy} className="btn btn-secondary btn-sm">
                   {copied ? (
                     <>
                       <CheckIcon className="w-4 h-4 mr-1" />
@@ -263,28 +261,19 @@ const AIResultModal = ({
                     </>
                   )}
                 </button>
-                <button
-                  onClick={handleExport}
-                  className="btn btn-secondary btn-sm"
-                >
+                <button onClick={handleExport} className="btn btn-secondary btn-sm">
                   <ArrowDownTrayIcon className="w-4 h-4 mr-1" />
                   Export
                 </button>
               </div>
-              
+
               <div className="flex gap-2">
                 {onSave && (
-                  <button
-                    onClick={onSave}
-                    className="btn btn-primary btn-sm"
-                  >
+                  <button onClick={onSave} className="btn btn-primary btn-sm">
                     Save to Library
                   </button>
                 )}
-                <button
-                  onClick={onClose}
-                  className="btn btn-ghost btn-sm"
-                >
+                <button onClick={onClose} className="btn btn-ghost btn-sm">
                   Close
                 </button>
               </div>

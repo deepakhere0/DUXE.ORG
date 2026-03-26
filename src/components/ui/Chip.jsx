@@ -20,4 +20,3 @@ const Chip = ({ children, variant = 'default', onClose, className = '' }) => {
 };
 
 export default Chip;
-

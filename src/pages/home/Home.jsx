@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
+import {
   AcademicCapIcon,
   BookOpenIcon,
   BeakerIcon,
@@ -14,13 +14,9 @@ import {
   StarIcon,
   BuildingLibraryIcon,
   TagIcon,
-  FireIcon
+  FireIcon,
 } from '@heroicons/react/24/outline';
-import { 
-  LightBulbIcon,
-  CpuChipIcon,
-  DocumentDuplicateIcon
-} from '@heroicons/react/24/solid';
+import { LightBulbIcon, CpuChipIcon, DocumentDuplicateIcon } from '@heroicons/react/24/solid';
 
 const Home = () => {
   // For now, we'll assume user is not logged in
@@ -33,22 +29,22 @@ const Home = () => {
       description: 'Browse notes from top universities',
       icon: BuildingLibraryIcon,
       href: '/notes?filter=university',
-      color: 'bg-blue-100 text-blue-600'
+      color: 'bg-blue-100 text-blue-600',
     },
     {
       title: 'Departments',
       description: 'Find notes by department and subject',
       icon: TagIcon,
       href: '/notes?filter=department',
-      color: 'bg-green-100 text-green-600'
+      color: 'bg-green-100 text-green-600',
     },
     {
       title: 'Trending',
       description: 'Most popular notes this week',
       icon: FireIcon,
       href: '/notes?filter=trending',
-      color: 'bg-red-100 text-red-600'
-    }
+      color: 'bg-red-100 text-red-600',
+    },
   ];
 
   const features = [
@@ -56,27 +52,27 @@ const Home = () => {
       title: 'AI-Powered Summaries',
       description: 'Get instant, intelligent summaries of complex study materials',
       icon: LightBulbIcon,
-      color: 'text-yellow-500'
+      color: 'text-yellow-500',
     },
     {
       title: 'Smart MCQ Generator',
       description: 'Practice with AI-generated questions tailored to your notes',
       icon: CpuChipIcon,
-      color: 'text-blue-500'
+      color: 'text-blue-500',
     },
     {
       title: 'Interactive Flashcards',
       description: 'Create and study with smart flashcards for better retention',
       icon: DocumentDuplicateIcon,
-      color: 'text-green-500'
-    }
+      color: 'text-green-500',
+    },
   ];
 
   const stats = [
     { label: 'Active Students', value: '50K+', icon: UserGroupIcon },
     { label: 'Study Materials', value: '100K+', icon: DocumentTextIcon },
     { label: 'Universities', value: '500+', icon: BuildingLibraryIcon },
-    { label: 'Success Rate', value: '95%', icon: ChartBarIcon }
+    { label: 'Success Rate', value: '95%', icon: ChartBarIcon },
   ];
 
   const testimonials = [
@@ -84,23 +80,26 @@ const Home = () => {
       name: 'Sarah Johnson',
       role: 'Computer Science Student',
       university: 'MIT',
-      content: 'StudyHub has been a game-changer for my studies. The AI tools help me understand complex topics quickly.',
-      rating: 5
+      content:
+        'StudyHub has been a game-changer for my studies. The AI tools help me understand complex topics quickly.',
+      rating: 5,
     },
     {
       name: 'Michael Chen',
       role: 'Medical Student',
       university: 'Harvard Medical School',
-      content: 'The quality of notes and the AI-generated MCQs have significantly improved my exam preparation.',
-      rating: 5
+      content:
+        'The quality of notes and the AI-generated MCQs have significantly improved my exam preparation.',
+      rating: 5,
     },
     {
       name: 'Emily Davis',
       role: 'Business Student',
       university: 'Wharton School',
-      content: 'I love how easy it is to find relevant study materials and the internship matching feature is brilliant!',
-      rating: 5
-    }
+      content:
+        'I love how easy it is to find relevant study materials and the internship matching feature is brilliant!',
+      rating: 5,
+    },
   ];
 
   return (
@@ -112,7 +111,7 @@ const Home = () => {
           <div className="absolute top-20 left-10 w-72 h-72 bg-accent-400/20 rounded-full blur-3xl"></div>
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-navy-400/20 rounded-full blur-3xl"></div>
         </div>
-        
+
         <div className="container-custom relative z-10 py-24 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
@@ -120,17 +119,17 @@ const Home = () => {
                 <SparklesIcon className="h-5 w-5 text-accent-400 mr-2" />
                 <span className="text-sm font-medium">AI-Powered Learning Platform</span>
               </div>
-              
+
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
                 Study Smarter,
                 <span className="text-accent-400"> Not Harder</span>
               </h1>
-              
+
               <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
-                Access premium university notes, AI-powered study tools, video lectures, 
-                and internship opportunities all in one platform.
+                Access premium university notes, AI-powered study tools, video lectures, and
+                internship opportunities all in one platform.
               </p>
-              
+
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link
                   to="/notes"
@@ -139,15 +138,12 @@ const Home = () => {
                   Explore Notes
                   <ArrowRightIcon className="ml-2 h-5 w-5" />
                 </Link>
-                <Link
-                  to="/tools"
-                  className="btn btn-subtle btn-lg"
-                >
+                <Link to="/tools" className="btn btn-subtle btn-lg">
                   Try AI Tools
                 </Link>
               </div>
             </div>
-            
+
             <div className="hidden lg:block">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-accent-400/20 to-navy-400/20 rounded-3xl blur-2xl"></div>
@@ -167,9 +163,11 @@ const Home = () => {
         <div className="container-custom">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Quick Access</h2>
-            <p className="text-lg text-gray-600">Start exploring our vast collection of study materials</p>
+            <p className="text-lg text-gray-600">
+              Start exploring our vast collection of study materials
+            </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {quickLinks.map((link, index) => (
               <Link
@@ -178,7 +176,9 @@ const Home = () => {
                 className="card hover:scale-105 transition-transform duration-300"
               >
                 <div className="card-body">
-                  <div className={`w-12 h-12 rounded-xl ${link.color} flex items-center justify-center mb-4`}>
+                  <div
+                    className={`w-12 h-12 rounded-xl ${link.color} flex items-center justify-center mb-4`}
+                  >
                     <link.icon className="h-6 w-6" />
                   </div>
                   <h3 className="font-semibold text-gray-900 mb-2">{link.title}</h3>
@@ -202,10 +202,11 @@ const Home = () => {
               AI Study Tools That Actually Help
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Transform your study materials into powerful learning resources with our suite of AI-powered tools
+              Transform your study materials into powerful learning resources with our suite of
+              AI-powered tools
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <div key={index} className="text-center">
@@ -217,10 +218,10 @@ const Home = () => {
               </div>
             ))}
           </div>
-          
+
           <div className="text-center mt-12">
             <Link
-              to={currentUser ? "/tools" : "/signup"}
+              to={currentUser ? '/tools' : '/signup'}
               className="btn btn-primary btn-lg inline-flex items-center"
             >
               Try AI Tools Now
@@ -252,7 +253,7 @@ const Home = () => {
             <h2 className="text-3xl font-bold text-gray-900 mb-4">What Students Say</h2>
             <p className="text-lg text-gray-600">Join thousands of successful students</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
               <div key={index} className="card">
@@ -278,9 +279,7 @@ const Home = () => {
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-r from-accent-500 to-accent-600 text-white">
         <div className="container-custom text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Transform Your Learning?
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Transform Your Learning?</h2>
           <p className="text-xl mb-8 text-white/90">
             Join StudyHub today and get instant access to all features
           </p>
@@ -300,10 +299,7 @@ const Home = () => {
                 >
                   Start Free Trial
                 </Link>
-                <Link
-                  to="/notes"
-                  className="btn btn-subtle btn-lg"
-                >
+                <Link to="/notes" className="btn btn-subtle btn-lg">
                   Browse Notes First
                 </Link>
               </>

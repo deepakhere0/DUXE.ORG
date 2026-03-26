@@ -21,13 +21,25 @@ const Report = () => {
           <div className="card-body space-y-4">
             <div>
               <label className="label">Subject</label>
-              <input className="input" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Issue subject" />
+              <input
+                className="input"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Issue subject"
+              />
             </div>
             <div>
               <label className="label">Details</label>
-              <textarea className="input min-h-[120px]" value={details} onChange={(e) => setDetails(e.target.value)} placeholder="Describe the issue..." />
+              <textarea
+                className="input min-h-[120px]"
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+                placeholder="Describe the issue..."
+              />
             </div>
-            <button className="btn btn-primary btn-md" type="submit">Submit Report</button>
+            <button className="btn btn-primary btn-md" type="submit">
+              Submit Report
+            </button>
           </div>
         </form>
       </div>
@@ -36,4 +48,3 @@ const Report = () => {
 };
 
 export default Report;
-

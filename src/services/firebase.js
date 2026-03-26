@@ -12,7 +12,7 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Validate required env vars
@@ -26,9 +26,10 @@ const requiredKeys = [
 ];
 
 const missing = requiredKeys.filter(
-  (k) => !import.meta.env[k] || 
-         String(import.meta.env[k]).startsWith('your_') ||
-         String(import.meta.env[k]).trim() === ''
+  (k) =>
+    !import.meta.env[k] ||
+    String(import.meta.env[k]).startsWith('your_') ||
+    String(import.meta.env[k]).trim() === ''
 );
 
 export const isFirebaseConfigured = missing.length === 0;
@@ -71,7 +72,10 @@ try {
     console.log('✅ Firebase Analytics initialized successfully');
   }
 } catch (error) {
-  console.warn('⚠️ Firebase Analytics initialization failed (likely due to CSP or ad blockers):', error.message);
+  console.warn(
+    '⚠️ Firebase Analytics initialization failed (likely due to CSP or ad blockers):',
+    error.message
+  );
   analytics = null;
 }
 

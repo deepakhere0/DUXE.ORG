@@ -5,7 +5,7 @@ import {
   ChartBarIcon,
   DocumentTextIcon,
   ArrowTrendingUpIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { paymentService } from '../../services/paymentService';
 import toast from 'react-hot-toast';
@@ -20,7 +20,7 @@ const RevenueDashboard = () => {
   const [totalStats, setTotalStats] = useState({
     totalRevenue: 0,
     totalTransactions: 0,
-    averageTransaction: 0
+    averageTransaction: 0,
   });
   const [noteRevenues, setNoteRevenues] = useState([]);
 
@@ -62,7 +62,7 @@ const RevenueDashboard = () => {
       style: 'currency',
       currency: 'INR',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -162,7 +162,7 @@ const RevenueDashboard = () => {
                 <div>
                   <h4 className="font-medium text-blue-900 mb-1">Payment Analytics</h4>
                   <p className="text-sm text-blue-700">
-                    {totalStats.totalTransactions > 0 
+                    {totalStats.totalTransactions > 0
                       ? `You've successfully processed ${totalStats.totalTransactions} payment${totalStats.totalTransactions > 1 ? 's' : ''} with an average value of ${formatCurrency(totalStats.averageTransaction)}.`
                       : 'No transactions yet. Start by setting prices on your notes.'}
                   </p>
@@ -177,7 +177,8 @@ const RevenueDashboard = () => {
             </div>
             <h4 className="text-lg font-medium text-gray-900 mb-2">No Revenue Yet</h4>
             <p className="text-gray-600 max-w-md mx-auto">
-              Start earning by setting prices on your notes. Students will be able to purchase them and you'll see revenue here.
+              Start earning by setting prices on your notes. Students will be able to purchase them
+              and you'll see revenue here.
             </p>
           </div>
         )}
@@ -189,10 +190,12 @@ const RevenueDashboard = () => {
           <DocumentTextIcon className="h-5 w-5 text-navy-600" />
           <span>Top Earning Notes</span>
         </h3>
-        
+
         <div className="text-center py-8 text-gray-500">
           <p>Feature coming soon: View revenue breakdown by individual notes</p>
-          <p className="text-sm mt-2">You'll be able to see which notes generate the most revenue</p>
+          <p className="text-sm mt-2">
+            You'll be able to see which notes generate the most revenue
+          </p>
         </div>
       </div>
 
@@ -202,18 +205,23 @@ const RevenueDashboard = () => {
           <CurrencyRupeeIcon className="h-5 w-5 text-navy-600" />
           <span>Payment Information</span>
         </h3>
-        
+
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div>
               <h4 className="font-medium text-yellow-900 mb-1">Mock Payment System</h4>
               <p className="text-sm text-yellow-700">
-                Currently using a mock payment system for development. Replace with real payment gateway (Stripe, Razorpay, PayPal) in production.
+                Currently using a mock payment system for development. Replace with real payment
+                gateway (Stripe, Razorpay, PayPal) in production.
               </p>
             </div>
           </div>

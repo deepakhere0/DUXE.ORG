@@ -47,16 +47,14 @@ export async function parsePDF(file) {
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map(item => item.str)
-        .join(' ');
+      const pageText = textContent.items.map((item) => item.str).join(' ');
       fullText += pageText + '\n';
     }
 
     return fullText.trim();
   } catch (error) {
     console.error('Error parsing PDF:', error);
-    throw new Error('Failed to parse PDF file. Please ensure it\'s a valid PDF document.');
+    throw new Error("Failed to parse PDF file. Please ensure it's a valid PDF document.");
   }
 }
 
@@ -70,7 +68,7 @@ export async function parseDOCX(file) {
     const mammothLib = await initMammoth();
     const arrayBuffer = await file.arrayBuffer();
     const result = await mammothLib.extractRawText({ arrayBuffer });
-    
+
     if (result.messages.length > 0) {
       console.warn('DOCX parsing warnings:', result.messages);
     }
@@ -78,7 +76,7 @@ export async function parseDOCX(file) {
     return result.value.trim();
   } catch (error) {
     console.error('Error parsing DOCX:', error);
-    throw new Error('Failed to parse DOCX file. Please ensure it\'s a valid Word document.');
+    throw new Error("Failed to parse DOCX file. Please ensure it's a valid Word document.");
   }
 }
 
@@ -114,14 +112,14 @@ export async function parseFile(file) {
   if (fileName.endsWith('.pdf') || fileType === 'application/pdf') {
     return await parsePDF(file);
   } else if (
-    fileName.endsWith('.docx') || 
+    fileName.endsWith('.docx') ||
     fileName.endsWith('.doc') ||
     fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
     fileType === 'application/msword'
   ) {
     return await parseDOCX(file);
   } else if (
-    fileName.endsWith('.txt') || 
+    fileName.endsWith('.txt') ||
     fileType === 'text/plain' ||
     fileType.startsWith('text/')
   ) {
@@ -140,19 +138,19 @@ export async function parseFile(file) {
 export function validateFile(file, options = {}) {
   const {
     maxSize = 10 * 1024 * 1024, // 10MB default
-    allowedTypes = ['pdf', 'docx', 'doc', 'txt']
+    allowedTypes = ['pdf', 'docx', 'doc', 'txt'],
   } = options;
 
   const result = {
     valid: true,
-    error: null
+    error: null,
   };
 
   // Check file exists
   if (!file) {
     return {
       valid: false,
-      error: 'No file selected'
+      error: 'No file selected',
     };
   }
 
@@ -160,20 +158,18 @@ export function validateFile(file, options = {}) {
   if (file.size > maxSize) {
     return {
       valid: false,
-      error: `File size exceeds ${maxSize / (1024 * 1024)}MB limit`
+      error: `File size exceeds ${maxSize / (1024 * 1024)}MB limit`,
     };
   }
 
   // Check file type
   const fileName = file.name.toLowerCase();
-  const hasValidExtension = allowedTypes.some(type => 
-    fileName.endsWith(`.${type}`)
-  );
+  const hasValidExtension = allowedTypes.some((type) => fileName.endsWith(`.${type}`));
 
   if (!hasValidExtension) {
     return {
       valid: false,
-      error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`
+      error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`,
     };
   }
 
@@ -190,7 +186,7 @@ export function getFileMetadata(file) {
 
   const fileName = file.name;
   const fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
-  
+
   return {
     name: fileName,
     size: file.size,
@@ -198,7 +194,7 @@ export function getFileMetadata(file) {
     type: file.type || 'unknown',
     extension: fileExtension,
     lastModified: new Date(file.lastModified),
-    isSupported: ['pdf', 'docx', 'doc', 'txt'].includes(fileExtension)
+    isSupported: ['pdf', 'docx', 'doc', 'txt'].includes(fileExtension),
   };
 }
 
@@ -225,7 +221,7 @@ function formatFileSize(bytes) {
  */
 export function truncateText(text, maxLength = 5000) {
   if (!text || text.length <= maxLength) return text;
-  
+
   return text.substring(0, maxLength) + '...';
 }
 
@@ -236,5 +232,5 @@ export default {
   parseTXT,
   validateFile,
   getFileMetadata,
-  truncateText
+  truncateText,
 };

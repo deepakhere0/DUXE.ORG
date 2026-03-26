@@ -6,7 +6,8 @@ const Contact = () => {
       <div className="container-custom py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Contact</h1>
         <p className="text-gray-600 mb-6">
-          We'd love to hear from you. For general inquiries, support, or feedback, reach out using the details below.
+          We'd love to hear from you. For general inquiries, support, or feedback, reach out using
+          the details below.
         </p>
         <div className="grid sm:grid-cols-3 gap-6">
           <div className="card">
@@ -34,4 +35,3 @@ const Contact = () => {
 };
 
 export default Contact;
-

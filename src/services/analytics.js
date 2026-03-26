@@ -2,7 +2,9 @@
 import { doc, setDoc, serverTimestamp, increment, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
-const ensureDb = () => { if (!db) throw new Error('Firebase not configured'); };
+const ensureDb = () => {
+  if (!db) throw new Error('Firebase not configured');
+};
 
 export const bumpNoteDownload = async (noteId) => {
   ensureDb();
@@ -13,6 +15,9 @@ export const bumpNoteDownload = async (noteId) => {
 export const bumpToolUsage = async (toolKey) => {
   ensureDb();
   const ref = doc(db, 'analytics', `tool_${toolKey}`);
-  await setDoc(ref, { key: toolKey, count: increment(1), updatedAt: serverTimestamp() }, { merge: true });
+  await setDoc(
+    ref,
+    { key: toolKey, count: increment(1), updatedAt: serverTimestamp() },
+    { merge: true }
+  );
 };
-

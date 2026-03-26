@@ -14,12 +14,12 @@ export const useAuth = () => {
         try {
           // Get user data from Firestore
           const userDoc = await getDoc(doc(db, 'users', authUser.uid));
-          
+
           if (userDoc.exists()) {
             setUser({
               uid: authUser.uid,
               email: authUser.email,
-              ...userDoc.data()
+              ...userDoc.data(),
             });
           } else {
             // User exists in auth but not in Firestore, create basic user object
@@ -27,7 +27,7 @@ export const useAuth = () => {
               uid: authUser.uid,
               email: authUser.email,
               displayName: authUser.displayName,
-              role: 'user' // default role
+              role: 'user', // default role
             });
           }
         } catch (error) {
@@ -36,7 +36,7 @@ export const useAuth = () => {
             uid: authUser.uid,
             email: authUser.email,
             displayName: authUser.displayName,
-            role: 'user'
+            role: 'user',
           });
         }
       } else {

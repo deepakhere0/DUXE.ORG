@@ -10,7 +10,7 @@ import {
   CalendarIcon,
   CurrencyRupeeIcon,
   ShoppingCartIcon,
-  ChartBarIcon
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { adminNotesService } from '../../services/adminNotesService';
 import { paymentService } from '../../services/paymentService';
@@ -23,7 +23,11 @@ const AdminDashboard = () => {
   const [pendingNotes, setPendingNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
-  const [revenueStats, setRevenueStats] = useState({ totalRevenue: 0, totalTransactions: 0, averageTransaction: 0 });
+  const [revenueStats, setRevenueStats] = useState({
+    totalRevenue: 0,
+    totalTransactions: 0,
+    averageTransaction: 0,
+  });
   const [selectedNotes, setSelectedNotes] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -42,9 +46,9 @@ const AdminDashboard = () => {
       const [notesData, statsData, revenue] = await Promise.all([
         adminNotesService.getPendingNotes(),
         adminNotesService.getNoteStats(),
-        paymentService.getTotalRevenue()
+        paymentService.getTotalRevenue(),
       ]);
-      
+
       setPendingNotes(notesData);
       setStats(statsData);
       setRevenueStats(revenue);
@@ -135,10 +139,8 @@ const AdminDashboard = () => {
   };
 
   const toggleNoteSelection = (noteId) => {
-    setSelectedNotes(prev => 
-      prev.includes(noteId) 
-        ? prev.filter(id => id !== noteId)
-        : [...prev, noteId]
+    setSelectedNotes((prev) =>
+      prev.includes(noteId) ? prev.filter((id) => id !== noteId) : [...prev, noteId]
     );
   };
 
@@ -188,7 +190,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center">
               <CheckCircleIcon className="h-8 w-8 text-green-600" />
@@ -198,7 +200,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center">
               <XCircleIcon className="h-8 w-8 text-red-600" />
@@ -208,7 +210,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center">
               <DocumentTextIcon className="h-8 w-8 text-blue-600" />
@@ -218,28 +220,32 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center">
               <CurrencyRupeeIcon className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
                 <p className="text-sm text-gray-500">Total Revenue</p>
-                <p className="text-2xl font-bold text-purple-600">₹{revenueStats.totalRevenue.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  ₹{revenueStats.totalRevenue.toFixed(2)}
+                </p>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center">
               <ShoppingCartIcon className="h-8 w-8 text-indigo-600" />
               <div className="ml-4">
                 <p className="text-sm text-gray-500">Transactions</p>
-                <p className="text-2xl font-bold text-indigo-600">{revenueStats.totalTransactions}</p>
+                <p className="text-2xl font-bold text-indigo-600">
+                  {revenueStats.totalTransactions}
+                </p>
               </div>
             </div>
           </div>
         </div>
-        
+
         {/* Revenue Info Card */}
         {revenueStats.totalRevenue > 0 && (
           <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl p-6 shadow-lg mb-8 text-white">
@@ -257,7 +263,9 @@ const AdminDashboard = () => {
                   </div>
                   <div>
                     <p className="text-purple-200 text-sm">Avg Transaction</p>
-                    <p className="text-3xl font-bold">₹{revenueStats.averageTransaction.toFixed(2)}</p>
+                    <p className="text-3xl font-bold">
+                      ₹{revenueStats.averageTransaction.toFixed(2)}
+                    </p>
                   </div>
                 </div>
                 <div className="mt-4">
@@ -284,7 +292,7 @@ const AdminDashboard = () => {
               <h2 className="text-xl font-semibold text-gray-900">
                 Pending Notes ({pendingNotes.length})
               </h2>
-              
+
               {selectedNotes.length > 0 && (
                 <div className="flex space-x-3">
                   <button
@@ -318,7 +326,10 @@ const AdminDashboard = () => {
             ) : (
               <div className="space-y-4">
                 {pendingNotes.map((note) => (
-                  <div key={note.id} className="border rounded-xl p-6 hover:bg-gray-50 transition-colors">
+                  <div
+                    key={note.id}
+                    className="border rounded-xl p-6 hover:bg-gray-50 transition-colors"
+                  >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-4">
                         <input
@@ -327,7 +338,7 @@ const AdminDashboard = () => {
                           onChange={() => toggleNoteSelection(note.id)}
                           className="mt-1"
                         />
-                        
+
                         <div className="flex-1">
                           <div className="flex items-center mb-2">
                             <h3 className="text-lg font-semibold text-gray-900">{note.title}</h3>
@@ -335,7 +346,7 @@ const AdminDashboard = () => {
                               Pending Review
                             </span>
                           </div>
-                          
+
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-3">
                             <div className="flex items-center">
                               <BuildingOfficeIcon className="h-4 w-4 mr-1" />
@@ -347,10 +358,12 @@ const AdminDashboard = () => {
                             </div>
                             <div className="flex items-center">
                               <CalendarIcon className="h-4 w-4 mr-1" />
-                              {note.createdAt?.toDate ? new Date(note.createdAt.toDate()).toLocaleDateString() : 'Unknown date'}
+                              {note.createdAt?.toDate
+                                ? new Date(note.createdAt.toDate()).toLocaleDateString()
+                                : 'Unknown date'}
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center text-sm text-gray-600 mb-3">
                             <span className="font-medium">{note.courseCode}</span>
                             <span className="mx-2">•</span>
@@ -364,15 +377,18 @@ const AdminDashboard = () => {
                               </>
                             )}
                           </div>
-                          
+
                           {note.description && (
                             <p className="text-gray-700 mb-4 line-clamp-2">{note.description}</p>
                           )}
-                          
+
                           {note.tags && note.tags.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-4">
                               {note.tags.map((tag, index) => (
-                                <span key={index} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded"
+                                >
                                   {tag}
                                 </span>
                               ))}
@@ -380,7 +396,7 @@ const AdminDashboard = () => {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleApprove(note.id)}

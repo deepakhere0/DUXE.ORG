@@ -16,7 +16,7 @@ export function useIntersectionObserver(options = {}) {
     const observerOptions = {
       threshold: 0.1,
       rootMargin: '50px',
-      ...options
+      ...options,
     };
 
     const observer = new IntersectionObserver(([entry]) => {

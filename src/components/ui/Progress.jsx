@@ -13,4 +13,3 @@ const Progress = ({ value = 0, max = 100, label }) => {
 };
 
 export default Progress;
-

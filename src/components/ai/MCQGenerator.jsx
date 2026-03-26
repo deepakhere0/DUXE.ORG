@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
-import { 
+import {
   QuestionMarkCircleIcon,
   CheckCircleIcon,
   XCircleIcon,
   DocumentDuplicateIcon,
   ArrowDownTrayIcon,
-  AcademicCapIcon
+  AcademicCapIcon,
 } from '@heroicons/react/24/outline';
 import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../ui/Toast';
 
-
 const MCQGenerator = () => {
   // For now, we'll use anonymous user until auth is implemented
   const user = null;
-  
+
   const [inputText, setInputText] = useState('');
   const [mcqs, setMcqs] = useState([]);
   const [questionCount, setQuestionCount] = useState(20);
@@ -42,12 +41,12 @@ const MCQGenerator = () => {
     setSelectedAnswers({});
     setShowAnswers(false);
     setScore(null);
-    
+
     try {
       const result = await AIService.generateMCQ({
         inputText,
         count: questionCount,
-        createdBy: user?.uid || 'anonymous'
+        createdBy: user?.uid || 'anonymous',
       });
       setMcqs(result.output);
     } catch (err) {
@@ -62,18 +61,18 @@ const MCQGenerator = () => {
     if (!showAnswers) {
       setSelectedAnswers({
         ...selectedAnswers,
-        [questionId]: choiceIndex
+        [questionId]: choiceIndex,
       });
     }
   };
 
   const handleSubmit = () => {
     setShowAnswers(true);
-    const correct = mcqs.filter(q => selectedAnswers[q.id] === q.correctIndex).length;
+    const correct = mcqs.filter((q) => selectedAnswers[q.id] === q.correctIndex).length;
     setScore({
       correct,
       total: mcqs.length,
-      percentage: Math.round((correct / mcqs.length) * 100)
+      percentage: Math.round((correct / mcqs.length) * 100),
     });
   };
 
@@ -84,7 +83,9 @@ const MCQGenerator = () => {
   };
 
   const copyMCQs = () => {
-    const mcqText = mcqs.map((q, i) => `
+    const mcqText = mcqs
+      .map(
+        (q, i) => `
 Question ${i + 1}: ${q.question}
 A) ${q.choices[0]}
 B) ${q.choices[1]}
@@ -94,7 +95,9 @@ Answer: ${['A', 'B', 'C', 'D'][q.correctIndex]}
 Explanation: ${q.explanation}
 Difficulty: ${q.difficulty}
 Topic: ${q.topic}
-`).join('\n---\n');
+`
+      )
+      .join('\n---\n');
 
     navigator.clipboard.writeText(mcqText);
     Toast.success('MCQs copied to clipboard!');
@@ -103,7 +106,9 @@ Topic: ${q.topic}
   const downloadMCQs = () => {
     const mcqText = `# Multiple Choice Questions
 
-${mcqs.map((q, i) => `
+${mcqs
+  .map(
+    (q, i) => `
 ## Question ${i + 1}
 **${q.question}**
 
@@ -118,7 +123,9 @@ ${mcqs.map((q, i) => `
 
 **Difficulty:** ${q.difficulty}  
 **Topic:** ${q.topic}
-`).join('\n---\n')}
+`
+  )
+  .join('\n---\n')}
 
 ---
 Generated with DUXE MCQ Generator
@@ -135,11 +142,15 @@ Generated with DUXE MCQ Generator
   };
 
   const getDifficultyColor = (difficulty) => {
-    switch(difficulty?.toLowerCase()) {
-      case 'easy': return 'text-green-400 bg-green-500/20';
-      case 'medium': return 'text-yellow-400 bg-yellow-500/20';
-      case 'hard': return 'text-red-400 bg-red-500/20';
-      default: return 'text-gray-400 bg-gray-500/20';
+    switch (difficulty?.toLowerCase()) {
+      case 'easy':
+        return 'text-green-400 bg-green-500/20';
+      case 'medium':
+        return 'text-yellow-400 bg-yellow-500/20';
+      case 'hard':
+        return 'text-red-400 bg-red-500/20';
+      default:
+        return 'text-gray-400 bg-gray-500/20';
     }
   };
 
@@ -157,17 +168,12 @@ Generated with DUXE MCQ Generator
 
       {/* File Upload */}
       <div className="mb-8">
-        <FileUpload 
-          onTextExtracted={handleTextExtracted}
-          className="mb-6"
-        />
+        <FileUpload onTextExtracted={handleTextExtracted} className="mb-6" />
       </div>
 
       {/* Text Input */}
       <div className="mb-6">
-        <label className="block text-white font-medium mb-3">
-          Or paste your study material:
-        </label>
+        <label className="block text-white font-medium mb-3">Or paste your study material:</label>
         <textarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
@@ -227,9 +233,7 @@ Generated with DUXE MCQ Generator
           <div className="text-center">
             <AcademicCapIcon className="h-12 w-12 text-accent-500 mx-auto mb-3" />
             <h3 className="text-2xl font-bold text-white mb-2">Quiz Results</h3>
-            <div className="text-3xl font-bold text-accent-500 mb-2">
-              {score.percentage}%
-            </div>
+            <div className="text-3xl font-bold text-accent-500 mb-2">{score.percentage}%</div>
             <p className="text-gray-300">
               You got {score.correct} out of {score.total} questions correct
             </p>
@@ -247,7 +251,7 @@ Generated with DUXE MCQ Generator
       {mcqs.length > 0 && (
         <div className="space-y-6">
           {mcqs.map((mcq, index) => (
-            <div 
+            <div
               key={mcq.id}
               className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-sm rounded-2xl border border-accent-500/30 p-6"
             >
@@ -259,14 +263,14 @@ Generated with DUXE MCQ Generator
                     {mcq.question}
                   </h4>
                   <div className="flex gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getDifficultyColor(mcq.difficulty)}`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${getDifficultyColor(mcq.difficulty)}`}
+                    >
                       {mcq.difficulty}
                     </span>
                   </div>
                 </div>
-                {mcq.topic && (
-                  <p className="text-sm text-gray-400">Topic: {mcq.topic}</p>
-                )}
+                {mcq.topic && <p className="text-sm text-gray-400">Topic: {mcq.topic}</p>}
               </div>
 
               {/* Answer Choices */}
@@ -365,8 +369,12 @@ Generated with DUXE MCQ Generator
         }
 
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
       `}</style>
     </div>

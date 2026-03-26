@@ -9,7 +9,7 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   setPersistence,
-  browserLocalPersistence
+  browserLocalPersistence,
 } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -50,17 +50,17 @@ export const AuthProvider = ({ children }) => {
   const signup = async (email, password, displayName = '') => {
     try {
       setError(null);
-      
+
       // Create user account
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
+
       // Update display name if provided
       if (displayName) {
         await updateProfile(userCredential.user, {
-          displayName: displayName
+          displayName: displayName,
         });
       }
-      
+
       // Create user document in Firestore
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         uid: userCredential.user.uid,
@@ -70,9 +70,9 @@ export const AuthProvider = ({ children }) => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         bookmarks: [],
-        skills: []
+        skills: [],
       });
-      
+
       console.log('✅ User signed up successfully:', userCredential.user.email);
       return userCredential;
     } catch (error) {
@@ -162,7 +162,7 @@ export const AuthProvider = ({ children }) => {
         const userData = await getUserData(firebaseUser.uid);
         setUser({
           ...firebaseUser,
-          userData: userData
+          userData: userData,
         });
         // Set user role from userData (handle string properly)
         const role = userData?.role ? String(userData.role).trim().toLowerCase() : 'user';
@@ -196,7 +196,7 @@ export const AuthProvider = ({ children }) => {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           bookmarks: [],
-          skills: []
+          skills: [],
         });
       }
     } catch (e) {
@@ -251,15 +251,11 @@ export const AuthProvider = ({ children }) => {
     logout,
     loginWithGoogle,
     loginWithApple,
-    getUserData
+    getUserData,
   };
 
   // Show loading state or render children
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
 
 export default AuthContext;

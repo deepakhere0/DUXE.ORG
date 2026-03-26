@@ -3,15 +3,15 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
-import { 
-  FiArrowLeft, 
-  FiDownload, 
-  FiZoomIn, 
-  FiZoomOut, 
-  FiChevronLeft, 
+import {
+  FiArrowLeft,
+  FiDownload,
+  FiZoomIn,
+  FiZoomOut,
+  FiChevronLeft,
   FiChevronRight,
   FiMaximize,
-  FiMinimize
+  FiMinimize,
 } from 'react-icons/fi';
 import { getNoteById } from '../../services/firestoreData';
 import toast from 'react-hot-toast';
@@ -22,7 +22,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 function PDFPreview() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
   const [note, setNote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [numPages, setNumPages] = useState(null);
@@ -36,7 +36,7 @@ function PDFPreview() {
       try {
         setLoading(true);
         const noteData = await getNoteById(id);
-        
+
         if (!noteData) {
           setError('Note not found');
           toast.error('Note not found');
@@ -76,7 +76,7 @@ function PDFPreview() {
   };
 
   const changePage = (offset) => {
-    setPageNumber(prevPageNumber => {
+    setPageNumber((prevPageNumber) => {
       const newPage = prevPageNumber + offset;
       if (newPage < 1) return 1;
       if (newPage > numPages) return numPages;
@@ -85,11 +85,11 @@ function PDFPreview() {
   };
 
   const handleZoomIn = () => {
-    setScale(prev => Math.min(prev + 0.2, 3.0));
+    setScale((prev) => Math.min(prev + 0.2, 3.0));
   };
 
   const handleZoomOut = () => {
-    setScale(prev => Math.max(prev - 0.2, 0.5));
+    setScale((prev) => Math.max(prev - 0.2, 0.5));
   };
 
   const toggleFullscreen = () => {
@@ -134,12 +134,8 @@ function PDFPreview() {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <div className="text-6xl mb-4">📄</div>
-          <h2 className="text-2xl font-bold text-white mb-2">
-            {error || 'Note not found'}
-          </h2>
-          <p className="text-gray-400 mb-6">
-            The PDF you're looking for is not available
-          </p>
+          <h2 className="text-2xl font-bold text-white mb-2">{error || 'Note not found'}</h2>
+          <p className="text-gray-400 mb-6">The PDF you're looking for is not available</p>
           <button
             onClick={() => navigate(-1)}
             className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-3 rounded-lg transition-colors"
@@ -167,16 +163,14 @@ function PDFPreview() {
                 <FiArrowLeft className="text-xl group-hover:-translate-x-1 transition-transform" />
                 <span className="font-medium">Back</span>
               </button>
-              
+
               <div className="h-8 w-px bg-gray-700"></div>
-              
+
               <div>
                 <h1 className="text-white font-semibold text-lg truncate max-w-xs md:max-w-md">
                   {note.title || 'Untitled Document'}
                 </h1>
-                <p className="text-gray-400 text-xs">
-                  {note.subject || 'PDF Preview'}
-                </p>
+                <p className="text-gray-400 text-xs">{note.subject || 'PDF Preview'}</p>
               </div>
             </div>
 
@@ -190,7 +184,7 @@ function PDFPreview() {
                 <FiDownload />
                 <span className="hidden md:inline">Download</span>
               </button>
-              
+
               <button
                 onClick={toggleFullscreen}
                 className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
@@ -219,7 +213,7 @@ function PDFPreview() {
                 >
                   <FiChevronLeft className="text-xl" />
                 </button>
-                
+
                 <div className="flex items-center gap-2 px-4 py-2 bg-gray-700 rounded-lg">
                   <input
                     type="number"
@@ -236,7 +230,7 @@ function PDFPreview() {
                   />
                   <span className="text-gray-400">/ {numPages || '?'}</span>
                 </div>
-                
+
                 <button
                   onClick={() => changePage(1)}
                   disabled={pageNumber >= numPages}
@@ -257,11 +251,11 @@ function PDFPreview() {
                 >
                   <FiZoomOut className="text-xl" />
                 </button>
-                
+
                 <span className="text-white font-medium min-w-[60px] text-center">
                   {Math.round(scale * 100)}%
                 </span>
-                
+
                 <button
                   onClick={handleZoomIn}
                   disabled={scale >= 3.0}

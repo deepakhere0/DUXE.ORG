@@ -17,23 +17,23 @@ const NotesPage = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [selectedSemester, setSelectedSemester] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Notes data
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [lastDoc, setLastDoc] = useState(null);
-  
+
   // Preview modal state
   const [selectedNote, setSelectedNote] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  
+
   // Stats
   const [stats, setStats] = useState({
     totalNotes: 0,
     totalUniversities: 0,
     totalDepartments: 0,
-    totalDownloads: 0
+    totalDownloads: 0,
   });
 
   // Load initial stats
@@ -49,12 +49,12 @@ const NotesPage = () => {
   useEffect(() => {
     const fetchNotes = async () => {
       setLoading(true);
-      
+
       try {
         const filters = {
           universityId: selectedUniversity?.id || null,
           departmentId: selectedDepartment?.id || null,
-          semester: selectedSemester?.value || null
+          semester: selectedSemester?.value || null,
         };
 
         let result;
@@ -63,7 +63,7 @@ const NotesPage = () => {
         } else {
           result = await notesService.getNotes(filters, null, 20);
         }
-        
+
         setNotes(result.notes);
         setHasMore(result.hasMore);
         setLastDoc(result.lastDoc);
@@ -82,12 +82,12 @@ const NotesPage = () => {
     if (!hasMore || loading) return;
 
     setLoading(true);
-    
+
     try {
       const filters = {
         universityId: selectedUniversity?.id || null,
         departmentId: selectedDepartment?.id || null,
-        semester: selectedSemester?.value || null
+        semester: selectedSemester?.value || null,
       };
 
       let result;
@@ -97,7 +97,7 @@ const NotesPage = () => {
         result = await notesService.getNotes(filters, lastDoc, 20);
       }
 
-      setNotes(prev => [...prev, ...result.notes]);
+      setNotes((prev) => [...prev, ...result.notes]);
       setHasMore(result.hasMore);
       setLastDoc(result.lastDoc);
     } catch (error) {
@@ -162,7 +162,9 @@ const NotesPage = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Notes Library</h1>
-          <p className="mt-2 text-gray-600">Find notes by university, department, semester, or search by subject and course code.</p>
+          <p className="mt-2 text-gray-600">
+            Find notes by university, department, semester, or search by subject and course code.
+          </p>
         </div>
 
         {/* Stats */}
@@ -187,33 +189,30 @@ const NotesPage = () => {
 
         {/* Search Bar */}
         <div className="mb-6">
-          <SearchBar 
-            onSearch={handleSearch}
-            onSuggestionSelect={handleSuggestionSelect}
-          />
+          <SearchBar onSearch={handleSearch} onSuggestionSelect={handleSuggestionSelect} />
         </div>
 
         {/* Filters */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <UniversityDropdown 
+            <UniversityDropdown
               selectedUniversity={selectedUniversity}
               onUniversityChange={(uni) => {
                 setSelectedUniversity(uni);
                 setSelectedDepartment(null);
               }}
             />
-            <DepartmentDropdown 
+            <DepartmentDropdown
               selectedUniversity={selectedUniversity}
               selectedDepartment={selectedDepartment}
               onDepartmentChange={setSelectedDepartment}
             />
-            <SemesterDropdown 
+            <SemesterDropdown
               selectedSemester={selectedSemester}
               onSemesterChange={setSelectedSemester}
             />
           </div>
-          
+
           {/* Clear Filters */}
           <div className="mt-4">
             <button
@@ -238,7 +237,7 @@ const NotesPage = () => {
             </div>
           ) : (
             notes.map((note) => (
-              <NoteCard 
+              <NoteCard
                 key={note.id}
                 note={note}
                 userId={user?.uid}

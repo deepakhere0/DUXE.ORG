@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   SparklesIcon,
   ListBulletIcon,
   QuestionMarkCircleIcon,
@@ -12,7 +12,7 @@ import {
   ShareIcon,
   StarIcon,
   KeyIcon,
-  XMarkIcon
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import ToolCard from '../../components/notes/ToolCard';
 import { AIService } from '../../services/aiService';
@@ -27,7 +27,7 @@ const Tools = () => {
   // For now, we'll assume user is not logged in
   // This will be properly implemented when Firebase auth is set up
   const currentUser = null;
-  
+
   const [activeTool, setActiveTool] = useState(null);
   const [showVideo, setShowVideo] = useState(false);
   const [animationStep, setAnimationStep] = useState(0);
@@ -52,29 +52,29 @@ const Tools = () => {
 
   const handleApiKeySave = async () => {
     const trimmedKey = apiKey.trim();
-    
+
     // Client-side validation
     if (!trimmedKey) {
       Toast.error('Please enter a valid API key');
       return;
     }
-    
+
     if (trimmedKey.length < 30) {
       Toast.error('API key seems too short. Please check your key.');
       return;
     }
-    
+
     if (!trimmedKey.startsWith('sk-')) {
       Toast.error('Invalid API key format. OpenAI keys start with "sk-"');
       return;
     }
 
     setIsConfiguringAI(true);
-    
+
     try {
       // Configure AI service with the provided API key
       const result = await AIService.configureWithApiKey(trimmedKey);
-      
+
       if (result.success) {
         setIsOpenAIConfigured(true);
         setShowApiKeyModal(false);
@@ -96,7 +96,7 @@ const Tools = () => {
       setShowApiKeyModal(true);
       return;
     }
-    
+
     setActiveTool(toolId);
   };
 
@@ -108,7 +108,7 @@ const Tools = () => {
       icon: ListBulletIcon,
       demo: 'Converts 10-page research paper → 5 bullet points',
       features: ['PDF/DOCX/TXT support', 'Key points extraction', 'Study tips included'],
-      component: AISummarizer
+      component: AISummarizer,
     },
     {
       id: 'mcq',
@@ -117,7 +117,7 @@ const Tools = () => {
       icon: QuestionMarkCircleIcon,
       demo: 'Study material → 20 MCQs with correct answers',
       features: ['Auto-generation', 'Interactive quiz mode', 'Answer explanations'],
-      component: MCQGenerator
+      component: MCQGenerator,
     },
     {
       id: 'questions',
@@ -126,7 +126,7 @@ const Tools = () => {
       icon: DocumentTextIcon,
       demo: 'Chapter content → Comprehensive question bank',
       features: ['5 question types', 'Learning objectives', 'Discussion topics'],
-      component: QuestionMaker
+      component: QuestionMaker,
     },
     {
       id: 'flashcards',
@@ -135,7 +135,7 @@ const Tools = () => {
       icon: RectangleStackIcon,
       demo: 'Study material → Interactive flashcard set',
       features: ['Smart card generation', 'Study mode', 'Progress tracking'],
-      component: FlashcardGenerator
+      component: FlashcardGenerator,
     },
     {
       id: 'mapping',
@@ -144,8 +144,8 @@ const Tools = () => {
       icon: Square3Stack3DIcon,
       demo: 'Topic input → Interactive concept map',
       features: ['Visual learning', 'Interactive nodes', 'Export to image'],
-      component: ConceptMap
-    }
+      component: ConceptMap,
+    },
   ];
 
   return (
@@ -154,7 +154,10 @@ const Tools = () => {
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent-500/10 to-transparent animate-pulse"></div>
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent-500/20 rounded-full filter blur-3xl animate-bounce opacity-20"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-navy-500/20 rounded-full filter blur-3xl animate-bounce opacity-20" style={{ animationDelay: '1s' }}></div>
+        <div
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-navy-500/20 rounded-full filter blur-3xl animate-bounce opacity-20"
+          style={{ animationDelay: '1s' }}
+        ></div>
       </div>
 
       <div className="relative z-10">
@@ -170,14 +173,14 @@ const Tools = () => {
             <p className="text-2xl text-gray-300 max-w-4xl mx-auto mb-12 animate-slide-up">
               Smarter Learning with AI-Powered Study Tools
             </p>
-            
+
             {/* Video Preview Section */}
             <div className="relative max-w-4xl mx-auto mb-16">
               <div className="bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm rounded-3xl border border-accent-500/30 p-8 shadow-2xl">
                 <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl flex items-center justify-center relative overflow-hidden border border-accent-500/20">
                   {/* Animated Preview Content */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent-500/10 to-transparent animate-pulse"></div>
-                  
+
                   {/* Video Storyboard Animation */}
                   <div className="relative z-10 text-center">
                     {animationStep === 0 && (
@@ -209,9 +212,9 @@ const Tools = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Play Button Overlay */}
-                  <button 
+                  <button
                     onClick={() => setShowVideo(true)}
                     className="absolute inset-0 flex items-center justify-center bg-black/50 hover:bg-black/30 transition-all duration-300 group"
                   >
@@ -220,7 +223,7 @@ const Tools = () => {
                     </div>
                   </button>
                 </div>
-                
+
                 <div className="text-center mt-6">
                   <p className="text-gray-300 mb-4">See DUXE AI Tools in Action</p>
                   <div className="flex justify-center space-x-4">
@@ -247,11 +250,11 @@ const Tools = () => {
               Experience the future of learning with our intelligent study assistants
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {aiTools.map((tool, index) => (
-              <div 
-                key={tool.id} 
+              <div
+                key={tool.id}
                 className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-sm rounded-3xl border border-accent-500/20 p-8 hover:border-accent-500/40 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl group"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
@@ -264,9 +267,9 @@ const Tools = () => {
                     <p className="text-accent-500 font-medium">{tool.demo}</p>
                   </div>
                 </div>
-                
+
                 <p className="text-gray-300 text-lg mb-6">{tool.description}</p>
-                
+
                 <div className="space-y-3 mb-8">
                   {tool.features.map((feature, featureIndex) => (
                     <div key={featureIndex} className="flex items-center text-gray-300">
@@ -275,8 +278,8 @@ const Tools = () => {
                     </div>
                   ))}
                 </div>
-                
-                <button 
+
+                <button
                   onClick={() => handleToolClick(tool.id)}
                   className="w-full bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105"
                 >
@@ -299,9 +302,9 @@ const Tools = () => {
                 >
                   <XMarkIcon className="h-6 w-6" />
                 </button>
-                
+
                 {/* Render the selected tool component */}
-                {aiTools.map(tool => {
+                {aiTools.map((tool) => {
                   if (tool.id === activeTool) {
                     const ToolComponent = tool.component;
                     return <ToolComponent key={tool.id} />;
@@ -319,26 +322,33 @@ const Tools = () => {
             <div className="max-w-4xl mx-auto">
               <div className="bg-gradient-to-br from-slate-800/90 to-slate-700/90 backdrop-blur-sm rounded-3xl border border-accent-500/30 p-8 shadow-2xl">
                 <div className="text-center">
-                  <h3 className="text-3xl font-bold text-white mb-4">Ready to Transform Your Learning?</h3>
+                  <h3 className="text-3xl font-bold text-white mb-4">
+                    Ready to Transform Your Learning?
+                  </h3>
                   <p className="text-gray-300 text-lg mb-8">
-                    {currentUser ? 
-                      'Select any AI tool above to start processing your study materials' : 
-                      'Log in to access the full power of AI-assisted learning'
-                    }
+                    {currentUser
+                      ? 'Select any AI tool above to start processing your study materials'
+                      : 'Log in to access the full power of AI-assisted learning'}
                   </p>
-                  
+
                   {!currentUser ? (
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                      <a href="/signup" className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                      <a
+                        href="/signup"
+                        className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                      >
                         Start for Free
                       </a>
-                      <a href="/login" className="bg-transparent border-2 border-accent-500 text-accent-500 hover:bg-accent-500 hover:text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 hover:shadow-lg">
+                      <a
+                        href="/login"
+                        className="bg-transparent border-2 border-accent-500 text-accent-500 hover:bg-accent-500 hover:text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 hover:shadow-lg"
+                      >
                         Log In
                       </a>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {aiTools.map(tool => {
+                      {aiTools.map((tool) => {
                         const Icon = tool.icon;
                         return (
                           <button
@@ -353,7 +363,7 @@ const Tools = () => {
                       })}
                     </div>
                   )}
-                  
+
                   {/* API Key Configuration */}
                   {currentUser && !isOpenAIConfigured && (
                     <div className="mt-8 p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
@@ -381,8 +391,13 @@ const Tools = () => {
             <div className="bg-slate-800 rounded-2xl border border-accent-500/30 p-6 max-w-md w-full">
               <h3 className="text-xl font-bold text-white mb-4">Configure OpenAI API Key</h3>
               <p className="text-gray-400 mb-4">
-                Enter your OpenAI API key to enable AI features. 
-                <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-accent-500 hover:underline">
+                Enter your OpenAI API key to enable AI features.
+                <a
+                  href="https://platform.openai.com/api-keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent-500 hover:underline"
+                >
                   Get your API key here
                 </a>
               </p>

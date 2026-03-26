@@ -5,7 +5,7 @@ import {
   DocumentTextIcon,
   ArrowTrendingUpIcon,
   CalendarIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { paymentService } from '../../services/paymentService';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
@@ -63,7 +63,7 @@ const PaymentAnalytics = () => {
             noteId: payment.noteId,
             totalRevenue: 0,
             purchaseCount: 0,
-            payments: []
+            payments: [],
           });
         }
 
@@ -83,7 +83,7 @@ const PaymentAnalytics = () => {
             limit(1)
           );
           const noteSnapshot = await getDocs(noteQuery);
-          
+
           let noteDetails = { title: 'Unknown Note', courseCode: '' };
           if (!noteSnapshot.empty) {
             noteDetails = noteSnapshot.docs[0].data();
@@ -92,7 +92,7 @@ const PaymentAnalytics = () => {
           return {
             ...noteStats,
             noteTitle: noteDetails.title,
-            courseCo: noteDetails.courseCode
+            courseCo: noteDetails.courseCode,
           };
         })
       );
@@ -103,7 +103,6 @@ const PaymentAnalytics = () => {
 
       // Get recent payments (last 10)
       setRecentPayments(payments.slice(0, 10));
-
     } catch (error) {
       console.error('Error fetching analytics:', error);
     } finally {
@@ -128,7 +127,7 @@ const PaymentAnalytics = () => {
       // Fetch user details for each payment
       for (const doc of snapshot.docs) {
         const payment = { id: doc.id, ...doc.data() };
-        
+
         // Fetch user details
         const userQuery = query(
           collection(db, 'users'),
@@ -136,7 +135,7 @@ const PaymentAnalytics = () => {
           limit(1)
         );
         const userSnapshot = await getDocs(userQuery);
-        
+
         let userDetails = { displayName: 'Unknown User', email: '' };
         if (!userSnapshot.empty) {
           userDetails = userSnapshot.docs[0].data();
@@ -145,7 +144,7 @@ const PaymentAnalytics = () => {
         purchasers.push({
           ...payment,
           userName: userDetails.displayName || userDetails.email,
-          userEmail: userDetails.email
+          userEmail: userDetails.email,
         });
       }
 
@@ -175,7 +174,7 @@ const PaymentAnalytics = () => {
         month: 'short',
         year: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
       });
     } catch {
       return 'Invalid Date';
@@ -224,9 +223,7 @@ const PaymentAnalytics = () => {
             <DocumentTextIcon className="h-6 w-6" />
           </div>
           <p className="text-sm opacity-90 mb-1">Total Transactions</p>
-          <h3 className="text-3xl font-bold">
-            {totalStats?.totalTransactions || 0}
-          </h3>
+          <h3 className="text-3xl font-bold">{totalStats?.totalTransactions || 0}</h3>
         </div>
 
         {/* Average Transaction */}
@@ -236,9 +233,7 @@ const PaymentAnalytics = () => {
             <CalendarIcon className="h-6 w-6" />
           </div>
           <p className="text-sm opacity-90 mb-1">Average Transaction</p>
-          <h3 className="text-3xl font-bold">
-            ₹{totalStats?.averageTransaction?.toFixed(0) || 0}
-          </h3>
+          <h3 className="text-3xl font-bold">₹{totalStats?.averageTransaction?.toFixed(0) || 0}</h3>
         </div>
       </div>
 
@@ -246,9 +241,7 @@ const PaymentAnalytics = () => {
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
         <div className="p-6 border-b border-gray-200">
           <h3 className="text-xl font-bold text-gray-900">Revenue by Note</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Click on a note to view purchasers
-          </p>
+          <p className="text-sm text-gray-600 mt-1">Click on a note to view purchasers</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -279,9 +272,7 @@ const PaymentAnalytics = () => {
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {noteStats.noteTitle}
-                    </div>
+                    <div className="text-sm font-medium text-gray-900">{noteStats.noteTitle}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
@@ -312,7 +303,8 @@ const PaymentAnalytics = () => {
               <div>
                 <h3 className="text-xl font-bold">{selectedNote.noteTitle}</h3>
                 <p className="text-sm opacity-90 mt-1">
-                  {selectedNote.purchaseCount} purchases • ₹{selectedNote.totalRevenue.toLocaleString('en-IN')} revenue
+                  {selectedNote.purchaseCount} purchases • ₹
+                  {selectedNote.totalRevenue.toLocaleString('en-IN')} revenue
                 </p>
               </div>
               <button
@@ -348,9 +340,7 @@ const PaymentAnalytics = () => {
                 {notePurchasers.map((purchaser) => (
                   <tr key={purchaser.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {purchaser.userName}
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{purchaser.userName}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {purchaser.userEmail}
@@ -415,11 +405,13 @@ const PaymentAnalytics = () => {
                     ₹{payment.amount}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      payment.status === 'completed' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        payment.status === 'completed'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
                       {payment.status}
                     </span>
                   </td>

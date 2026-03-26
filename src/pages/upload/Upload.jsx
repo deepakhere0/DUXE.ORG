@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
+import {
   CloudArrowUpIcon,
   DocumentTextIcon,
   CheckCircleIcon,
   InformationCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -29,7 +29,7 @@ const Upload = () => {
     semester: '',
     courseCode: '',
     description: '',
-    tags: ''
+    tags: '',
   });
 
   // Simple auth check - just check if user is logged in
@@ -39,8 +39,8 @@ const Upload = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Please Login</h2>
           <p className="text-gray-600 mb-6">You need to be logged in to upload notes.</p>
-          <button 
-            onClick={() => navigate('/login')} 
+          <button
+            onClick={() => navigate('/login')}
             className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"
           >
             Login
@@ -68,7 +68,7 @@ const Upload = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!file) {
       toast.error('Please select a file to upload');
       return;
@@ -82,31 +82,32 @@ const Upload = () => {
     setUploading(true);
     setUploadProgress(0);
     setCurrentStep('Starting upload...');
-    
+
     try {
       // Step 1: Upload file to Firebase Storage (if available)
       setCurrentStep('Uploading file...');
       let fileUrl = '';
-      
+
       if (storage) {
         const timestamp = Date.now();
         const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
         const fileName = `notes/${timestamp}_${sanitizedFileName}`;
         const storageRef = ref(storage, fileName);
         const uploadTask = uploadBytesResumable(storageRef, file);
-        
+
         fileUrl = await new Promise((resolve, reject) => {
-          uploadTask.on('state_changed', 
+          uploadTask.on(
+            'state_changed',
             (snapshot) => {
               const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
               setUploadProgress(Math.round(progress));
               setCurrentStep(`Uploading: ${Math.round(progress)}%`);
-            }, 
+            },
             (error) => {
               console.error('Upload error:', error);
               // Don't reject, just continue without file URL
               resolve('');
-            }, 
+            },
             async () => {
               try {
                 const url = await getDownloadURL(uploadTask.snapshot.ref);
@@ -119,10 +120,10 @@ const Upload = () => {
           );
         });
       }
-      
+
       // Step 2: Create note document in Firestore
       setCurrentStep('Saving note information...');
-      
+
       const noteData = {
         title: formData.title,
         universityId: formData.university,
@@ -131,7 +132,10 @@ const Upload = () => {
         semester: parseInt(formData.semester),
         courseCode: formData.courseCode,
         description: formData.description,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        tags: formData.tags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter((tag) => tag),
         status: 'approved', // Auto-approve for development
         createdBy: user.uid,
         authorName: user.displayName || user.email,
@@ -145,18 +149,17 @@ const Upload = () => {
         ratingCount: 0,
         ratingAvg: 0,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       };
-      
+
       const docRef = await addDoc(collection(db, 'notes'), noteData);
       console.log('Document created with ID:', docRef.id);
-      
+
       setUploadProgress(100);
       setCurrentStep('Upload completed!');
       setUploading(false);
       setUploadSuccess(true);
       toast.success('Note uploaded successfully!');
-      
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Upload failed: ' + error.message);
@@ -173,7 +176,7 @@ const Upload = () => {
           <h2 className="text-2xl font-bold mb-2">Upload Successful!</h2>
           <p className="text-gray-600 mb-6">Your note has been uploaded and is now available.</p>
           <div className="space-x-4">
-            <button 
+            <button
               onClick={() => {
                 setUploadSuccess(false);
                 setFile(null);
@@ -185,15 +188,15 @@ const Upload = () => {
                   semester: '',
                   courseCode: '',
                   description: '',
-                  tags: ''
+                  tags: '',
                 });
-              }} 
+              }}
               className="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"
             >
               Upload Another
             </button>
-            <button 
-              onClick={() => navigate('/notes')} 
+            <button
+              onClick={() => navigate('/notes')}
               className="px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-50"
             >
               View Notes
@@ -219,13 +222,11 @@ const Upload = () => {
         </div>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Upload Notes</h1>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* File Upload */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-4">
-              Upload File *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-4">Upload File *</label>
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
               {file ? (
                 <div className="space-y-4">
@@ -250,8 +251,8 @@ const Upload = () => {
                     className="hidden"
                     id="file-upload"
                   />
-                  <label 
-                    htmlFor="file-upload" 
+                  <label
+                    htmlFor="file-upload"
                     className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 cursor-pointer inline-block"
                   >
                     Choose File
@@ -269,7 +270,7 @@ const Upload = () => {
               <input
                 type="text"
                 value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
@@ -280,7 +281,7 @@ const Upload = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">University *</label>
                 <select
                   value={formData.university}
-                  onChange={(e) => setFormData({...formData, university: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, university: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
@@ -296,7 +297,7 @@ const Upload = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Department *</label>
                 <select
                   value={formData.department}
-                  onChange={(e) => setFormData({...formData, department: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
@@ -315,7 +316,7 @@ const Upload = () => {
                 <input
                   type="text"
                   value={formData.subject}
-                  onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   required
                 />
@@ -325,23 +326,27 @@ const Upload = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Semester *</label>
                 <select
                   value={formData.semester}
-                  onChange={(e) => setFormData({...formData, semester: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, semester: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   required
                 >
                   <option value="">Select</option>
-                  {[1,2,3,4,5,6,7,8].map(sem => (
-                    <option key={sem} value={sem}>Semester {sem}</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                    <option key={sem} value={sem}>
+                      Semester {sem}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Course Code *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Course Code *
+                </label>
                 <input
                   type="text"
                   value={formData.courseCode}
-                  onChange={(e) => setFormData({...formData, courseCode: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, courseCode: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   required
                 />
@@ -352,18 +357,20 @@ const Upload = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg h-32 resize-none"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma-separated)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tags (comma-separated)
+              </label>
               <input
                 type="text"
                 value={formData.tags}
-                onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 placeholder="e.g., algorithms, data structures"
               />
@@ -377,7 +384,7 @@ const Upload = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Uploading Note</h3>
                 <p className="text-sm text-gray-600 mb-4">{currentStep}</p>
                 <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-                  <div 
+                  <div
                     className="bg-blue-600 h-3 rounded-full transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   />

@@ -1,29 +1,28 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import ReactFlow, { 
-  Controls, 
-  Background, 
+import ReactFlow, {
+  Controls,
+  Background,
   MiniMap,
   useNodesState,
   useEdgesState,
-  addEdge
+  addEdge,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { 
+import {
   Square3Stack3DIcon,
   ArrowsPointingOutIcon,
   ArrowsPointingInIcon,
   ArrowDownTrayIcon,
-  PhotoIcon
+  PhotoIcon,
 } from '@heroicons/react/24/outline';
 import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../ui/Toast';
 
-
 const ConceptMap = () => {
   // For now, we'll use anonymous user until auth is implemented
   const user = null;
-  
+
   const [inputText, setInputText] = useState('');
   const [conceptData, setConceptData] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -45,41 +44,41 @@ const ConceptMap = () => {
 
     setIsGenerating(true);
     setError(null);
-    
+
     try {
       const result = await AIService.generateConceptMap({
         inputText,
-        createdBy: user?.uid || 'anonymous'
+        createdBy: user?.uid || 'anonymous',
       });
       setConceptData(result.output);
-      
+
       // Convert to React Flow format
-      const flowNodes = result.output.nodes.map(node => ({
+      const flowNodes = result.output.nodes.map((node) => ({
         id: node.id,
         position: node.position || { x: Math.random() * 500, y: Math.random() * 500 },
-        data: { 
+        data: {
           label: node.label,
           description: node.description,
           importance: node.importance,
-          type: node.type
+          type: node.type,
         },
         style: getNodeStyle(node.type, node.importance),
-        type: 'default'
+        type: 'default',
       }));
 
-      const flowEdges = result.output.edges.map(edge => ({
+      const flowEdges = result.output.edges.map((edge) => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
         label: edge.label,
         type: 'smoothstep',
         animated: edge.type === 'causes',
-        style: getEdgeStyle(edge.type)
+        style: getEdgeStyle(edge.type),
       }));
 
       setNodes(flowNodes);
       setEdges(flowEdges);
-      
+
       Toast.success('Concept map generated successfully!');
     } catch (err) {
       setError(err.message);
@@ -97,19 +96,19 @@ const ConceptMap = () => {
       fontWeight: 'bold',
       border: '2px solid',
       width: 150,
-      textAlign: 'center'
+      textAlign: 'center',
     };
 
     const typeColors = {
       main: { background: '#1e40af', color: '#fff', borderColor: '#3b82f6' },
       subtopic: { background: '#047857', color: '#fff', borderColor: '#10b981' },
-      detail: { background: '#7c3aed', color: '#fff', borderColor: '#a78bfa' }
+      detail: { background: '#7c3aed', color: '#fff', borderColor: '#a78bfa' },
     };
 
     const importanceScale = {
       high: 1.2,
       medium: 1,
-      low: 0.9
+      low: 0.9,
     };
 
     const colors = typeColors[type] || typeColors.detail;
@@ -118,7 +117,7 @@ const ConceptMap = () => {
     return {
       ...baseStyle,
       ...colors,
-      transform: `scale(${scale})`
+      transform: `scale(${scale})`,
     };
   };
 
@@ -128,15 +127,18 @@ const ConceptMap = () => {
       causes: { stroke: '#10b981', strokeWidth: 3 },
       contains: { stroke: '#3b82f6', strokeWidth: 2 },
       supports: { stroke: '#8b5cf6', strokeWidth: 2 },
-      contrasts: { stroke: '#ef4444', strokeWidth: 2, strokeDasharray: '5,5' }
+      contrasts: { stroke: '#ef4444', strokeWidth: 2, strokeDasharray: '5,5' },
     };
 
     return styles[type] || styles.relates;
   };
 
-  const onConnect = useCallback((params) => {
-    setEdges((eds) => addEdge(params, eds));
-  }, [setEdges]);
+  const onConnect = useCallback(
+    (params) => {
+      setEdges((eds) => addEdge(params, eds));
+    },
+    [setEdges]
+  );
 
   const onNodeClick = (event, node) => {
     setSelectedNode(node.data);
@@ -149,7 +151,7 @@ const ConceptMap = () => {
         // Dynamic import to avoid module resolution issues
         const html2canvas = await import('html2canvas');
         const html2canvasFunc = html2canvas.default || html2canvas;
-        
+
         const canvas = await html2canvasFunc(flowElement);
         const link = document.createElement('a');
         link.download = 'concept-map.png';
@@ -191,17 +193,12 @@ const ConceptMap = () => {
 
       {/* File Upload */}
       <div className="mb-8">
-        <FileUpload 
-          onTextExtracted={handleTextExtracted}
-          className="mb-6"
-        />
+        <FileUpload onTextExtracted={handleTextExtracted} className="mb-6" />
       </div>
 
       {/* Text Input */}
       <div className="mb-6">
-        <label className="block text-white font-medium mb-3">
-          Or paste your study material:
-        </label>
+        <label className="block text-white font-medium mb-3">Or paste your study material:</label>
         <textarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
@@ -264,7 +261,7 @@ const ConceptMap = () => {
                 fitView
               >
                 <Background color="#334155" gap={16} />
-                <MiniMap 
+                <MiniMap
                   nodeColor={(node) => {
                     if (node.data.type === 'main') return '#1e40af';
                     if (node.data.type === 'subtopic') return '#047857';
@@ -303,11 +300,15 @@ const ConceptMap = () => {
               <h4 className="text-lg font-semibold text-white mb-2">{selectedNode.label}</h4>
               <p className="text-gray-300 mb-2">{selectedNode.description}</p>
               <div className="flex gap-2">
-                <span className={`px-2 py-1 rounded text-xs ${
-                  selectedNode.importance === 'high' ? 'bg-red-500/20 text-red-400' :
-                  selectedNode.importance === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                  'bg-gray-500/20 text-gray-400'
-                }`}>
+                <span
+                  className={`px-2 py-1 rounded text-xs ${
+                    selectedNode.importance === 'high'
+                      ? 'bg-red-500/20 text-red-400'
+                      : selectedNode.importance === 'medium'
+                        ? 'bg-yellow-500/20 text-yellow-400'
+                        : 'bg-gray-500/20 text-gray-400'
+                  }`}
+                >
                   {selectedNode.importance} importance
                 </span>
                 <span className="px-2 py-1 rounded text-xs bg-accent-500/20 text-accent-400">
@@ -351,8 +352,12 @@ const ConceptMap = () => {
         }
 
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
 
         .react-flow__node {
