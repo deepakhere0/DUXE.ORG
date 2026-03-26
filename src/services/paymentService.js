@@ -1,7 +1,7 @@
-import { 
-  collection, 
-  doc, 
-  setDoc, 
+import {
+  collection,
+  doc,
+  setDoc,
   addDoc,
   getDoc,
   query,
@@ -9,7 +9,7 @@ import {
   getDocs,
   serverTimestamp,
   updateDoc,
-  increment
+  increment,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { razorpayConfig, loadRazorpayScript } from '../config/razorpayConfig';
@@ -67,7 +67,7 @@ export class PaymentService {
 
       const snapshot = await getDocs(paymentQuery);
       const paidNotes = [];
-      
+
       snapshot.forEach((doc) => {
         paidNotes.push(doc.data().noteId);
       });
@@ -91,7 +91,7 @@ export class PaymentService {
     try {
       // Get backend API URL from environment
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      
+
       // Call backend API to create Razorpay order
       const response = await fetch(`${apiBaseUrl}/payments/create-order`, {
         method: 'POST',
@@ -103,8 +103,8 @@ export class PaymentService {
           currency: currency || 'INR',
           noteId,
           userId,
-          noteName
-        })
+          noteName,
+        }),
       });
 
       const data = await response.json();
@@ -148,7 +148,7 @@ export class PaymentService {
         description: `Purchase: ${paymentData.noteName}`,
         order_id: order.id, // Order ID from backend
         image: razorpayConfig.companyLogo,
-        
+
         // Payment handler - called on successful payment
         handler: async (response) => {
           try {
@@ -156,12 +156,12 @@ export class PaymentService {
             // - razorpay_payment_id: Payment ID
             // - razorpay_order_id: Order ID
             // - razorpay_signature: Signature for verification
-            
+
             // IMPORTANT: In production, verify the signature on your backend
             // to ensure payment authenticity before granting access
-            
+
             console.log('Payment successful:', response);
-            
+
             // Create payment record in Firestore
             const paymentRecord = await this.createPaymentRecord({
               userId: paymentData.userId,
@@ -172,15 +172,15 @@ export class PaymentService {
               orderId: response.razorpay_order_id,
               signature: response.razorpay_signature,
               status: 'completed',
-              paymentMethod: 'razorpay'
+              paymentMethod: 'razorpay',
             });
-            
+
             // Call success callback
             if (onSuccess) {
               onSuccess({
                 success: true,
                 payment: paymentRecord,
-                razorpayResponse: response
+                razorpayResponse: response,
               });
             }
           } catch (error) {
@@ -190,14 +190,14 @@ export class PaymentService {
             }
           }
         },
-        
+
         // Prefill customer details
         prefill: {
           name: paymentData.userName || '',
           email: paymentData.userEmail || '',
-          contact: paymentData.userPhone || ''
+          contact: paymentData.userPhone || '',
         },
-        
+
         // Payment methods to show
         method: {
           card: razorpayConfig.paymentMethods.card,
@@ -205,10 +205,10 @@ export class PaymentService {
           wallet: razorpayConfig.paymentMethods.wallet,
           upi: razorpayConfig.paymentMethods.upi,
         },
-        
+
         // Theme
         theme: razorpayConfig.theme,
-        
+
         // Modal configuration
         modal: {
           ondismiss: () => {
@@ -216,21 +216,21 @@ export class PaymentService {
             if (onFailure) {
               onFailure(new Error('Payment cancelled by user'));
             }
-          }
+          },
         },
-        
+
         // Notes (metadata)
         notes: {
           noteId: paymentData.noteId,
           userId: paymentData.userId,
-          noteName: paymentData.noteName
-        }
+          noteName: paymentData.noteName,
+        },
       };
 
       // Open Razorpay checkout
       const razorpay = new window.Razorpay(options);
       razorpay.open();
-      
+
       // Handle payment failure
       razorpay.on('payment.failed', (response) => {
         console.error('Payment failed:', response.error);
@@ -238,7 +238,6 @@ export class PaymentService {
           onFailure(new Error(response.error.description || 'Payment failed'));
         }
       });
-      
     } catch (error) {
       console.error('Error initializing Razorpay payment:', error);
       if (onFailure) {
@@ -263,7 +262,7 @@ export class PaymentService {
         orderId,
         signature,
         status = 'completed',
-        paymentMethod = 'razorpay'
+        paymentMethod = 'razorpay',
       } = paymentData;
 
       // Validate required fields
@@ -284,7 +283,7 @@ export class PaymentService {
         status,
         paymentMethod,
         paymentDate: serverTimestamp(),
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
       };
 
       await setDoc(paymentRef, paymentRecord);
@@ -296,7 +295,7 @@ export class PaymentService {
         id: paymentRef.id,
         ...paymentRecord,
         paymentDate: new Date(),
-        createdAt: new Date()
+        createdAt: new Date(),
       };
     } catch (error) {
       console.error('Error creating payment record:', error);
@@ -314,7 +313,7 @@ export class PaymentService {
       const noteRef = doc(db, this.notesCollection, noteId);
       await updateDoc(noteRef, {
         totalRevenue: increment(parseFloat(amount)),
-        purchaseCount: increment(1)
+        purchaseCount: increment(1),
       });
     } catch (error) {
       console.error('Error updating note revenue:', error);
@@ -340,7 +339,7 @@ export class PaymentService {
           if (!isSuccess) {
             resolve({
               success: false,
-              error: 'Payment failed. Please try again.'
+              error: 'Payment failed. Please try again.',
             });
             return;
           }
@@ -356,7 +355,7 @@ export class PaymentService {
             paymentDate: serverTimestamp(),
             transactionId: `MOCK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             paymentMethod: 'mock_payment',
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
           };
 
           const paymentsRef = collection(db, this.paymentsCollection);
@@ -369,15 +368,15 @@ export class PaymentService {
             success: true,
             payment: {
               id: docRef.id,
-              ...paymentRecord
+              ...paymentRecord,
             },
-            transactionId: paymentRecord.transactionId
+            transactionId: paymentRecord.transactionId,
           });
         } catch (error) {
           console.error('Error processing mock payment:', error);
           resolve({
             success: false,
-            error: 'Failed to process payment. Please try again.'
+            error: 'Failed to process payment. Please try again.',
           });
         }
       }, 2000);
@@ -411,7 +410,7 @@ export class PaymentService {
           noteId,
           amount,
           userEmail,
-          userName
+          userName,
         });
       }
 
@@ -426,7 +425,7 @@ export class PaymentService {
             noteName,
             userName,
             userEmail,
-            userPhone
+            userPhone,
           },
           // Success callback
           (result) => {
@@ -462,7 +461,7 @@ export class PaymentService {
       const doc = snapshot.docs[0];
       return {
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       };
     } catch (error) {
       console.error('Error fetching payment:', error);
@@ -488,7 +487,7 @@ export class PaymentService {
       snapshot.forEach((doc) => {
         payments.push({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         });
       });
 
@@ -525,7 +524,7 @@ export class PaymentService {
       return {
         totalRevenue,
         purchaseCount,
-        noteId
+        noteId,
       };
     } catch (error) {
       console.error('Error fetching note revenue:', error);
@@ -557,7 +556,7 @@ export class PaymentService {
       return {
         totalRevenue,
         totalTransactions,
-        averageTransaction: totalTransactions > 0 ? totalRevenue / totalTransactions : 0
+        averageTransaction: totalTransactions > 0 ? totalRevenue / totalTransactions : 0,
       };
     } catch (error) {
       console.error('Error fetching total revenue:', error);

@@ -24,7 +24,7 @@ const getToastContainer = () => {
 // Show toast notification
 export const showToast = (message, type = 'info', duration = 3000) => {
   const container = getToastContainer();
-  
+
   const toast = document.createElement('div');
   toast.style.cssText = `
     min-width: 300px;
@@ -48,7 +48,7 @@ export const showToast = (message, type = 'info', duration = 3000) => {
     success: { bg: '#10b981', text: '#ffffff', icon: '✓' },
     error: { bg: '#ef4444', text: '#ffffff', icon: '✕' },
     warning: { bg: '#f59e0b', text: '#ffffff', icon: '⚠' },
-    info: { bg: '#3b82f6', text: '#ffffff', icon: 'ℹ' }
+    info: { bg: '#3b82f6', text: '#ffffff', icon: 'ℹ' },
   };
 
   const color = colors[type] || colors.info;

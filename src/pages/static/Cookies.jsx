@@ -9,7 +9,8 @@ const Cookies = () => {
           We use cookies to improve your experience, analyze traffic, and personalize content.
         </p>
         <p className="text-gray-600">
-          Note: This is placeholder content. Replace with your organization's actual cookie policy details.
+          Note: This is placeholder content. Replace with your organization's actual cookie policy
+          details.
         </p>
       </div>
     </div>
@@ -17,4 +18,3 @@ const Cookies = () => {
 };
 
 export default Cookies;
-

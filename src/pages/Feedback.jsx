@@ -19,9 +19,16 @@ const Feedback = () => {
           <div className="card-body space-y-4">
             <div>
               <label className="label">Your Feedback</label>
-              <textarea className="input min-h-[120px]" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Share your thoughts..." />
+              <textarea
+                className="input min-h-[120px]"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Share your thoughts..."
+              />
             </div>
-            <button className="btn btn-primary btn-md" type="submit">Send Feedback</button>
+            <button className="btn btn-primary btn-md" type="submit">
+              Send Feedback
+            </button>
           </div>
         </form>
       </div>
@@ -30,4 +37,3 @@ const Feedback = () => {
 };
 
 export default Feedback;
-

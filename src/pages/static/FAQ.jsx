@@ -2,9 +2,15 @@ import React from 'react';
 
 const FAQ = () => {
   const faqs = [
-    { q: 'What is StudyHub?', a: 'A platform offering premium notes, AI tools, and learning resources.' },
+    {
+      q: 'What is StudyHub?',
+      a: 'A platform offering premium notes, AI tools, and learning resources.',
+    },
     { q: 'Is there a free plan?', a: 'Yes, you can browse notes and try basic tools for free.' },
-    { q: 'How do I upload notes?', a: 'Create an account, verify your email, and use the Upload page.' },
+    {
+      q: 'How do I upload notes?',
+      a: 'Create an account, verify your email, and use the Upload page.',
+    },
   ];
 
   return (
@@ -27,4 +33,3 @@ const FAQ = () => {
 };
 
 export default FAQ;
-

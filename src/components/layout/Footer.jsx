@@ -1,11 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  AcademicCapIcon,
-  EnvelopeIcon,
-  PhoneIcon,
-  MapPinIcon
-} from '@heroicons/react/24/outline';
+import { AcademicCapIcon, EnvelopeIcon, PhoneIcon, MapPinIcon } from '@heroicons/react/24/outline';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -56,7 +51,8 @@ const Footer = () => {
               <span className="text-xl font-bold">DUXE</span>
             </div>
             <p className="text-sm text-gray-300 mb-4">
-              DUXE - Empowering students with premium study materials, AI-powered tools, and career opportunities.
+              DUXE - Empowering students with premium study materials, AI-powered tools, and career
+              opportunities.
             </p>
             <div className="flex space-x-3 mb-6">
               {socialLinks.map((social) => (
@@ -75,8 +71,14 @@ const Footer = () => {
               <h3 className="font-semibold text-accent-300 mb-2">Newsletter</h3>
               <p className="text-sm text-gray-200 mb-3">Get study tips and platform updates.</p>
               <form className="flex flex-col sm:flex-row gap-2">
-                <input type="email" placeholder="you@example.com" className="w-full px-4 py-2 rounded-xl text-gray-900" />
-                <button type="submit" className="btn btn-subtle btn-md">Subscribe</button>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  className="w-full px-4 py-2 rounded-xl text-gray-900"
+                />
+                <button type="submit" className="btn btn-subtle btn-md">
+                  Subscribe
+                </button>
               </form>
             </div>
           </div>
@@ -122,17 +124,24 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="border-t border-white/10 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-sm text-gray-300">
-              © {currentYear} DUXE. All rights reserved.
-            </p>
+            <p className="text-sm text-gray-300">© {currentYear} DUXE. All rights reserved.</p>
             <div className="flex space-x-6 text-sm">
-              <Link to="/privacy" className="text-gray-300 hover:text-white transition-colors duration-200">
+              <Link
+                to="/privacy"
+                className="text-gray-300 hover:text-white transition-colors duration-200"
+              >
                 Privacy Policy
               </Link>
-              <Link to="/terms" className="text-gray-300 hover:text-white transition-colors duration-200">
+              <Link
+                to="/terms"
+                className="text-gray-300 hover:text-white transition-colors duration-200"
+              >
                 Terms of Service
               </Link>
-              <Link to="/cookies" className="text-gray-300 hover:text-white transition-colors duration-200">
+              <Link
+                to="/cookies"
+                className="text-gray-300 hover:text-white transition-colors duration-200"
+              >
                 Cookie Policy
               </Link>
             </div>

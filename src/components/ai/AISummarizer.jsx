@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  ListBulletIcon, 
+import {
+  ListBulletIcon,
   DocumentDuplicateIcon,
   ArrowDownTrayIcon,
   ShareIcon,
-  BookmarkIcon
+  BookmarkIcon,
 } from '@heroicons/react/24/outline';
 import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
@@ -31,11 +31,11 @@ const AISummarizer = () => {
 
     setIsGenerating(true);
     setError(null);
-    
+
     try {
       const result = await AIService.summarize({
         inputText,
-        createdBy: user?.uid || 'anonymous'
+        createdBy: user?.uid || 'anonymous',
       });
       setSummary(result.output);
     } catch (err) {
@@ -63,7 +63,7 @@ Main Concepts: ${summary.mainConcepts.join(', ')}
 Study Tips:
 ${summary.studyTips.map((t, i) => `- ${t}`).join('\n')}
       `.trim();
-      
+
       navigator.clipboard.writeText(summaryText);
       Toast.success('Summary copied to clipboard!');
     }
@@ -92,7 +92,7 @@ ${summary.studyTips.map((t, i) => `- ${t}`).join('\n')}
 ---
 Generated with DUXE AI Summarizer
       `.trim();
-      
+
       const blob = new Blob([summaryText], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -118,17 +118,12 @@ Generated with DUXE AI Summarizer
 
       {/* File Upload */}
       <div className="mb-8">
-        <FileUpload 
-          onTextExtracted={handleTextExtracted}
-          className="mb-6"
-        />
+        <FileUpload onTextExtracted={handleTextExtracted} className="mb-6" />
       </div>
 
       {/* Text Input */}
       <div className="mb-6">
-        <label className="block text-white font-medium mb-3">
-          Or paste your text directly:
-        </label>
+        <label className="block text-white font-medium mb-3">Or paste your text directly:</label>
         <textarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
@@ -136,7 +131,7 @@ Generated with DUXE AI Summarizer
           placeholder="Paste your study material, notes, or any text you want to summarize..."
         />
         <p className="text-sm text-gray-500 mt-2">
-          {inputText.length} characters • {inputText.split(' ').filter(w => w).length} words
+          {inputText.length} characters • {inputText.split(' ').filter((w) => w).length} words
         </p>
       </div>
 
@@ -197,7 +192,7 @@ Generated with DUXE AI Summarizer
             <h4 className="text-lg font-semibold text-white mb-3">Key Terms</h4>
             <div className="flex flex-wrap gap-2">
               {summary.keyTerms.map((term, index) => (
-                <span 
+                <span
                   key={index}
                   className="bg-accent-500/20 text-accent-400 px-3 py-1 rounded-lg text-sm"
                 >
@@ -212,7 +207,7 @@ Generated with DUXE AI Summarizer
             <h4 className="text-lg font-semibold text-white mb-3">Main Concepts</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {summary.mainConcepts.map((concept, index) => (
-                <div 
+                <div
                   key={index}
                   className="bg-slate-900/50 border border-accent-500/20 rounded-lg p-3"
                 >
@@ -251,15 +246,11 @@ Generated with DUXE AI Summarizer
               <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
               Download
             </button>
-            <button
-              className="flex-1 bg-slate-700/50 hover:bg-slate-600/50 text-white py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
-            >
+            <button className="flex-1 bg-slate-700/50 hover:bg-slate-600/50 text-white py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
               <ShareIcon className="h-5 w-5 mr-2" />
               Share
             </button>
-            <button
-              className="flex-1 bg-slate-700/50 hover:bg-slate-600/50 text-white py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
-            >
+            <button className="flex-1 bg-slate-700/50 hover:bg-slate-600/50 text-white py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
               <BookmarkIcon className="h-5 w-5 mr-2" />
               Save
             </button>
@@ -279,8 +270,12 @@ Generated with DUXE AI Summarizer
         }
 
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
       `}</style>
     </div>

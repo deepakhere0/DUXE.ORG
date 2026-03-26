@@ -1,20 +1,20 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { 
-  CloudArrowUpIcon, 
-  DocumentTextIcon, 
+import {
+  CloudArrowUpIcon,
+  DocumentTextIcon,
   XMarkIcon,
   CheckCircleIcon,
-  ExclamationCircleIcon 
+  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { validateFile, getFileMetadata, parseFile } from '../../utils/fileParser';
 import Toast from '../ui/Toast';
 
-const FileUpload = ({ 
-  onFileProcessed, 
+const FileUpload = ({
+  onFileProcessed,
   onTextExtracted,
   maxSize = 10 * 1024 * 1024, // 10MB default
   acceptedTypes = ['pdf', 'docx', 'doc', 'txt'],
-  className = ''
+  className = '',
 }) => {
   const [file, setFile] = useState(null);
   const [fileMetadata, setFileMetadata] = useState(null);
@@ -24,48 +24,51 @@ const FileUpload = ({
   const [extractedText, setExtractedText] = useState('');
   const fileInputRef = useRef(null);
 
-  const handleFileSelect = useCallback(async (selectedFile) => {
-    setError(null);
-    
-    // Validate file
-    const validation = validateFile(selectedFile, { maxSize, allowedTypes: acceptedTypes });
-    if (!validation.valid) {
-      setError(validation.error);
-      Toast.error(validation.error);
-      return;
-    }
+  const handleFileSelect = useCallback(
+    async (selectedFile) => {
+      setError(null);
 
-    // Get file metadata
-    const metadata = getFileMetadata(selectedFile);
-    setFile(selectedFile);
-    setFileMetadata(metadata);
+      // Validate file
+      const validation = validateFile(selectedFile, { maxSize, allowedTypes: acceptedTypes });
+      if (!validation.valid) {
+        setError(validation.error);
+        Toast.error(validation.error);
+        return;
+      }
 
-    // Process file
-    setIsProcessing(true);
-    try {
-      const text = await parseFile(selectedFile);
-      setExtractedText(text);
-      
-      // Call callbacks
-      if (onTextExtracted) {
-        onTextExtracted(text);
+      // Get file metadata
+      const metadata = getFileMetadata(selectedFile);
+      setFile(selectedFile);
+      setFileMetadata(metadata);
+
+      // Process file
+      setIsProcessing(true);
+      try {
+        const text = await parseFile(selectedFile);
+        setExtractedText(text);
+
+        // Call callbacks
+        if (onTextExtracted) {
+          onTextExtracted(text);
+        }
+        if (onFileProcessed) {
+          onFileProcessed({
+            file: selectedFile,
+            text,
+            metadata,
+          });
+        }
+
+        Toast.success(`File "${metadata.name}" processed successfully`);
+      } catch (err) {
+        setError(err.message);
+        Toast.error(err.message);
+      } finally {
+        setIsProcessing(false);
       }
-      if (onFileProcessed) {
-        onFileProcessed({
-          file: selectedFile,
-          text,
-          metadata
-        });
-      }
-      
-      Toast.success(`File "${metadata.name}" processed successfully`);
-    } catch (err) {
-      setError(err.message);
-      Toast.error(err.message);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [maxSize, acceptedTypes, onFileProcessed, onTextExtracted]);
+    },
+    [maxSize, acceptedTypes, onFileProcessed, onTextExtracted]
+  );
 
   const handleInputChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -74,15 +77,18 @@ const FileUpload = ({
     }
   };
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      handleFileSelect(droppedFile);
-    }
-  }, [handleFileSelect]);
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      setIsDragging(false);
+
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile) {
+        handleFileSelect(droppedFile);
+      }
+    },
+    [handleFileSelect]
+  );
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -116,7 +122,7 @@ const FileUpload = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept={acceptedTypes.map(type => `.${type}`).join(',')}
+        accept={acceptedTypes.map((type) => `.${type}`).join(',')}
         onChange={handleInputChange}
         className="hidden"
       />
@@ -126,9 +132,10 @@ const FileUpload = ({
         <div
           className={`
             border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300
-            ${isDragging 
-              ? 'border-accent-500 bg-accent-500/10' 
-              : 'border-gray-600 hover:border-accent-500/50 bg-slate-800/50'
+            ${
+              isDragging
+                ? 'border-accent-500 bg-accent-500/10'
+                : 'border-gray-600 hover:border-accent-500/50 bg-slate-800/50'
             }
             ${error ? 'border-red-500' : ''}
           `}
@@ -137,24 +144,20 @@ const FileUpload = ({
           onDragLeave={handleDragLeave}
         >
           <CloudArrowUpIcon className="h-12 w-12 text-accent-500 mx-auto mb-4" />
-          
-          <h3 className="text-xl font-semibold text-white mb-2">
-            Upload Study Material
-          </h3>
-          
-          <p className="text-gray-400 mb-4">
-            Drag and drop your file here, or click to browse
-          </p>
-          
+
+          <h3 className="text-xl font-semibold text-white mb-2">Upload Study Material</h3>
+
+          <p className="text-gray-400 mb-4">Drag and drop your file here, or click to browse</p>
+
           <button
             onClick={triggerFileInput}
             className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300"
           >
             Choose File
           </button>
-          
+
           <p className="text-sm text-gray-500 mt-4">
-            Supported formats: {acceptedTypes.map(t => t.toUpperCase()).join(', ')}
+            Supported formats: {acceptedTypes.map((t) => t.toUpperCase()).join(', ')}
             <br />
             Maximum file size: {maxSize / (1024 * 1024)}MB
           </p>
@@ -252,8 +255,12 @@ const FileUpload = ({
         }
 
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
       `}</style>
     </div>

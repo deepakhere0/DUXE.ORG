@@ -2,11 +2,11 @@ import React from 'react';
 
 const Skeleton = ({ className = '', variant = 'text', animation = 'pulse' }) => {
   const baseClasses = 'bg-gray-200 rounded';
-  
+
   const animationClasses = {
     pulse: 'animate-pulse',
     wave: 'animate-shimmer',
-    none: ''
+    none: '',
   };
 
   const variantClasses = {
@@ -15,11 +15,11 @@ const Skeleton = ({ className = '', variant = 'text', animation = 'pulse' }) => 
     rectangle: 'h-24 w-full',
     circle: 'h-12 w-12 rounded-full',
     card: 'h-64 w-full rounded-2xl',
-    button: 'h-10 w-24 rounded-xl'
+    button: 'h-10 w-24 rounded-xl',
   };
 
   return (
-    <div 
+    <div
       className={`${baseClasses} ${animationClasses[animation]} ${variantClasses[variant]} ${className}`}
       role="status"
       aria-label="Loading"

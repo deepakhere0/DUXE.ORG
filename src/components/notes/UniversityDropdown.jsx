@@ -3,11 +3,11 @@ import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outlin
 import { collection, getDocs, query, orderBy, where, limit } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
-const UniversityDropdown = ({ 
-  selectedUniversity, 
-  onUniversityChange, 
-  placeholder = "Select University",
-  className = "" 
+const UniversityDropdown = ({
+  selectedUniversity,
+  onUniversityChange,
+  placeholder = 'Select University',
+  className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [universities, setUniversities] = useState([]);
@@ -27,17 +27,17 @@ const UniversityDropdown = ({
           where('active', '==', true),
           orderBy('shortName', 'asc')
         );
-        
+
         const snapshot = await getDocs(q);
         const universitiesData = [];
-        
+
         snapshot.forEach((doc) => {
           universitiesData.push({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           });
         });
-        
+
         setUniversities(universitiesData);
         setFilteredUniversities(universitiesData);
       } catch (error) {
@@ -57,12 +57,13 @@ const UniversityDropdown = ({
       return;
     }
 
-    const filtered = universities.filter(uni => 
-      uni.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      uni.shortName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      uni.type.toLowerCase().includes(searchQuery.toLowerCase())
+    const filtered = universities.filter(
+      (uni) =>
+        uni.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        uni.shortName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        uni.type.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    
+
     setFilteredUniversities(filtered);
   }, [searchQuery, universities]);
 
@@ -95,22 +96,20 @@ const UniversityDropdown = ({
 
   const getUniversityTypeColor = (type) => {
     const colors = {
-      'IIT': 'bg-blue-100 text-blue-800',
-      'NIT': 'bg-green-100 text-green-800',
-      'IIIT': 'bg-purple-100 text-purple-800',
-      'Private': 'bg-orange-100 text-orange-800',
-      'Central': 'bg-red-100 text-red-800',
-      'State': 'bg-gray-100 text-gray-800'
+      IIT: 'bg-blue-100 text-blue-800',
+      NIT: 'bg-green-100 text-green-800',
+      IIIT: 'bg-purple-100 text-purple-800',
+      Private: 'bg-orange-100 text-orange-800',
+      Central: 'bg-red-100 text-red-800',
+      State: 'bg-gray-100 text-gray-800',
     };
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        University
-      </label>
-      
+      <label className="block text-sm font-medium text-gray-700 mb-2">University</label>
+
       {/* Dropdown Trigger */}
       <button
         type="button"
@@ -126,7 +125,9 @@ const UniversityDropdown = ({
           {selectedUniversity ? (
             <div className="flex items-center space-x-2">
               <span className="text-gray-900">{selectedUniversity.shortName}</span>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getUniversityTypeColor(selectedUniversity.type)}`}>
+              <span
+                className={`px-2 py-1 text-xs font-medium rounded-full ${getUniversityTypeColor(selectedUniversity.type)}`}
+              >
                 {selectedUniversity.type}
               </span>
             </div>
@@ -135,7 +136,9 @@ const UniversityDropdown = ({
               {loading ? 'Loading universities...' : placeholder}
             </span>
           )}
-          <ChevronDownIcon className={`h-5 w-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDownIcon
+            className={`h-5 w-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          />
         </div>
       </button>
 
@@ -160,12 +163,12 @@ const UniversityDropdown = ({
           {/* Universities List */}
           <div className="max-h-60 overflow-y-auto">
             {loading ? (
-              <div className="p-4 text-center text-gray-500">
-                Loading universities...
-              </div>
+              <div className="p-4 text-center text-gray-500">Loading universities...</div>
             ) : filteredUniversities.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
-                {searchQuery ? 'No universities found matching your search.' : 'No universities available.'}
+                {searchQuery
+                  ? 'No universities found matching your search.'
+                  : 'No universities available.'}
               </div>
             ) : (
               filteredUniversities.map((university) => (
@@ -185,7 +188,9 @@ const UniversityDropdown = ({
                         {university.name}
                       </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getUniversityTypeColor(university.type)}`}>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${getUniversityTypeColor(university.type)}`}
+                    >
                       {university.type}
                     </span>
                   </div>

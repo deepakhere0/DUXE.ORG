@@ -10,12 +10,12 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  serverTimestamp 
+  serverTimestamp,
 } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../services/firebase';
-import { 
-  ShieldCheckIcon, 
+import {
+  ShieldCheckIcon,
   DocumentTextIcon,
   CheckCircleIcon,
   XCircleIcon,
@@ -24,7 +24,7 @@ import {
   EyeIcon,
   InformationCircleIcon,
   CurrencyRupeeIcon,
-  PencilIcon
+  PencilIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -65,20 +65,20 @@ const AdminReview = () => {
       } else {
         q = query(collection(db, 'notes'), where('status', '==', filter));
       }
-      
+
       const querySnapshot = await getDocs(q);
       const notesData = [];
       querySnapshot.forEach((doc) => {
         notesData.push({ id: doc.id, ...doc.data() });
       });
-      
+
       // Sort by creation date (newest first)
       notesData.sort((a, b) => {
         const aTime = a.createdAt?.toDate?.() || new Date(0);
         const bTime = b.createdAt?.toDate?.() || new Date(0);
         return bTime - aTime;
       });
-      
+
       setNotes(notesData);
     } catch (error) {
       console.error('Error fetching notes:', error);
@@ -94,7 +94,7 @@ const AdminReview = () => {
         status: NOTE_STATUS.APPROVED,
         reviewedBy: user.uid,
         reviewedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
       toast.success('Note approved successfully');
       fetchNotes();
@@ -110,7 +110,7 @@ const AdminReview = () => {
         status: NOTE_STATUS.REJECTED,
         reviewedBy: user.uid,
         reviewedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
       toast.success('Note rejected');
       fetchNotes();
@@ -152,10 +152,10 @@ const AdminReview = () => {
    */
   const handleSavePriceFromModal = async () => {
     if (!selectedNoteForPrice) return;
-    
+
     try {
       const newPrice = parseFloat(priceInputValue);
-      
+
       if (isNaN(newPrice) || newPrice < 0) {
         toast.error('Please enter a valid price (0 or greater)');
         return;
@@ -163,7 +163,7 @@ const AdminReview = () => {
 
       await updateDoc(doc(db, 'notes', selectedNoteForPrice.id), {
         price: newPrice,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
 
       toast.success(`Price updated to ₹${newPrice}`);
@@ -182,7 +182,7 @@ const AdminReview = () => {
   const handleSavePrice = async (noteId) => {
     try {
       const newPrice = parseFloat(priceInputValue);
-      
+
       if (isNaN(newPrice) || newPrice < 0) {
         toast.error('Please enter a valid price');
         return;
@@ -190,7 +190,7 @@ const AdminReview = () => {
 
       await updateDoc(doc(db, 'notes', noteId), {
         price: newPrice,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
 
       toast.success(`Price updated to ₹${newPrice}`);
@@ -223,7 +223,7 @@ const AdminReview = () => {
       if (fileUrl || filePath) {
         try {
           let storagePath = filePath;
-          
+
           // If no filePath provided, extract from URL
           if (!storagePath && fileUrl) {
             // Extract path from Firebase Storage URL
@@ -233,7 +233,7 @@ const AdminReview = () => {
               storagePath = decodeURIComponent(urlMatch[1]);
             }
           }
-          
+
           if (storagePath) {
             console.log('📂 Storage path:', storagePath);
             const storageRef = ref(storage, storagePath);
@@ -247,12 +247,12 @@ const AdminReview = () => {
           // Continue with Firestore deletion even if storage deletion fails
         }
       }
-      
+
       // Delete document from Firestore
       console.log('🗑️ Deleting Firestore document...');
       await deleteDoc(doc(db, 'notes', noteId));
       console.log('✅ Document deleted from Firestore');
-      
+
       toast.success('Note deleted permanently');
       await fetchNotes();
     } catch (error) {
@@ -280,11 +280,9 @@ const AdminReview = () => {
         <div className="text-center max-w-md">
           <ShieldCheckIcon className="h-24 w-24 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600 mb-6">
-            You don't have permission to access this page.
-          </p>
-          <button 
-            onClick={() => navigate('/')} 
+          <p className="text-gray-600 mb-6">You don't have permission to access this page.</p>
+          <button
+            onClick={() => navigate('/')}
             className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
           >
             Go Home
@@ -348,17 +346,16 @@ const AdminReview = () => {
                 key={tab}
                 onClick={() => setFilter(tab)}
                 className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  filter === tab
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                  filter === tab ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                {tab === 'pending' && notes.filter(n => n.status === NOTE_STATUS.PENDING).length > 0 && (
-                  <span className="ml-2 bg-white text-blue-600 px-2 py-0.5 rounded-full text-xs">
-                    {notes.filter(n => n.status === NOTE_STATUS.PENDING).length}
-                  </span>
-                )}
+                {tab === 'pending' &&
+                  notes.filter((n) => n.status === NOTE_STATUS.PENDING).length > 0 && (
+                    <span className="ml-2 bg-white text-blue-600 px-2 py-0.5 rounded-full text-xs">
+                      {notes.filter((n) => n.status === NOTE_STATUS.PENDING).length}
+                    </span>
+                  )}
               </button>
             ))}
           </div>
@@ -374,7 +371,7 @@ const AdminReview = () => {
             <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No notes found</h3>
             <p className="text-gray-600">
-              {filter === 'pending' 
+              {filter === 'pending'
                 ? 'No notes are waiting for review'
                 : `No ${filter === 'all' ? '' : filter} notes available`}
             </p>
@@ -391,7 +388,7 @@ const AdminReview = () => {
                       {note.createdAt?.toDate?.().toLocaleDateString() || 'Unknown date'}
                     </span>
                   </div>
-                  
+
                   {/* Price Display/Editor */}
                   <div className="flex items-center gap-2">
                     {editingPriceId === note.id ? (
@@ -425,11 +422,13 @@ const AdminReview = () => {
                     ) : (
                       // Price display mode
                       <div className="flex items-center gap-2">
-                        <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold ${
-                          note.price > 0 
-                            ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white' 
-                            : 'bg-gray-100 text-gray-700'
-                        }`}>
+                        <div
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold ${
+                            note.price > 0
+                              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
                           {note.price > 0 ? (
                             <>
                               <CurrencyRupeeIcon className="h-4 w-4" />
@@ -457,7 +456,6 @@ const AdminReview = () => {
 
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                   <div className="flex-1">
-                    
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
                       <div>
                         <span className="text-gray-500">University:</span>
@@ -491,111 +489,110 @@ const AdminReview = () => {
                     </div>
                   </div>
 
-                  
-                 {/* Action Buttons - FIXED VERSION */}
-<div style={{
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '8px',
-  minWidth: '140px'
-}}>
-  
-  {/* View */}
-  {note.fileUrl && (
-    <a
-      href={note.fileUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{
-        padding: '8px 16px',
-        background: '#f3f4f6',
-        color: '#374151',
-        borderRadius: '8px',
-        textAlign: 'center',
-        textDecoration: 'none',
-        fontSize: '14px',
-        fontWeight: '500'
-      }}
-    >
-      View
-    </a>
-  )}
-  
-  {/* Approve (pending only) */}
-  {note.status === NOTE_STATUS.PENDING && (
-    <button
-      onClick={() => handleApprove(note.id)}
-      style={{
-        padding: '8px 16px',
-        background: '#16a34a',
-        color: 'white',
-        border: 'none',
-        borderRadius: '8px',
-        fontSize: '14px',
-        fontWeight: '500',
-        cursor: 'pointer'
-      }}
-    >
-      Approve
-    </button>
-  )}
-  
-  {/* Reject (pending only) */}
-  {note.status === NOTE_STATUS.PENDING && (
-    <button
-      onClick={() => handleReject(note.id)}
-      style={{
-        padding: '8px 16px',
-        background: '#ca8a04',
-        color: 'white',
-        border: 'none',
-        borderRadius: '8px',
-        fontSize: '14px',
-        fontWeight: '500',
-        cursor: 'pointer'
-      }}
-    >
-      Reject
-    </button>
-  )}
-  
-  {/* PRICE - ALWAYS VISIBLE */}
-  <button
-    onClick={() => handleOpenPriceModal(note)}
-    style={{
-      padding: '8px 16px',
-      background: 'linear-gradient(to right, #f97316, #ea580c)',
-      color: 'white',
-      border: 'none',
-      borderRadius: '8px',
-      fontSize: '14px',
-      fontWeight: '500',
-      cursor: 'pointer'
-    }}
-  >
-    💰 Set Price
-  </button>
-  
-  {/* Delete */}
-  <button
-    onClick={() => handleDelete(note.id, note.fileUrl, note.filePath)}
-    disabled={deletingId === note.id}
-    style={{
-      padding: '8px 16px',
-      background: deletingId === note.id ? '#9ca3af' : '#dc2626',
-      color: 'white',
-      border: 'none',
-      borderRadius: '8px',
-      fontSize: '14px',
-      fontWeight: '500',
-      cursor: deletingId === note.id ? 'not-allowed' : 'pointer',
-      opacity: deletingId === note.id ? 0.5 : 1
-    }}
-  >
-    {deletingId === note.id ? 'Deleting...' : 'Delete'}
-  </button>
-  
-</div>
+                  {/* Action Buttons - FIXED VERSION */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      minWidth: '140px',
+                    }}
+                  >
+                    {/* View */}
+                    {note.fileUrl && (
+                      <a
+                        href={note.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '8px 16px',
+                          background: '#f3f4f6',
+                          color: '#374151',
+                          borderRadius: '8px',
+                          textAlign: 'center',
+                          textDecoration: 'none',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                        }}
+                      >
+                        View
+                      </a>
+                    )}
+
+                    {/* Approve (pending only) */}
+                    {note.status === NOTE_STATUS.PENDING && (
+                      <button
+                        onClick={() => handleApprove(note.id)}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#16a34a',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Approve
+                      </button>
+                    )}
+
+                    {/* Reject (pending only) */}
+                    {note.status === NOTE_STATUS.PENDING && (
+                      <button
+                        onClick={() => handleReject(note.id)}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#ca8a04',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Reject
+                      </button>
+                    )}
+
+                    {/* PRICE - ALWAYS VISIBLE */}
+                    <button
+                      onClick={() => handleOpenPriceModal(note)}
+                      style={{
+                        padding: '8px 16px',
+                        background: 'linear-gradient(to right, #f97316, #ea580c)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      💰 Set Price
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                      onClick={() => handleDelete(note.id, note.fileUrl, note.filePath)}
+                      disabled={deletingId === note.id}
+                      style={{
+                        padding: '8px 16px',
+                        background: deletingId === note.id ? '#9ca3af' : '#dc2626',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: deletingId === note.id ? 'not-allowed' : 'pointer',
+                        opacity: deletingId === note.id ? 0.5 : 1,
+                      }}
+                    >
+                      {deletingId === note.id ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -623,9 +620,14 @@ const AdminReview = () => {
 
       {/* Price Modal */}
       {priceModalOpen && selectedNoteForPrice && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="price-modal" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto"
+          aria-labelledby="price-modal"
+          role="dialog"
+          aria-modal="true"
+        >
           {/* Backdrop */}
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
             onClick={handleClosePriceModal}
           />
@@ -646,7 +648,12 @@ const AdminReview = () => {
                     aria-label="Close modal"
                   >
                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -655,9 +662,7 @@ const AdminReview = () => {
               {/* Note Details */}
               <div className="p-6 border-b border-gray-200">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-1">
-                    {selectedNoteForPrice.title}
-                  </h4>
+                  <h4 className="font-semibold text-gray-900 mb-1">{selectedNoteForPrice.title}</h4>
                   <p className="text-sm text-gray-600 mb-3">
                     {selectedNoteForPrice.courseCode} • {selectedNoteForPrice.subject}
                   </p>
@@ -680,7 +685,10 @@ const AdminReview = () => {
 
               {/* Price Input Form */}
               <div className="p-6">
-                <label htmlFor="price-input" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="price-input"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   New Price (₹)
                 </label>
                 <div className="relative">

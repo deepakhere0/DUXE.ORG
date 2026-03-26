@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { 
+import {
   DocumentTextIcon,
   ArrowDownTrayIcon,
   BookmarkIcon,
@@ -13,9 +13,12 @@ import {
   ChevronLeftIcon,
   UserIcon,
   CalendarIcon,
-  AcademicCapIcon
+  AcademicCapIcon,
 } from '@heroicons/react/24/outline';
-import { StarIcon as StarIconSolid, BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
+import {
+  StarIcon as StarIconSolid,
+  BookmarkIcon as BookmarkIconSolid,
+} from '@heroicons/react/24/solid';
 import { AIService } from '../../services/aiService';
 import Toast from '../../components/ui/Toast';
 import AIResultModal from '../../components/modals/AIResultModal';
@@ -30,33 +33,39 @@ const NoteDetail = () => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [activeTab, setActiveTab] = useState('preview');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [aiModal, setAiModal] = useState({ isOpen: false, type: null, data: null, isLoading: false, error: null });
+  const [aiModal, setAiModal] = useState({
+    isOpen: false,
+    type: null,
+    data: null,
+    isLoading: false,
+    error: null,
+  });
 
-// Fetch note from Firebase
+  // Fetch note from Firebase
   React.useEffect(() => {
     const fetchNote = async () => {
       try {
         setLoading(true);
         const noteData = await getNoteById(noteId);
-        
+
         if (!noteData) {
           setError('Note not found');
           return;
         }
 
         // Check if note is approved (allow admin/owner to view pending notes)
-if (noteData.status !== 'approved') {
-  console.warn('Note status:', noteData.status);
-  
-  // Only show error for non-admin users
-  // For now, let's allow viewing pending notes for testing
-  console.log('⚠️ Note is pending but allowing preview');
-  
-  // Uncomment below to restrict non-approved notes later:
-  // setError('This note is pending approval');
-  // setLoading(false);
-  // return;
-}
+        if (noteData.status !== 'approved') {
+          console.warn('Note status:', noteData.status);
+
+          // Only show error for non-admin users
+          // For now, let's allow viewing pending notes for testing
+          console.log('⚠️ Note is pending but allowing preview');
+
+          // Uncomment below to restrict non-approved notes later:
+          // setError('This note is pending approval');
+          // setLoading(false);
+          // return;
+        }
 
         setNote(noteData);
       } catch (err) {
@@ -73,7 +82,7 @@ if (noteData.status !== 'approved') {
   const relatedNotes = [
     { id: 2, title: 'Advanced Algorithms', courseCode: 'CS301', rating: 4.9 },
     { id: 3, title: 'Database Systems', courseCode: 'CS302', rating: 4.7 },
-    { id: 4, title: 'Operating Systems', courseCode: 'CS303', rating: 4.6 }
+    { id: 4, title: 'Operating Systems', courseCode: 'CS303', rating: 4.6 },
   ];
 
   const handleBookmark = () => {
@@ -85,7 +94,7 @@ if (noteData.status !== 'approved') {
     if (note?.fileUrl) {
       // Open file in new tab (browser will handle download)
       window.open(note.fileUrl, '_blank');
-      
+
       // Optionally: increment download counter
       // incrementDownloadCount(noteId);
     }
@@ -97,12 +106,12 @@ if (noteData.status !== 'approved') {
       navigator.share({
         title: note.title,
         text: note.description,
-        url: window.location.href
+        url: window.location.href,
       });
     }
   };
 
-// Loading state
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -137,23 +146,24 @@ if (noteData.status !== 'approved') {
       {/* Header */}
       <div className="bg-gradient-to-r from-navy-600 to-navy-500 text-white">
         <div className="container-custom py-6">
-          <Link to="/notes" className="inline-flex items-center text-white/80 hover:text-white mb-4">
+          <Link
+            to="/notes"
+            className="inline-flex items-center text-white/80 hover:text-white mb-4"
+          >
             <ChevronLeftIcon className="h-5 w-5 mr-1" />
             Back to Notes
           </Link>
-          
+
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <span className="chip bg-white/20 text-white">
-                  {note.courseCode}
-                </span>
+                <span className="chip bg-white/20 text-white">{note.courseCode}</span>
                 <span className="text-sm text-white/80">
                   {note.universityId} • {note.departmentId}
                 </span>
               </div>
               <h1 className="text-3xl font-bold mb-3">{note.title}</h1>
-              
+
               <div className="flex flex-wrap items-center gap-4 text-sm text-white/80">
                 <div className="flex items-center">
                   <UserIcon className="h-4 w-4 mr-1" />
@@ -230,7 +240,7 @@ if (noteData.status !== 'approved') {
 
               <div className="p-6">
                 {activeTab === 'preview' ? (
-                 <div className="space-y-4">
+                  <div className="space-y-4">
                     {/* PDF Preview */}
                     {note.fileUrl && note.fileType === 'application/pdf' && (
                       <div className="bg-gray-100 rounded-xl p-4">
@@ -254,70 +264,110 @@ if (noteData.status !== 'approved') {
                         className="btn btn-secondary btn-sm"
                         disabled={isProcessing}
                         onClick={async () => {
-                          setAiModal({ isOpen: true, type: 'summary', data: null, isLoading: true, error: null });
+                          setAiModal({
+                            isOpen: true,
+                            type: 'summary',
+                            data: null,
+                            isLoading: true,
+                            error: null,
+                          });
                           try {
-                            const result = await AIService.summarize({ 
-                              inputText: note.description, 
-                              createdBy: 'local' 
+                            const result = await AIService.summarize({
+                              inputText: note.description,
+                              createdBy: 'local',
                             });
-                            setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
+                            setAiModal((prev) => ({
+                              ...prev,
+                              data: result.output,
+                              isLoading: false,
+                            }));
                           } catch (error) {
-                            setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
+                            setAiModal((prev) => ({
+                              ...prev,
+                              error: error.message,
+                              isLoading: false,
+                            }));
                           }
                         }}
                       >
-                        <ListBulletIcon className="h-4 w-4 mr-1" /> 
+                        <ListBulletIcon className="h-4 w-4 mr-1" />
                         AI Summary
                       </button>
                       <button
                         className="btn btn-secondary btn-sm"
                         disabled={isProcessing}
                         onClick={async () => {
-                          setAiModal({ isOpen: true, type: 'mcq', data: null, isLoading: true, error: null });
+                          setAiModal({
+                            isOpen: true,
+                            type: 'mcq',
+                            data: null,
+                            isLoading: true,
+                            error: null,
+                          });
                           try {
-                            const result = await AIService.generateMCQ({ 
-                              inputText: note.description, 
+                            const result = await AIService.generateMCQ({
+                              inputText: note.description,
                               count: 10,
-                              createdBy: 'local' 
+                              createdBy: 'local',
                             });
-                            setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
+                            setAiModal((prev) => ({
+                              ...prev,
+                              data: result.output,
+                              isLoading: false,
+                            }));
                           } catch (error) {
-                            setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
+                            setAiModal((prev) => ({
+                              ...prev,
+                              error: error.message,
+                              isLoading: false,
+                            }));
                           }
                         }}
                       >
-                        <QuestionMarkCircleIcon className="h-4 w-4 mr-1" /> 
+                        <QuestionMarkCircleIcon className="h-4 w-4 mr-1" />
                         MCQs
                       </button>
                       <button
                         className="btn btn-secondary btn-sm"
                         disabled={isProcessing}
                         onClick={async () => {
-                          setAiModal({ isOpen: true, type: 'flashcard', data: null, isLoading: true, error: null });
+                          setAiModal({
+                            isOpen: true,
+                            type: 'flashcard',
+                            data: null,
+                            isLoading: true,
+                            error: null,
+                          });
                           try {
-                            const result = await AIService.flashcards({ 
-                              inputText: note.description, 
+                            const result = await AIService.flashcards({
+                              inputText: note.description,
                               count: 20,
-                              createdBy: 'local' 
+                              createdBy: 'local',
                             });
-                            setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
+                            setAiModal((prev) => ({
+                              ...prev,
+                              data: result.output,
+                              isLoading: false,
+                            }));
                           } catch (error) {
-                            setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
+                            setAiModal((prev) => ({
+                              ...prev,
+                              error: error.message,
+                              isLoading: false,
+                            }));
                           }
                         }}
                       >
-                        <Square3Stack3DIcon className="h-4 w-4 mr-1" /> 
+                        <Square3Stack3DIcon className="h-4 w-4 mr-1" />
                         Flashcards
                       </button>
                     </div>
                     <div className="text-center py-8">
                       <p className="text-gray-600 mb-4">
-                        This is a preview. Download the full document to access all {note.pages} pages.
+                        This is a preview. Download the full document to access all {note.pages}{' '}
+                        pages.
                       </p>
-                      <button
-                        onClick={handleDownload}
-                        className="btn btn-primary btn-lg"
-                      >
+                      <button onClick={handleDownload} className="btn btn-primary btn-lg">
                         <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
                         Download Full Notes
                       </button>
@@ -357,7 +407,9 @@ if (noteData.status !== 'approved') {
                         <div>
                           <dt className="text-gray-500">Size</dt>
                           <dd className="font-medium text-gray-900">
-                            {note.fileSize ? `${(note.fileSize / (1024 * 1024)).toFixed(2)} MB` : 'Unknown'}
+                            {note.fileSize
+                              ? `${(note.fileSize / (1024 * 1024)).toFixed(2)} MB`
+                              : 'Unknown'}
                           </dd>
                         </div>
                         <div>
@@ -408,7 +460,7 @@ if (noteData.status !== 'approved') {
                     <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
                     Download Notes
                   </button>
-                  
+
                   <button
                     onClick={handleBookmark}
                     className={`btn ${isBookmarked ? 'btn-primary' : 'btn-secondary'} btn-lg w-full justify-center`}
@@ -499,50 +551,67 @@ if (noteData.status !== 'approved') {
 
       {/* AI Result Modal */}
       <AIResultModal
-      isOpen={aiModal.isOpen}
-      onClose={() => setAiModal({ isOpen: false, type: null, data: null, isLoading: false, error: null })}
-      title={
-        aiModal.type === 'summary' ? 'AI Summary' :
-        aiModal.type === 'mcq' ? 'Generated MCQs' :
-        aiModal.type === 'flashcard' ? 'Flashcards' : ''
-      }
-      type={aiModal.type}
-      data={aiModal.data}
-      isLoading={aiModal.isLoading}
-      error={aiModal.error}
-      onRetry={() => {
-        // Retry logic based on type
-        const retryMap = {
-          'summary': async () => {
-            setAiModal(prev => ({ ...prev, isLoading: true, error: null }));
-            try {
-              const result = await AIService.summarize({ inputText: note.description, createdBy: 'local' });
-              setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
-            } catch (error) {
-              setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
-            }
-          },
-          'mcq': async () => {
-            setAiModal(prev => ({ ...prev, isLoading: true, error: null }));
-            try {
-              const result = await AIService.generateMCQ({ inputText: note.description, count: 10, createdBy: 'local' });
-              setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
-            } catch (error) {
-              setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
-            }
-          },
-          'flashcard': async () => {
-            setAiModal(prev => ({ ...prev, isLoading: true, error: null }));
-            try {
-              const result = await AIService.flashcards({ inputText: note.description, count: 20, createdBy: 'local' });
-              setAiModal(prev => ({ ...prev, data: result.output, isLoading: false }));
-            } catch (error) {
-              setAiModal(prev => ({ ...prev, error: error.message, isLoading: false }));
-            }
-          }
-        };
-        retryMap[aiModal.type]?.();
-      }}
+        isOpen={aiModal.isOpen}
+        onClose={() =>
+          setAiModal({ isOpen: false, type: null, data: null, isLoading: false, error: null })
+        }
+        title={
+          aiModal.type === 'summary'
+            ? 'AI Summary'
+            : aiModal.type === 'mcq'
+              ? 'Generated MCQs'
+              : aiModal.type === 'flashcard'
+                ? 'Flashcards'
+                : ''
+        }
+        type={aiModal.type}
+        data={aiModal.data}
+        isLoading={aiModal.isLoading}
+        error={aiModal.error}
+        onRetry={() => {
+          // Retry logic based on type
+          const retryMap = {
+            summary: async () => {
+              setAiModal((prev) => ({ ...prev, isLoading: true, error: null }));
+              try {
+                const result = await AIService.summarize({
+                  inputText: note.description,
+                  createdBy: 'local',
+                });
+                setAiModal((prev) => ({ ...prev, data: result.output, isLoading: false }));
+              } catch (error) {
+                setAiModal((prev) => ({ ...prev, error: error.message, isLoading: false }));
+              }
+            },
+            mcq: async () => {
+              setAiModal((prev) => ({ ...prev, isLoading: true, error: null }));
+              try {
+                const result = await AIService.generateMCQ({
+                  inputText: note.description,
+                  count: 10,
+                  createdBy: 'local',
+                });
+                setAiModal((prev) => ({ ...prev, data: result.output, isLoading: false }));
+              } catch (error) {
+                setAiModal((prev) => ({ ...prev, error: error.message, isLoading: false }));
+              }
+            },
+            flashcard: async () => {
+              setAiModal((prev) => ({ ...prev, isLoading: true, error: null }));
+              try {
+                const result = await AIService.flashcards({
+                  inputText: note.description,
+                  count: 20,
+                  createdBy: 'local',
+                });
+                setAiModal((prev) => ({ ...prev, data: result.output, isLoading: false }));
+              } catch (error) {
+                setAiModal((prev) => ({ ...prev, error: error.message, isLoading: false }));
+              }
+            },
+          };
+          retryMap[aiModal.type]?.();
+        }}
       />
     </>
   );

@@ -1,21 +1,30 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { collection, getDocs, query, where, orderBy, limit, startAt, endAt } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
+  startAt,
+  endAt,
+} from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { debounce } from 'lodash';
 
-const SearchBar = ({ 
-  onSearch, 
+const SearchBar = ({
+  onSearch,
   onSuggestionSelect,
-  placeholder = "Search by subject, course code, university, or department...",
-  className = "" 
+  placeholder = 'Search by subject, course code, university, or department...',
+  className = '',
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  
+
   const searchRef = useRef(null);
   const suggestionsRef = useRef(null);
 
@@ -33,13 +42,13 @@ const SearchBar = ({
         const searchSuggestions = await Promise.all([
           searchUniversities(searchQuery),
           searchDepartments(searchQuery),
-          searchNotes(searchQuery)
+          searchNotes(searchQuery),
         ]);
 
         const combinedSuggestions = [
           ...searchSuggestions[0],
           ...searchSuggestions[1],
-          ...searchSuggestions[2]
+          ...searchSuggestions[2],
         ].slice(0, 10); // Limit to 10 suggestions
 
         setSuggestions(combinedSuggestions);
@@ -80,7 +89,7 @@ const SearchBar = ({
             title: data.shortName,
             subtitle: data.name,
             icon: '🏫',
-            data: { id: doc.id, ...data }
+            data: { id: doc.id, ...data },
           });
         }
       });
@@ -119,7 +128,7 @@ const SearchBar = ({
             title: data.shortName,
             subtitle: `${data.name} - ${data.uniName}`,
             icon: getCategoryIcon(data.category),
-            data: { id: doc.id, ...data }
+            data: { id: doc.id, ...data },
           });
         }
       });
@@ -135,7 +144,7 @@ const SearchBar = ({
   const searchNotes = async (searchQuery) => {
     try {
       const normalizedQuery = searchQuery.toLowerCase();
-      
+
       // Search by title and course code
       const titleQuery = query(
         collection(db, 'notes'),
@@ -157,7 +166,7 @@ const SearchBar = ({
           title: data.title,
           subtitle: `${data.courseCode} - ${data.departmentName || 'Unknown Dept'}`,
           icon: '📄',
-          data: { id: doc.id, ...data }
+          data: { id: doc.id, ...data },
         });
       });
 
@@ -170,12 +179,12 @@ const SearchBar = ({
 
   const getCategoryIcon = (category) => {
     const icons = {
-      'engineering': '⚙️',
-      'sciences': '🔬',
-      'management': '💼',
-      'arts': '🎨',
-      'law': '⚖️',
-      'medical': '🏥'
+      engineering: '⚙️',
+      sciences: '🔬',
+      management: '💼',
+      arts: '🎨',
+      law: '⚖️',
+      medical: '🏥',
     };
     return icons[category] || '📚';
   };
@@ -210,15 +219,11 @@ const SearchBar = ({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => 
-          prev < suggestions.length - 1 ? prev + 1 : 0
-        );
+        setSelectedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => 
-          prev > 0 ? prev - 1 : suggestions.length - 1
-        );
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
         break;
       case 'Enter':
         e.preventDefault();
@@ -247,9 +252,9 @@ const SearchBar = ({
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        searchRef.current && 
+        searchRef.current &&
         !searchRef.current.contains(event.target) &&
-        suggestionsRef.current && 
+        suggestionsRef.current &&
         !suggestionsRef.current.contains(event.target)
       ) {
         setShowSuggestions(false);
@@ -262,9 +267,9 @@ const SearchBar = ({
 
   const getSuggestionTypeColor = (type) => {
     const colors = {
-      'university': 'bg-blue-100 text-blue-800',
-      'department': 'bg-green-100 text-green-800',
-      'note': 'bg-purple-100 text-purple-800'
+      university: 'bg-blue-100 text-blue-800',
+      department: 'bg-green-100 text-green-800',
+      note: 'bg-purple-100 text-purple-800',
     };
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
@@ -287,7 +292,7 @@ const SearchBar = ({
                      text-gray-900 placeholder-gray-500 text-lg
                      shadow-sm hover:shadow-md transition-shadow duration-200"
           />
-          
+
           {/* Clear Button */}
           {searchQuery && (
             <button
@@ -302,12 +307,14 @@ const SearchBar = ({
         </div>
 
         {/* Search Button (Hidden - form submission handles search) */}
-        <button type="submit" className="sr-only">Search</button>
+        <button type="submit" className="sr-only">
+          Search
+        </button>
       </form>
 
       {/* Search Suggestions */}
       {showSuggestions && (
-        <div 
+        <div
           ref={suggestionsRef}
           className="absolute z-50 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-hidden"
         >
@@ -346,15 +353,13 @@ const SearchBar = ({
                     <div className="flex items-center space-x-3 flex-1 min-w-0">
                       <span className="text-xl">{suggestion.icon}</span>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 truncate">
-                          {suggestion.title}
-                        </div>
-                        <div className="text-sm text-gray-600 truncate">
-                          {suggestion.subtitle}
-                        </div>
+                        <div className="font-medium text-gray-900 truncate">{suggestion.title}</div>
+                        <div className="text-sm text-gray-600 truncate">{suggestion.subtitle}</div>
                       </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSuggestionTypeColor(suggestion.type)}`}>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${getSuggestionTypeColor(suggestion.type)}`}
+                    >
                       {suggestion.type}
                     </span>
                   </div>

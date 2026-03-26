@@ -1,22 +1,21 @@
 import React, { useState } from 'react';
-import { 
+import {
   DocumentTextIcon,
   LightBulbIcon,
   ChatBubbleLeftRightIcon,
   BeakerIcon,
   PencilSquareIcon,
   DocumentDuplicateIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../ui/Toast';
 
-
 const QuestionMaker = () => {
   // For now, we'll use anonymous user until auth is implemented
   const user = null;
-  
+
   const [inputText, setInputText] = useState('');
   const [questions, setQuestions] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -36,11 +35,11 @@ const QuestionMaker = () => {
 
     setIsGenerating(true);
     setError(null);
-    
+
     try {
       const result = await AIService.generateQuestions({
         inputText,
-        createdBy: user?.uid || 'anonymous'
+        createdBy: user?.uid || 'anonymous',
       });
       setQuestions(result.output);
     } catch (err) {
@@ -58,39 +57,69 @@ const QuestionMaker = () => {
 # Study Questions
 
 ## Short Answer Questions
-${questions.shortAnswer?.map((q, i) => `
+${
+  questions.shortAnswer
+    ?.map(
+      (q, i) => `
 ${i + 1}. ${q.question}
    Answer: ${q.suggestedAnswer}
    Key Points: ${q.points}
-`).join('\n') || 'No questions available'}
+`
+    )
+    .join('\n') || 'No questions available'
+}
 
 ## Long Answer Questions
-${questions.longAnswer?.map((q, i) => `
+${
+  questions.longAnswer
+    ?.map(
+      (q, i) => `
 ${i + 1}. ${q.question}
    Guidelines: ${q.guidelines}
    Key Points: ${q.keyPoints?.join(', ')}
-`).join('\n') || 'No questions available'}
+`
+    )
+    .join('\n') || 'No questions available'
+}
 
 ## Critical Thinking Questions
-${questions.critical?.map((q, i) => `
+${
+  questions.critical
+    ?.map(
+      (q, i) => `
 ${i + 1}. ${q.question}
    Approach: ${q.approach}
    Considerations: ${q.considerations?.join(', ')}
-`).join('\n') || 'No questions available'}
+`
+    )
+    .join('\n') || 'No questions available'
+}
 
 ## Practical Application Questions
-${questions.practical?.map((q, i) => `
+${
+  questions.practical
+    ?.map(
+      (q, i) => `
 ${i + 1}. ${q.question}
    Scenario: ${q.scenario}
    Expected Outcome: ${q.expectedOutcome}
-`).join('\n') || 'No questions available'}
+`
+    )
+    .join('\n') || 'No questions available'
+}
 
 ## Discussion Topics
-${questions.discussion?.map((q, i) => `
+${
+  questions.discussion
+    ?.map(
+      (q, i) => `
 ${i + 1}. ${q.topic}
    Prompts: ${q.prompts?.join('; ')}
    Perspectives: ${q.perspectives?.join(', ')}
-`).join('\n') || 'No topics available'}
+`
+    )
+    .join('\n') || 'No topics available'
+}
     `.trim();
 
     navigator.clipboard.writeText(questionsText);
@@ -104,58 +133,88 @@ ${i + 1}. ${q.topic}
 # Study Questions
 
 ## Short Answer Questions
-${questions.shortAnswer?.map((q, i) => `
+${
+  questions.shortAnswer
+    ?.map(
+      (q, i) => `
 ### Question ${i + 1}
 **${q.question}**
 
 **Suggested Answer:** ${q.suggestedAnswer}
 
 **Key Points:** ${q.points}
-`).join('\n---\n') || 'No questions available'}
+`
+    )
+    .join('\n---\n') || 'No questions available'
+}
 
 ## Long Answer Questions
-${questions.longAnswer?.map((q, i) => `
+${
+  questions.longAnswer
+    ?.map(
+      (q, i) => `
 ### Question ${i + 1}
 **${q.question}**
 
 **Guidelines:** ${q.guidelines}
 
 **Key Points to Cover:**
-${q.keyPoints?.map(p => `- ${p}`).join('\n') || 'N/A'}
-`).join('\n---\n') || 'No questions available'}
+${q.keyPoints?.map((p) => `- ${p}`).join('\n') || 'N/A'}
+`
+    )
+    .join('\n---\n') || 'No questions available'
+}
 
 ## Critical Thinking Questions
-${questions.critical?.map((q, i) => `
+${
+  questions.critical
+    ?.map(
+      (q, i) => `
 ### Question ${i + 1}
 **${q.question}**
 
 **Approach:** ${q.approach}
 
 **Considerations:**
-${q.considerations?.map(c => `- ${c}`).join('\n') || 'N/A'}
-`).join('\n---\n') || 'No questions available'}
+${q.considerations?.map((c) => `- ${c}`).join('\n') || 'N/A'}
+`
+    )
+    .join('\n---\n') || 'No questions available'
+}
 
 ## Practical Application Questions
-${questions.practical?.map((q, i) => `
+${
+  questions.practical
+    ?.map(
+      (q, i) => `
 ### Question ${i + 1}
 **${q.question}**
 
 **Scenario:** ${q.scenario}
 
 **Expected Outcome:** ${q.expectedOutcome}
-`).join('\n---\n') || 'No questions available'}
+`
+    )
+    .join('\n---\n') || 'No questions available'
+}
 
 ## Discussion Topics
-${questions.discussion?.map((q, i) => `
+${
+  questions.discussion
+    ?.map(
+      (q, i) => `
 ### Topic ${i + 1}
 **${q.topic}**
 
 **Discussion Prompts:**
-${q.prompts?.map(p => `- ${p}`).join('\n') || 'N/A'}
+${q.prompts?.map((p) => `- ${p}`).join('\n') || 'N/A'}
 
 **Perspectives to Consider:**
-${q.perspectives?.map(p => `- ${p}`).join('\n') || 'N/A'}
-`).join('\n---\n') || 'No topics available'}
+${q.perspectives?.map((p) => `- ${p}`).join('\n') || 'N/A'}
+`
+    )
+    .join('\n---\n') || 'No topics available'
+}
 
 ---
 Generated with DUXE Question Maker
@@ -176,32 +235,32 @@ Generated with DUXE Question Maker
       title: 'Short Answer',
       icon: PencilSquareIcon,
       color: 'blue',
-      description: 'Quick response questions'
+      description: 'Quick response questions',
     },
     longAnswer: {
       title: 'Long Answer',
       icon: DocumentTextIcon,
       color: 'green',
-      description: 'Detailed explanations'
+      description: 'Detailed explanations',
     },
     critical: {
       title: 'Critical Thinking',
       icon: LightBulbIcon,
       color: 'yellow',
-      description: 'Analytical questions'
+      description: 'Analytical questions',
     },
     practical: {
       title: 'Practical Application',
       icon: BeakerIcon,
       color: 'purple',
-      description: 'Real-world scenarios'
+      description: 'Real-world scenarios',
     },
     discussion: {
       title: 'Discussion Topics',
       icon: ChatBubbleLeftRightIcon,
       color: 'pink',
-      description: 'Group discussions'
-    }
+      description: 'Group discussions',
+    },
   };
 
   const getQuestionCount = (category) => {
@@ -223,17 +282,12 @@ Generated with DUXE Question Maker
 
       {/* File Upload */}
       <div className="mb-8">
-        <FileUpload 
-          onTextExtracted={handleTextExtracted}
-          className="mb-6"
-        />
+        <FileUpload onTextExtracted={handleTextExtracted} className="mb-6" />
       </div>
 
       {/* Text Input */}
       <div className="mb-6">
-        <label className="block text-white font-medium mb-3">
-          Or paste your study material:
-        </label>
+        <label className="block text-white font-medium mb-3">Or paste your study material:</label>
         <textarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
@@ -286,19 +340,20 @@ Generated with DUXE Question Maker
                   onClick={() => setActiveCategory(category)}
                   className={`
                     p-4 rounded-xl border transition-all duration-300
-                    ${isActive 
-                      ? 'bg-accent-500/20 border-accent-500' 
-                      : 'bg-slate-800/50 border-gray-600 hover:border-accent-500/50'
+                    ${
+                      isActive
+                        ? 'bg-accent-500/20 border-accent-500'
+                        : 'bg-slate-800/50 border-gray-600 hover:border-accent-500/50'
                     }
                   `}
                 >
-                  <Icon className={`h-6 w-6 mb-2 mx-auto ${isActive ? 'text-accent-500' : 'text-gray-400'}`} />
+                  <Icon
+                    className={`h-6 w-6 mb-2 mx-auto ${isActive ? 'text-accent-500' : 'text-gray-400'}`}
+                  />
                   <p className={`text-sm font-medium ${isActive ? 'text-white' : 'text-gray-300'}`}>
                     {config.title}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {count} questions
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{count} questions</p>
                 </button>
               );
             })}
@@ -309,122 +364,146 @@ Generated with DUXE Question Maker
             <div className="mb-6">
               <h3 className="text-2xl font-bold text-white mb-2 flex items-center">
                 {React.createElement(categoryConfig[activeCategory].icon, {
-                  className: "h-6 w-6 text-accent-500 mr-2"
+                  className: 'h-6 w-6 text-accent-500 mr-2',
                 })}
                 {categoryConfig[activeCategory].title}
               </h3>
-              <p className="text-gray-400">
-                {categoryConfig[activeCategory].description}
-              </p>
+              <p className="text-gray-400">{categoryConfig[activeCategory].description}</p>
             </div>
 
             <div className="space-y-6">
-              {activeCategory === 'shortAnswer' && questions.shortAnswer?.map((q, index) => (
-                <div key={index} className="bg-slate-900/50 rounded-lg p-4 border border-accent-500/20">
-                  <h4 className="text-white font-semibold mb-2">
-                    <span className="text-accent-500 mr-2">Q{index + 1}.</span>
-                    {q.question}
-                  </h4>
-                  <div className="mt-3 space-y-2">
-                    <p className="text-sm text-gray-400">
-                      <span className="font-medium text-gray-300">Suggested Answer:</span> {q.suggestedAnswer}
-                    </p>
-                    <p className="text-sm text-gray-400">
-                      <span className="font-medium text-gray-300">Key Points:</span> {q.points}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              {activeCategory === 'longAnswer' && questions.longAnswer?.map((q, index) => (
-                <div key={index} className="bg-slate-900/50 rounded-lg p-4 border border-accent-500/20">
-                  <h4 className="text-white font-semibold mb-2">
-                    <span className="text-accent-500 mr-2">Q{index + 1}.</span>
-                    {q.question}
-                  </h4>
-                  <div className="mt-3 space-y-2">
-                    <p className="text-sm text-gray-400">
-                      <span className="font-medium text-gray-300">Guidelines:</span> {q.guidelines}
-                    </p>
-                    <div className="text-sm text-gray-400">
-                      <span className="font-medium text-gray-300">Key Points to Cover:</span>
-                      <ul className="mt-1 ml-4 list-disc">
-                        {q.keyPoints?.map((point, i) => (
-                          <li key={i}>{point}</li>
-                        ))}
-                      </ul>
+              {activeCategory === 'shortAnswer' &&
+                questions.shortAnswer?.map((q, index) => (
+                  <div
+                    key={index}
+                    className="bg-slate-900/50 rounded-lg p-4 border border-accent-500/20"
+                  >
+                    <h4 className="text-white font-semibold mb-2">
+                      <span className="text-accent-500 mr-2">Q{index + 1}.</span>
+                      {q.question}
+                    </h4>
+                    <div className="mt-3 space-y-2">
+                      <p className="text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Suggested Answer:</span>{' '}
+                        {q.suggestedAnswer}
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Key Points:</span> {q.points}
+                      </p>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {activeCategory === 'critical' && questions.critical?.map((q, index) => (
-                <div key={index} className="bg-slate-900/50 rounded-lg p-4 border border-accent-500/20">
-                  <h4 className="text-white font-semibold mb-2">
-                    <span className="text-accent-500 mr-2">Q{index + 1}.</span>
-                    {q.question}
-                  </h4>
-                  <div className="mt-3 space-y-2">
-                    <p className="text-sm text-gray-400">
-                      <span className="font-medium text-gray-300">Approach:</span> {q.approach}
-                    </p>
-                    <div className="text-sm text-gray-400">
-                      <span className="font-medium text-gray-300">Considerations:</span>
-                      <ul className="mt-1 ml-4 list-disc">
-                        {q.considerations?.map((c, i) => (
-                          <li key={i}>{c}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {activeCategory === 'practical' && questions.practical?.map((q, index) => (
-                <div key={index} className="bg-slate-900/50 rounded-lg p-4 border border-accent-500/20">
-                  <h4 className="text-white font-semibold mb-2">
-                    <span className="text-accent-500 mr-2">Q{index + 1}.</span>
-                    {q.question}
-                  </h4>
-                  <div className="mt-3 space-y-2">
-                    <p className="text-sm text-gray-400">
-                      <span className="font-medium text-gray-300">Scenario:</span> {q.scenario}
-                    </p>
-                    <p className="text-sm text-gray-400">
-                      <span className="font-medium text-gray-300">Expected Outcome:</span> {q.expectedOutcome}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              {activeCategory === 'discussion' && questions.discussion?.map((q, index) => (
-                <div key={index} className="bg-slate-900/50 rounded-lg p-4 border border-accent-500/20">
-                  <h4 className="text-white font-semibold mb-2">
-                    <span className="text-accent-500 mr-2">Topic {index + 1}:</span>
-                    {q.topic}
-                  </h4>
-                  <div className="mt-3 space-y-2">
-                    <div className="text-sm text-gray-400">
-                      <span className="font-medium text-gray-300">Discussion Prompts:</span>
-                      <ul className="mt-1 ml-4 list-disc">
-                        {q.prompts?.map((p, i) => (
-                          <li key={i}>{p}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      <span className="font-medium text-gray-300">Perspectives:</span>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {q.perspectives?.map((p, i) => (
-                          <span key={i} className="bg-accent-500/20 text-accent-400 px-2 py-1 rounded text-xs">
-                            {p}
-                          </span>
-                        ))}
+              {activeCategory === 'longAnswer' &&
+                questions.longAnswer?.map((q, index) => (
+                  <div
+                    key={index}
+                    className="bg-slate-900/50 rounded-lg p-4 border border-accent-500/20"
+                  >
+                    <h4 className="text-white font-semibold mb-2">
+                      <span className="text-accent-500 mr-2">Q{index + 1}.</span>
+                      {q.question}
+                    </h4>
+                    <div className="mt-3 space-y-2">
+                      <p className="text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Guidelines:</span>{' '}
+                        {q.guidelines}
+                      </p>
+                      <div className="text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Key Points to Cover:</span>
+                        <ul className="mt-1 ml-4 list-disc">
+                          {q.keyPoints?.map((point, i) => (
+                            <li key={i}>{point}</li>
+                          ))}
+                        </ul>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+
+              {activeCategory === 'critical' &&
+                questions.critical?.map((q, index) => (
+                  <div
+                    key={index}
+                    className="bg-slate-900/50 rounded-lg p-4 border border-accent-500/20"
+                  >
+                    <h4 className="text-white font-semibold mb-2">
+                      <span className="text-accent-500 mr-2">Q{index + 1}.</span>
+                      {q.question}
+                    </h4>
+                    <div className="mt-3 space-y-2">
+                      <p className="text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Approach:</span> {q.approach}
+                      </p>
+                      <div className="text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Considerations:</span>
+                        <ul className="mt-1 ml-4 list-disc">
+                          {q.considerations?.map((c, i) => (
+                            <li key={i}>{c}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+              {activeCategory === 'practical' &&
+                questions.practical?.map((q, index) => (
+                  <div
+                    key={index}
+                    className="bg-slate-900/50 rounded-lg p-4 border border-accent-500/20"
+                  >
+                    <h4 className="text-white font-semibold mb-2">
+                      <span className="text-accent-500 mr-2">Q{index + 1}.</span>
+                      {q.question}
+                    </h4>
+                    <div className="mt-3 space-y-2">
+                      <p className="text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Scenario:</span> {q.scenario}
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Expected Outcome:</span>{' '}
+                        {q.expectedOutcome}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+              {activeCategory === 'discussion' &&
+                questions.discussion?.map((q, index) => (
+                  <div
+                    key={index}
+                    className="bg-slate-900/50 rounded-lg p-4 border border-accent-500/20"
+                  >
+                    <h4 className="text-white font-semibold mb-2">
+                      <span className="text-accent-500 mr-2">Topic {index + 1}:</span>
+                      {q.topic}
+                    </h4>
+                    <div className="mt-3 space-y-2">
+                      <div className="text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Discussion Prompts:</span>
+                        <ul className="mt-1 ml-4 list-disc">
+                          {q.prompts?.map((p, i) => (
+                            <li key={i}>{p}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Perspectives:</span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {q.perspectives?.map((p, i) => (
+                            <span
+                              key={i}
+                              className="bg-accent-500/20 text-accent-400 px-2 py-1 rounded text-xs"
+                            >
+                              {p}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
             </div>
 
             {/* Action Buttons */}
@@ -460,8 +539,12 @@ Generated with DUXE Question Maker
         }
 
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
       `}</style>
     </div>

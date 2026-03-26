@@ -11,11 +11,12 @@ const ToolCard = ({ title, icon: Icon, description, ctaLabel = 'Open', onClick }
         <p className="text-sm text-gray-600">{description}</p>
       </div>
       <div className="p-4 pt-0">
-        <button className="btn btn-primary btn-md w-full" onClick={onClick}>{ctaLabel}</button>
+        <button className="btn btn-primary btn-md w-full" onClick={onClick}>
+          {ctaLabel}
+        </button>
       </div>
     </div>
   );
 };
 
 export default ToolCard;
-

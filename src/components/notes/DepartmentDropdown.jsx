@@ -3,12 +3,12 @@ import { ChevronDownIcon, MagnifyingGlassIcon, AcademicCapIcon } from '@heroicon
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
-const DepartmentDropdown = ({ 
-  selectedDepartment, 
+const DepartmentDropdown = ({
+  selectedDepartment,
   onDepartmentChange,
   selectedUniversity,
-  placeholder = "Select Department",
-  className = "" 
+  placeholder = 'Select Department',
+  className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [departments, setDepartments] = useState([]);
@@ -35,20 +35,20 @@ const DepartmentDropdown = ({
           where('active', '==', true),
           orderBy('name', 'asc')
         );
-        
+
         const snapshot = await getDocs(q);
         const departmentsData = [];
-        
+
         snapshot.forEach((doc) => {
           departmentsData.push({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           });
         });
-        
+
         setDepartments(departmentsData);
         setFilteredDepartments(departmentsData);
-        
+
         // Clear selected department if it doesn't belong to new university
         if (selectedDepartment && selectedDepartment.uniId !== selectedUniversity.id) {
           onDepartmentChange(null);
@@ -70,13 +70,14 @@ const DepartmentDropdown = ({
       return;
     }
 
-    const filtered = departments.filter(dept => 
-      dept.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dept.shortName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dept.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dept.category.toLowerCase().includes(searchQuery.toLowerCase())
+    const filtered = departments.filter(
+      (dept) =>
+        dept.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        dept.shortName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        dept.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        dept.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    
+
     setFilteredDepartments(filtered);
   }, [searchQuery, departments]);
 
@@ -101,7 +102,7 @@ const DepartmentDropdown = ({
 
   const handleOpen = () => {
     if (!selectedUniversity) return;
-    
+
     setIsOpen(true);
     // Focus search input when dropdown opens
     setTimeout(() => {
@@ -111,25 +112,32 @@ const DepartmentDropdown = ({
 
   const getCategoryColor = (category) => {
     const colors = {
-      'engineering': 'bg-blue-100 text-blue-800',
-      'sciences': 'bg-green-100 text-green-800',
-      'management': 'bg-purple-100 text-purple-800',
-      'arts': 'bg-yellow-100 text-yellow-800',
-      'law': 'bg-red-100 text-red-800',
-      'medical': 'bg-pink-100 text-pink-800'
+      engineering: 'bg-blue-100 text-blue-800',
+      sciences: 'bg-green-100 text-green-800',
+      management: 'bg-purple-100 text-purple-800',
+      arts: 'bg-yellow-100 text-yellow-800',
+      law: 'bg-red-100 text-red-800',
+      medical: 'bg-pink-100 text-pink-800',
     };
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
 
   const getCategoryIcon = (category) => {
     switch (category) {
-      case 'engineering': return '⚙️';
-      case 'sciences': return '🔬';
-      case 'management': return '💼';
-      case 'arts': return '🎨';
-      case 'law': return '⚖️';
-      case 'medical': return '🏥';
-      default: return '📚';
+      case 'engineering':
+        return '⚙️';
+      case 'sciences':
+        return '🔬';
+      case 'management':
+        return '💼';
+      case 'arts':
+        return '🎨';
+      case 'law':
+        return '⚖️';
+      case 'medical':
+        return '🏥';
+      default:
+        return '📚';
     }
   };
 
@@ -147,10 +155,8 @@ const DepartmentDropdown = ({
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Department
-      </label>
-      
+      <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+
       {/* Dropdown Trigger */}
       <button
         type="button"
@@ -168,20 +174,24 @@ const DepartmentDropdown = ({
           {selectedDepartment ? (
             <div className="flex items-center space-x-2">
               <span className="text-gray-900">{selectedDepartment.shortName}</span>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(selectedDepartment.category)}`}>
+              <span
+                className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(selectedDepartment.category)}`}
+              >
                 {getCategoryIcon(selectedDepartment.category)} {selectedDepartment.category}
               </span>
             </div>
           ) : (
             <span className="text-gray-500">
-              {!selectedUniversity 
-                ? 'Select university first' 
-                : loading 
-                ? 'Loading departments...' 
-                : placeholder}
+              {!selectedUniversity
+                ? 'Select university first'
+                : loading
+                  ? 'Loading departments...'
+                  : placeholder}
             </span>
           )}
-          <ChevronDownIcon className={`h-5 w-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDownIcon
+            className={`h-5 w-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          />
         </div>
       </button>
 
@@ -206,12 +216,12 @@ const DepartmentDropdown = ({
           {/* Departments List */}
           <div className="max-h-60 overflow-y-auto">
             {loading ? (
-              <div className="p-4 text-center text-gray-500">
-                Loading departments...
-              </div>
+              <div className="p-4 text-center text-gray-500">Loading departments...</div>
             ) : filteredDepartments.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
-                {searchQuery ? 'No departments found matching your search.' : 'No departments available for this university.'}
+                {searchQuery
+                  ? 'No departments found matching your search.'
+                  : 'No departments available for this university.'}
               </div>
             ) : (
               Object.entries(groupedDepartments).map(([category, categoryDepartments]) => (
@@ -225,7 +235,7 @@ const DepartmentDropdown = ({
                       </span>
                     </div>
                   </div>
-                  
+
                   {/* Category Departments */}
                   {categoryDepartments.map((department) => (
                     <button
@@ -240,12 +250,8 @@ const DepartmentDropdown = ({
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-gray-900">{department.shortName}</div>
-                          <div className="text-sm text-gray-600 truncate">
-                            {department.name}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            Code: {department.code}
-                          </div>
+                          <div className="text-sm text-gray-600 truncate">{department.name}</div>
+                          <div className="text-xs text-gray-500 mt-1">Code: {department.code}</div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <AcademicCapIcon className="h-4 w-4 text-gray-400" />

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  XMarkIcon, 
+import {
+  XMarkIcon,
   CreditCardIcon,
   LockClosedIcon,
   CheckCircleIcon,
-  ExclamationCircleIcon
+  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { paymentService } from '../../services/paymentService';
 import { validateRazorpayConfig } from '../../config/razorpayConfig';
@@ -65,14 +65,14 @@ const PaymentModal = ({ isOpen, onClose, note, userId, onPaymentSuccess }) => {
         noteName: note.title,
         userName: user?.displayName || user?.userData?.displayName || '',
         userEmail: user?.email || '',
-        userPhone: user?.userData?.phone || ''
+        userPhone: user?.userData?.phone || '',
       });
 
       // Payment successful
       if (result.success) {
         setPaymentStatus('success');
         toast.success('Payment successful! You can now access this note.');
-        
+
         // Call success callback after a short delay
         setTimeout(() => {
           onPaymentSuccess?.(note.id);
@@ -86,7 +86,7 @@ const PaymentModal = ({ isOpen, onClose, note, userId, onPaymentSuccess }) => {
       }
     } catch (error) {
       console.error('Payment error:', error);
-      
+
       // Handle specific error cases
       if (error.message && error.message.includes('cancelled')) {
         toast('Payment cancelled', { icon: 'ℹ️' });
@@ -114,11 +114,15 @@ const PaymentModal = ({ isOpen, onClose, note, userId, onPaymentSuccess }) => {
     }
   };
 
-
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="payment-modal" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto"
+      aria-labelledby="payment-modal"
+      role="dialog"
+      aria-modal="true"
+    >
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={handleClose}
       />
@@ -142,16 +146,10 @@ const PaymentModal = ({ isOpen, onClose, note, userId, onPaymentSuccess }) => {
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
                 <CheckCircleIcon className="h-10 w-10 text-green-600" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Payment Successful!
-              </h3>
-              <p className="text-gray-600 mb-4">
-                You can now access and download this note.
-              </p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h3>
+              <p className="text-gray-600 mb-4">You can now access and download this note.</p>
               <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                <p className="text-sm text-green-800">
-                  Redirecting you to the note...
-                </p>
+                <p className="text-sm text-green-800">Redirecting you to the note...</p>
               </div>
             </div>
           )}
@@ -162,12 +160,8 @@ const PaymentModal = ({ isOpen, onClose, note, userId, onPaymentSuccess }) => {
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
                 <ExclamationCircleIcon className="h-10 w-10 text-red-600" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-                Payment Failed
-              </h3>
-              <p className="text-gray-600 mb-4 text-center">
-                {errorMessage}
-              </p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">Payment Failed</h3>
+              <p className="text-gray-600 mb-4 text-center">{errorMessage}</p>
               <button
                 onClick={() => setPaymentStatus(null)}
                 className="w-full bg-navy-600 text-white py-3 rounded-lg hover:bg-navy-700 transition-colors font-medium"
@@ -186,17 +180,13 @@ const PaymentModal = ({ isOpen, onClose, note, userId, onPaymentSuccess }) => {
                   <CreditCardIcon className="h-8 w-8" />
                   <h3 className="text-2xl font-bold">Purchase Note</h3>
                 </div>
-                <p className="text-gray-200 text-sm">
-                  Complete your payment to access this note
-                </p>
+                <p className="text-gray-200 text-sm">Complete your payment to access this note</p>
               </div>
 
               {/* Note Details */}
               <div className="p-6 border-b border-gray-200">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-1">
-                    {note.title}
-                  </h4>
+                  <h4 className="font-semibold text-gray-900 mb-1">{note.title}</h4>
                   <p className="text-sm text-gray-600 mb-3">
                     {note.courseCode} • {note.semester && `Semester ${note.semester}`}
                   </p>
@@ -223,20 +213,50 @@ const PaymentModal = ({ isOpen, onClose, note, userId, onPaymentSuccess }) => {
                         <span>Credit/Debit Cards</span>
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-600 bg-gray-50 rounded-lg p-2">
-                        <svg className="h-4 w-4 text-navy-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg
+                          className="h-4 w-4 text-navy-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
                         </svg>
                         <span>UPI</span>
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-600 bg-gray-50 rounded-lg p-2">
-                        <svg className="h-4 w-4 text-navy-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        <svg
+                          className="h-4 w-4 text-navy-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                          />
                         </svg>
                         <span>Net Banking</span>
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-600 bg-gray-50 rounded-lg p-2">
-                        <svg className="h-4 w-4 text-navy-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                        <svg
+                          className="h-4 w-4 text-navy-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                          />
                         </svg>
                         <span>Mobile Wallets</span>
                       </div>
@@ -254,8 +274,8 @@ const PaymentModal = ({ isOpen, onClose, note, userId, onPaymentSuccess }) => {
                       <>
                         <p className="font-medium mb-1">🔒 Secure Payment via Razorpay</p>
                         <p className="text-xs">
-                          Your payment is processed securely through Razorpay. 
-                          We never store your card details.
+                          Your payment is processed securely through Razorpay. We never store your
+                          card details.
                         </p>
                       </>
                     )}

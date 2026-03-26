@@ -14,7 +14,7 @@ const Videos = () => {
       skill: 'Machine Learning',
       level: 'Beginner',
       thumbnail: 'https://via.placeholder.com/400x225',
-      views: '125K'
+      views: '125K',
     },
     {
       id: 2,
@@ -24,7 +24,7 @@ const Videos = () => {
       skill: 'Programming',
       level: 'Advanced',
       thumbnail: 'https://via.placeholder.com/400x225',
-      views: '89K'
+      views: '89K',
     },
     {
       id: 3,
@@ -34,8 +34,8 @@ const Videos = () => {
       skill: 'Web Development',
       level: 'Intermediate',
       thumbnail: 'https://via.placeholder.com/400x225',
-      views: '203K'
-    }
+      views: '203K',
+    },
   ];
 
   return (
@@ -68,11 +68,7 @@ const Videos = () => {
               <option value="Advanced">Advanced</option>
             </select>
 
-            <input
-              type="text"
-              placeholder="Search videos..."
-              className="input"
-            />
+            <input type="text" placeholder="Search videos..." className="input" />
           </div>
         </div>
 
@@ -81,7 +77,11 @@ const Videos = () => {
           {videos.map((video) => (
             <div key={video.id} className="card hover:shadow-card-hover transition-shadow">
               <div className="relative aspect-video bg-gray-200 rounded-t-2xl overflow-hidden">
-                <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
+                <img
+                  src={video.thumbnail}
+                  alt={video.title}
+                  className="w-full h-full object-cover"
+                />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <PlayIcon className="h-16 w-16 text-white" />
                 </div>

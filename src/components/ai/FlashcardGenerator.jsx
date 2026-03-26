@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { 
+import {
   RectangleStackIcon,
   ArrowPathIcon,
   CheckIcon,
@@ -7,23 +7,22 @@ import {
   DocumentDuplicateIcon,
   ArrowDownTrayIcon,
   PlayIcon,
-  PauseIcon
+  PauseIcon,
 } from '@heroicons/react/24/outline';
 import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
 import Toast from '../ui/Toast';
 
-
 const FlashcardGenerator = () => {
   // For now, we'll use anonymous user until auth is implemented
   const user = null;
-  
+
   const [inputText, setInputText] = useState('');
   const [flashcards, setFlashcards] = useState([]);
   const [cardCount, setCardCount] = useState(20);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // Study mode states
   const [studyMode, setStudyMode] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -47,12 +46,12 @@ const FlashcardGenerator = () => {
     setFlashcards([]);
     setStudyMode(false);
     setCardStatuses({});
-    
+
     try {
       const result = await AIService.flashcards({
         inputText,
         count: cardCount,
-        createdBy: user?.uid || 'anonymous'
+        createdBy: user?.uid || 'anonymous',
       });
       setFlashcards(result.output);
     } catch (err) {
@@ -85,15 +84,17 @@ const FlashcardGenerator = () => {
   const markCard = (status) => {
     const cardId = flashcards[currentCardIndex].id;
     setCardStatuses({ ...cardStatuses, [cardId]: status });
-    setStudyResults(prev => ({
+    setStudyResults((prev) => ({
       ...prev,
-      [status]: prev[status] + 1
+      [status]: prev[status] + 1,
     }));
     nextCard();
   };
 
   const copyFlashcards = () => {
-    const flashcardText = flashcards.map((card, i) => `
+    const flashcardText = flashcards
+      .map(
+        (card, i) => `
 Card ${i + 1}
 Front: ${card.front}
 Back: ${card.back}
@@ -102,7 +103,9 @@ Difficulty: ${card.difficulty}
 Type: ${card.type}
 ${card.hint ? `Hint: ${card.hint}` : ''}
 Tags: ${card.tags.join(', ')}
-`).join('\n---\n');
+`
+      )
+      .join('\n---\n');
 
     navigator.clipboard.writeText(flashcardText);
     Toast.success('Flashcards copied to clipboard!');
@@ -111,7 +114,9 @@ Tags: ${card.tags.join(', ')}
   const downloadFlashcards = () => {
     const flashcardMarkdown = `# Flashcard Set
 
-${flashcards.map((card, i) => `
+${flashcards
+  .map(
+    (card, i) => `
 ## Card ${i + 1}
 
 **Front:** ${card.front}
@@ -124,7 +129,9 @@ ${flashcards.map((card, i) => `
 ${card.hint ? `**Hint:** ${card.hint}` : ''}
 
 **Tags:** ${card.tags.join(', ')}
-`).join('\n---\n')}
+`
+  )
+  .join('\n---\n')}
 
 ---
 Generated with DUXE Flashcard Generator
@@ -141,11 +148,15 @@ Generated with DUXE Flashcard Generator
   };
 
   const getDifficultyColor = (difficulty) => {
-    switch(difficulty?.toLowerCase()) {
-      case 'easy': return 'text-green-400 bg-green-500/20';
-      case 'medium': return 'text-yellow-400 bg-yellow-500/20';
-      case 'hard': return 'text-red-400 bg-red-500/20';
-      default: return 'text-gray-400 bg-gray-500/20';
+    switch (difficulty?.toLowerCase()) {
+      case 'easy':
+        return 'text-green-400 bg-green-500/20';
+      case 'medium':
+        return 'text-yellow-400 bg-yellow-500/20';
+      case 'hard':
+        return 'text-red-400 bg-red-500/20';
+      default:
+        return 'text-gray-400 bg-gray-500/20';
     }
   };
 
@@ -155,7 +166,7 @@ Generated with DUXE Flashcard Generator
       concept: 'text-purple-400 bg-purple-500/20',
       fact: 'text-green-400 bg-green-500/20',
       process: 'text-orange-400 bg-orange-500/20',
-      example: 'text-pink-400 bg-pink-500/20'
+      example: 'text-pink-400 bg-pink-500/20',
     };
     return colors[type] || 'text-gray-400 bg-gray-500/20';
   };
@@ -172,7 +183,9 @@ Generated with DUXE Flashcard Generator
               <RectangleStackIcon className="h-8 w-8 text-accent-500 mr-3" />
               <div>
                 <h2 className="text-3xl font-bold text-white">Study Mode</h2>
-                <p className="text-gray-400">Card {currentCardIndex + 1} of {flashcards.length}</p>
+                <p className="text-gray-400">
+                  Card {currentCardIndex + 1} of {flashcards.length}
+                </p>
               </div>
             </div>
             <button
@@ -182,10 +195,10 @@ Generated with DUXE Flashcard Generator
               Exit Study
             </button>
           </div>
-          
+
           {/* Progress Bar */}
           <div className="w-full bg-slate-800 rounded-full h-3 mb-4">
-            <div 
+            <div
               className="bg-gradient-to-r from-accent-500 to-accent-600 h-3 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}
             ></div>
@@ -195,13 +208,15 @@ Generated with DUXE Flashcard Generator
           <div className="flex gap-4 text-sm">
             <span className="text-green-400">Known: {studyResults.known}</span>
             <span className="text-yellow-400">Learning: {studyResults.learning}</span>
-            <span className="text-gray-400">Remaining: {flashcards.length - currentCardIndex - 1}</span>
+            <span className="text-gray-400">
+              Remaining: {flashcards.length - currentCardIndex - 1}
+            </span>
           </div>
         </div>
 
         {/* Flashcard */}
         <div className="flex justify-center mb-8">
-          <div 
+          <div
             className="relative w-96 h-64 cursor-pointer"
             onClick={() => setIsFlipped(!isFlipped)}
           >
@@ -214,12 +229,14 @@ Generated with DUXE Flashcard Generator
                 )}
                 <p className="text-gray-500 text-sm mt-4">Click to reveal answer</p>
               </div>
-              
+
               {/* Back */}
               <div className="flashcard-back bg-gradient-to-br from-accent-600 to-accent-700 border border-accent-400 rounded-2xl p-8 flex flex-col justify-center items-center text-center">
                 <p className="text-white text-lg font-medium mb-4">{currentCard.back}</p>
                 <div className="flex flex-wrap gap-2 justify-center">
-                  <span className={`px-2 py-1 rounded text-xs ${getDifficultyColor(currentCard.difficulty)}`}>
+                  <span
+                    className={`px-2 py-1 rounded text-xs ${getDifficultyColor(currentCard.difficulty)}`}
+                  >
                     {currentCard.difficulty}
                   </span>
                   <span className={`px-2 py-1 rounded text-xs ${getTypeColor(currentCard.type)}`}>
@@ -245,8 +262,7 @@ Generated with DUXE Flashcard Generator
               onClick={() => markCard('known')}
               className="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 flex items-center"
             >
-              <CheckIcon className="h-5 w-5 mr-2" />
-              I Know This
+              <CheckIcon className="h-5 w-5 mr-2" />I Know This
             </button>
           </div>
         )}
@@ -259,11 +275,11 @@ Generated with DUXE Flashcard Generator
             transition: transform 0.6s;
             transform-style: preserve-3d;
           }
-          
+
           .flashcard.flipped {
             transform: rotateY(180deg);
           }
-          
+
           .flashcard-front,
           .flashcard-back {
             position: absolute;
@@ -271,7 +287,7 @@ Generated with DUXE Flashcard Generator
             height: 100%;
             backface-visibility: hidden;
           }
-          
+
           .flashcard-back {
             transform: rotateY(180deg);
           }
@@ -294,17 +310,12 @@ Generated with DUXE Flashcard Generator
 
       {/* File Upload */}
       <div className="mb-8">
-        <FileUpload 
-          onTextExtracted={handleTextExtracted}
-          className="mb-6"
-        />
+        <FileUpload onTextExtracted={handleTextExtracted} className="mb-6" />
       </div>
 
       {/* Text Input */}
       <div className="mb-6">
-        <label className="block text-white font-medium mb-3">
-          Or paste your study material:
-        </label>
+        <label className="block text-white font-medium mb-3">Or paste your study material:</label>
         <textarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
@@ -376,7 +387,7 @@ Generated with DUXE Flashcard Generator
           {/* Flashcards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {flashcards.map((card) => (
-              <div 
+              <div
                 key={card.id}
                 className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-sm rounded-2xl border border-accent-500/30 p-6"
               >
@@ -384,7 +395,9 @@ Generated with DUXE Flashcard Generator
                 <div className="flex items-start justify-between mb-4">
                   <span className="text-accent-500 font-bold text-sm">#{card.id}</span>
                   <div className="flex gap-2">
-                    <span className={`px-2 py-1 rounded text-xs ${getDifficultyColor(card.difficulty)}`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs ${getDifficultyColor(card.difficulty)}`}
+                    >
                       {card.difficulty}
                     </span>
                     <span className={`px-2 py-1 rounded text-xs ${getTypeColor(card.type)}`}>
@@ -416,7 +429,7 @@ Generated with DUXE Flashcard Generator
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1">
                   {card.tags.map((tag, index) => (
-                    <span 
+                    <span
                       key={index}
                       className="bg-slate-700/50 text-gray-300 px-2 py-1 rounded text-xs"
                     >
@@ -465,8 +478,12 @@ Generated with DUXE Flashcard Generator
         }
 
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
       `}</style>
     </div>

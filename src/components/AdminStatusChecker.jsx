@@ -1,17 +1,22 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { ShieldCheckIcon, XCircleIcon, ArrowUpTrayIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
+import {
+  ShieldCheckIcon,
+  XCircleIcon,
+  ArrowUpTrayIcon,
+  ClipboardDocumentCheckIcon,
+} from '@heroicons/react/24/outline';
 
 const AdminStatusChecker = () => {
   const { user, userRole, isAdmin } = useAuth();
-  
+
   // Debug info
   console.log('AdminStatusChecker Debug:', {
     userRole,
     isAdmin,
     userRoleType: typeof userRole,
-    userData: user?.userData
+    userData: user?.userData,
   });
 
   if (!user) {
@@ -29,7 +34,9 @@ const AdminStatusChecker = () => {
   }
 
   return (
-    <div className={`${isAdmin ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'} border rounded-xl p-4 m-4`}>
+    <div
+      className={`${isAdmin ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'} border rounded-xl p-4 m-4`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           {isAdmin ? (
@@ -42,12 +49,13 @@ const AdminStatusChecker = () => {
               {isAdmin ? '✅ Admin Access Confirmed' : '❌ No Admin Access'}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              Email: {user.email} | Role: <span className="font-semibold">{userRole || 'user'}</span> | 
-              Type: {typeof userRole} | isAdmin: {String(isAdmin)}
+              Email: {user.email} | Role:{' '}
+              <span className="font-semibold">{userRole || 'user'}</span> | Type: {typeof userRole}{' '}
+              | isAdmin: {String(isAdmin)}
             </p>
           </div>
         </div>
-        
+
         {isAdmin && (
           <div className="flex gap-2">
             <Link
@@ -67,13 +75,15 @@ const AdminStatusChecker = () => {
           </div>
         )}
       </div>
-      
+
       {!isAdmin && (
         <div className="mt-4 p-3 bg-white rounded-lg">
           <p className="text-sm text-gray-700 font-medium mb-2">📝 How to get admin access:</p>
           <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside">
             <li>Go to Firebase Console → Firestore Database</li>
-            <li>Find your user document in the 'users' collection (search by your email: {user.email})</li>
+            <li>
+              Find your user document in the 'users' collection (search by your email: {user.email})
+            </li>
             <li>Edit the document and change the 'role' field from "user" to "admin"</li>
             <li>Save changes and refresh this page</li>
           </ol>

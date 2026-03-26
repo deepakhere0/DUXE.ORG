@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  AcademicCapIcon, 
+import {
+  AcademicCapIcon,
   Bars3Icon,
   XMarkIcon,
   BookOpenIcon,
@@ -13,7 +13,7 @@ import {
   TagIcon,
   ArrowRightIcon,
   ArrowUpTrayIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 
 const Navbar = () => {
@@ -57,9 +57,10 @@ const Navbar = () => {
                 key={link.name}
                 to={link.href}
                 className={`px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center space-x-1
-                  ${isActive(link.href) 
-                    ? 'bg-accent-100 text-accent-700' 
-                    : 'text-gray-700 hover:bg-gray-100'
+                  ${
+                    isActive(link.href)
+                      ? 'bg-accent-100 text-accent-700'
+                      : 'text-gray-700 hover:bg-gray-100'
                   }`}
               >
                 <link.icon className="h-4 w-4" />
@@ -123,10 +124,7 @@ const Navbar = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2"
-          >
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2">
             {mobileMenuOpen ? (
               <XMarkIcon className="h-6 w-6 text-gray-700" />
             ) : (
@@ -143,9 +141,10 @@ const Navbar = () => {
                 key={link.name}
                 to={link.href}
                 className={`block px-4 py-2 text-sm font-medium rounded-xl mb-1
-                  ${isActive(link.href) 
-                    ? 'bg-accent-100 text-accent-700' 
-                    : 'text-gray-700 hover:bg-gray-100'
+                  ${
+                    isActive(link.href)
+                      ? 'bg-accent-100 text-accent-700'
+                      : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -155,7 +154,7 @@ const Navbar = () => {
                 </div>
               </Link>
             ))}
-            
+
             {/* Auth Buttons - Mobile */}
             <div className="mt-4 pt-4 border-t space-y-2 px-4">
               {user ? (

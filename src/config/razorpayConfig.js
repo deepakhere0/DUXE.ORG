@@ -10,22 +10,22 @@ const isDevelopment = import.meta.env.MODE === 'development';
 // Razorpay configuration object
 export const razorpayConfig = {
   // Key ID (public key - safe to expose in frontend)
-  keyId: isDevelopment 
-    ? import.meta.env.VITE_RAZORPAY_TEST_KEY_ID 
+  keyId: isDevelopment
+    ? import.meta.env.VITE_RAZORPAY_TEST_KEY_ID
     : import.meta.env.VITE_RAZORPAY_LIVE_KEY_ID,
-  
+
   // Currency (INR for India)
   currency: 'INR',
-  
+
   // Company/Platform details
   companyName: 'DUXE',
   companyLogo: import.meta.env.VITE_COMPANY_LOGO_URL || '',
-  
+
   // Theme colors for Razorpay checkout
   theme: {
     color: '#1e3a8a', // navy-600 from your Tailwind config
   },
-  
+
   // Payment methods to enable
   paymentMethods: {
     card: true,
@@ -33,7 +33,7 @@ export const razorpayConfig = {
     wallet: true,
     upi: true,
   },
-  
+
   // Mode flag
   isDevelopment,
 };
@@ -65,16 +65,16 @@ export const loadRazorpayScript = () => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
-    
+
     script.onload = () => {
       resolve(true);
     };
-    
+
     script.onerror = () => {
       console.error('Failed to load Razorpay SDK');
       resolve(false);
     };
-    
+
     document.body.appendChild(script);
   });
 };

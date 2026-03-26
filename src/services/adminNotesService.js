@@ -9,7 +9,7 @@ import {
   where,
   orderBy,
   serverTimestamp,
-  getDoc
+  getDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -34,11 +34,11 @@ export class AdminNotesService {
 
       for (const docSnapshot of snapshot.docs) {
         const noteData = { id: docSnapshot.id, ...docSnapshot.data() };
-        
+
         // Enrich with university and department names
         noteData.universityName = await this.getUniversityName(noteData.universityId);
         noteData.departmentName = await this.getDepartmentName(noteData.departmentId);
-        
+
         pendingNotes.push(noteData);
       }
 
@@ -53,24 +53,24 @@ export class AdminNotesService {
   async approveNote(noteId, updatedData = {}) {
     try {
       const noteRef = doc(db, this.notesCollection, noteId);
-      
+
       // Prepare update data
       const updateData = {
         status: NOTE_STATUS.APPROVED,
         approvedAt: serverTimestamp(),
         reviewedBy: updatedData.reviewedBy || null,
-        ...updatedData
+        ...updatedData,
       };
 
       // Remove any undefined values
-      Object.keys(updateData).forEach(key => {
+      Object.keys(updateData).forEach((key) => {
         if (updateData[key] === undefined) {
           delete updateData[key];
         }
       });
 
       await updateDoc(noteRef, updateData);
-      
+
       // Return updated note
       const updatedNote = await getDoc(noteRef);
       return { id: updatedNote.id, ...updatedNote.data() };
@@ -84,17 +84,17 @@ export class AdminNotesService {
   async rejectNote(noteId, reason = null) {
     try {
       const noteRef = doc(db, this.notesCollection, noteId);
-      
+
       // Optionally, you could move to a 'rejected' collection for audit trail
       if (reason) {
         // Log rejection reason before deletion
         await updateDoc(noteRef, {
           status: NOTE_STATUS.REJECTED,
           rejectedAt: serverTimestamp(),
-          rejectionReason: reason
+          rejectionReason: reason,
         });
       }
-      
+
       // Delete the note
       await deleteDoc(noteRef);
       return true;
@@ -112,14 +112,14 @@ export class AdminNotesService {
         where('active', '==', true),
         orderBy('shortName', 'asc')
       );
-      
+
       const snapshot = await getDocs(universitiesQuery);
       const universities = [];
-      
-      snapshot.forEach(doc => {
+
+      snapshot.forEach((doc) => {
         universities.push({ id: doc.id, ...doc.data() });
       });
-      
+
       return universities;
     } catch (error) {
       console.error('Error fetching universities:', error);
@@ -136,14 +136,14 @@ export class AdminNotesService {
         where('active', '==', true),
         orderBy('name', 'asc')
       );
-      
+
       const snapshot = await getDocs(departmentsQuery);
       const departments = [];
-      
-      snapshot.forEach(doc => {
+
+      snapshot.forEach((doc) => {
         departments.push({ id: doc.id, ...doc.data() });
       });
-      
+
       return departments;
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -159,14 +159,14 @@ export class AdminNotesService {
         where('active', '==', true),
         orderBy('name', 'asc')
       );
-      
+
       const snapshot = await getDocs(departmentsQuery);
       const departments = [];
-      
-      snapshot.forEach(doc => {
+
+      snapshot.forEach((doc) => {
         departments.push({ id: doc.id, ...doc.data() });
       });
-      
+
       return departments;
     } catch (error) {
       console.error('Error fetching all departments:', error);
@@ -177,11 +177,11 @@ export class AdminNotesService {
   // Helper function to get university name
   async getUniversityName(universityId) {
     if (!universityId) return 'Unknown University';
-    
+
     try {
       const universityRef = doc(db, this.universitiesCollection, universityId);
       const universityDoc = await getDoc(universityRef);
-      
+
       if (universityDoc.exists()) {
         return universityDoc.data().shortName || universityDoc.data().name;
       }
@@ -195,11 +195,11 @@ export class AdminNotesService {
   // Helper function to get department name
   async getDepartmentName(departmentId) {
     if (!departmentId) return 'Unknown Department';
-    
+
     try {
       const departmentRef = doc(db, this.departmentsCollection, departmentId);
       const departmentDoc = await getDoc(departmentRef);
-      
+
       if (departmentDoc.exists()) {
         return departmentDoc.data().shortName || departmentDoc.data().name;
       }
@@ -214,16 +214,22 @@ export class AdminNotesService {
   async getNoteStats() {
     try {
       const [pendingQuery, approvedQuery, rejectedQuery] = await Promise.all([
-        getDocs(query(collection(db, this.notesCollection), where('status', '==', NOTE_STATUS.PENDING))),
-        getDocs(query(collection(db, this.notesCollection), where('status', '==', NOTE_STATUS.APPROVED))),
-        getDocs(query(collection(db, this.notesCollection), where('status', '==', NOTE_STATUS.REJECTED)))
+        getDocs(
+          query(collection(db, this.notesCollection), where('status', '==', NOTE_STATUS.PENDING))
+        ),
+        getDocs(
+          query(collection(db, this.notesCollection), where('status', '==', NOTE_STATUS.APPROVED))
+        ),
+        getDocs(
+          query(collection(db, this.notesCollection), where('status', '==', NOTE_STATUS.REJECTED))
+        ),
       ]);
 
       return {
         pending: pendingQuery.size,
         approved: approvedQuery.size,
         rejected: rejectedQuery.size,
-        total: pendingQuery.size + approvedQuery.size + rejectedQuery.size
+        total: pendingQuery.size + approvedQuery.size + rejectedQuery.size,
       };
     } catch (error) {
       console.error('Error fetching note stats:', error);
@@ -234,10 +240,8 @@ export class AdminNotesService {
   // Bulk approve multiple notes
   async bulkApproveNotes(noteIds, reviewedBy) {
     try {
-      const promises = noteIds.map(noteId => 
-        this.approveNote(noteId, { reviewedBy })
-      );
-      
+      const promises = noteIds.map((noteId) => this.approveNote(noteId, { reviewedBy }));
+
       await Promise.all(promises);
       return true;
     } catch (error) {
@@ -249,10 +253,8 @@ export class AdminNotesService {
   // Bulk reject multiple notes
   async bulkRejectNotes(noteIds, reason) {
     try {
-      const promises = noteIds.map(noteId => 
-        this.rejectNote(noteId, reason)
-      );
-      
+      const promises = noteIds.map((noteId) => this.rejectNote(noteId, reason));
+
       await Promise.all(promises);
       return true;
     } catch (error) {

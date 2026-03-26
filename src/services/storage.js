@@ -10,7 +10,7 @@ export const validateFile = (file) => {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'image/jpeg',
     'image/png',
-    'image/webp'
+    'image/webp',
   ];
 
   if (!file) {
@@ -81,7 +81,7 @@ export const uploadFile = async (file, options = {}) => {
             fullPath: storagePath,
             size: file.size,
             type: file.type,
-            uploadedAt: new Date().toISOString()
+            uploadedAt: new Date().toISOString(),
           });
         } catch (error) {
           console.error('❌ Error getting download URL:', error);
@@ -117,7 +117,7 @@ export const formatFileSize = (bytes) => {
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 };
 
 // Get allowed file types

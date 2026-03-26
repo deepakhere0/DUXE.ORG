@@ -81,8 +81,8 @@ function Pending() {
             <div className="text-6xl mb-4">📄</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No Pending Notes</h3>
             <p className="text-gray-600 mb-6">You don't have any notes waiting for review</p>
-            <Link 
-              to="/upload" 
+            <Link
+              to="/upload"
               className="inline-block bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-3 rounded-lg transition-colors"
             >
               Upload New Note
@@ -91,7 +91,10 @@ function Pending() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pendingNotes.map((note) => (
-              <div key={note.id} className="bg-white rounded-lg shadow border border-gray-200 hover:shadow-md transition-shadow">
+              <div
+                key={note.id}
+                className="bg-white rounded-lg shadow border border-gray-200 hover:shadow-md transition-shadow"
+              >
                 <div className="bg-yellow-50 border-b border-yellow-100 px-4 py-2">
                   <span className="inline-flex items-center gap-2 text-yellow-700 text-sm font-medium">
                     🕒 Pending Review
@@ -102,7 +105,7 @@ function Pending() {
                   <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">
                     {note.title || 'Untitled Note'}
                   </h3>
-                  
+
                   <p className="text-gray-600 text-sm mb-4 line-clamp-3">
                     {note.description || 'No description'}
                   </p>
@@ -114,14 +117,14 @@ function Pending() {
                         <span>{note.subject}</span>
                       </div>
                     )}
-                    
+
                     {note.semester && (
                       <div className="flex items-center gap-2">
                         <span className="font-medium">Semester:</span>
                         <span>{note.semester}</span>
                       </div>
                     )}
-                    
+
                     {note.createdAt && (
                       <div className="flex items-center gap-2 text-gray-400">
                         <span>📅</span>
@@ -134,9 +137,7 @@ function Pending() {
                 </div>
 
                 <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
-                  <p className="text-xs text-gray-500">
-                    Your note is being reviewed by our team
-                  </p>
+                  <p className="text-xs text-gray-500">Your note is being reviewed by our team</p>
                 </div>
               </div>
             ))}

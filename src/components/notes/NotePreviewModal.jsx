@@ -10,7 +10,7 @@ import {
   ArrowsPointingInIcon,
   ArrowDownTrayIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import { showToast } from '../ui/Toast';
 import { testPDFUrl, suggestFix } from '../../utils/pdfDiagnostics';
@@ -100,18 +100,18 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
     if (!isOpen) return;
 
     const handleKeyPress = (e) => {
-      switch(e.key) {
+      switch (e.key) {
         case 'Escape':
           onClose();
           break;
         case 'ArrowLeft':
           if (fileType === 'pdf' && pageNumber > 1) {
-            setPageNumber(prev => prev - 1);
+            setPageNumber((prev) => prev - 1);
           }
           break;
         case 'ArrowRight':
           if (fileType === 'pdf' && pageNumber < numPages) {
-            setPageNumber(prev => prev + 1);
+            setPageNumber((prev) => prev + 1);
           }
           break;
         case '+':
@@ -131,11 +131,11 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
   }, [isOpen, pageNumber, numPages, fileType]);
 
   const handleZoomIn = () => {
-    setScale(prev => Math.min(prev + 0.2, 3.0));
+    setScale((prev) => Math.min(prev + 0.2, 3.0));
   };
 
   const handleZoomOut = () => {
-    setScale(prev => Math.max(prev - 0.2, 0.5));
+    setScale((prev) => Math.max(prev - 0.2, 0.5));
   };
 
   const toggleFullscreen = () => {
@@ -178,17 +178,17 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
     console.error('Error details:', {
       message: error.message,
       name: error.name,
-      stack: error.stack
+      stack: error.stack,
     });
     console.error('PDF URL:', note?.fileUrl);
-    
+
     // Run diagnostics
     if (note?.fileUrl) {
       const diagnostics = await testPDFUrl(note.fileUrl);
       const suggestion = suggestFix(diagnostics);
       console.log('💡 Suggestion:', suggestion);
     }
-    
+
     // Try fallback iframe method for CORS issues
     console.log('🔄 Attempting fallback iframe preview...');
     setUseFallback(true);
@@ -202,7 +202,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
       });
     } catch (error) {
       return 'Invalid date';
@@ -271,7 +271,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
                   </button>
                 </>
               )}
-              
+
               <button
                 onClick={toggleFullscreen}
                 className="p-2 hover:bg-navy-400/30 rounded-lg transition-colors"
@@ -283,7 +283,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
                   <ArrowsPointingOutIcon className="h-5 w-5" />
                 )}
               </button>
-              
+
               <button
                 onClick={handleDownload}
                 className="p-2 hover:bg-navy-400/30 rounded-lg transition-colors"
@@ -291,7 +291,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
               >
                 <ArrowDownTrayIcon className="h-5 w-5" />
               </button>
-              
+
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-red-500/30 rounded-lg transition-colors"
@@ -303,7 +303,10 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-auto bg-gray-100 p-4" style={{ minHeight: '500px', height: 'calc(100vh - 160px)' }}>
+          <div
+            className="flex-1 overflow-auto bg-gray-100 p-4"
+            style={{ minHeight: '500px', height: 'calc(100vh - 160px)' }}
+          >
             {!renderReady ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
@@ -317,11 +320,23 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
               <div className="flex items-center justify-center h-full">
                 <div className="text-center max-w-md p-6 bg-white rounded-lg shadow-lg">
                   <div className="text-red-500 mb-4">
-                    <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg
+                      className="h-16 w-16 mx-auto"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Preview Not Available</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Preview Not Available
+                  </h3>
                   <p className="text-gray-600 mb-4">{error}</p>
                   <button
                     onClick={handleDownload}
@@ -335,14 +350,18 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
 
             {renderReady && !error ? (
               <div className="flex items-center justify-center w-full h-full">
-                {console.log('📺 Rendering content...', { fileType, useFallback, noteUrl: note?.fileUrl })}
+                {console.log('📺 Rendering content...', {
+                  fileType,
+                  useFallback,
+                  noteUrl: note?.fileUrl,
+                })}
                 {fileType === 'pdf' && !useFallback ? (
                   <div className="bg-white shadow-lg w-full h-full flex items-center justify-center">
                     <Document
                       file={{
                         url: note.fileUrl,
                         httpHeaders: {
-                          'Accept': 'application/pdf',
+                          Accept: 'application/pdf',
                         },
                         withCredentials: false,
                       }}
@@ -426,7 +445,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
           {fileType === 'pdf' && !useFallback && numPages && !error && (
             <div className="flex items-center justify-center gap-4 px-6 py-3 bg-white border-t border-gray-200">
               <button
-                onClick={() => setPageNumber(prev => Math.max(prev - 1, 1))}
+                onClick={() => setPageNumber((prev) => Math.max(prev - 1, 1))}
                 disabled={pageNumber <= 1}
                 className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 title="Previous Page (←)"
@@ -439,7 +458,7 @@ const NotePreviewModal = ({ isOpen, onClose, note }) => {
               </span>
 
               <button
-                onClick={() => setPageNumber(prev => Math.min(prev + 1, numPages))}
+                onClick={() => setPageNumber((prev) => Math.min(prev + 1, numPages))}
                 disabled={pageNumber >= numPages}
                 className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 title="Next Page (→)"

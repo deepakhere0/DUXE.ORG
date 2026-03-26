@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { BriefcaseIcon, MapPinIcon, CurrencyDollarIcon, ClockIcon, BookmarkIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  BriefcaseIcon,
+  MapPinIcon,
+  CurrencyDollarIcon,
+  ClockIcon,
+  BookmarkIcon,
+  PlusIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import { useQuery } from '@tanstack/react-query';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../services/firebase';
@@ -12,17 +20,17 @@ const Internships = () => {
   const [newSkill, setNewSkill] = useState('');
   const [showSkillInput, setShowSkillInput] = useState(false);
   const [sortedInternships, setSortedInternships] = useState([]);
-  
+
   // Fetch internships from Firestore
-  const { data: internships = [], isLoading, error } = useQuery({
+  const {
+    data: internships = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['internships'],
     queryFn: async () => {
       try {
-        const q = query(
-          collection(db, 'internships'),
-          orderBy('postedAt', 'desc'),
-          limit(50)
-        );
+        const q = query(collection(db, 'internships'), orderBy('postedAt', 'desc'), limit(50));
         const snapshot = await getDocs(q);
         const internshipsList = [];
         snapshot.forEach((doc) => {
@@ -42,7 +50,7 @@ const Internships = () => {
             duration: '3 months',
             skills: ['React', 'JavaScript', 'CSS'],
             applyUrl: 'https://example.com/apply',
-            postedAt: new Date()
+            postedAt: new Date(),
           },
           {
             id: '2',
@@ -53,7 +61,7 @@ const Internships = () => {
             duration: '6 months',
             skills: ['Python', 'Machine Learning', 'SQL'],
             applyUrl: 'https://example.com/apply',
-            postedAt: new Date()
+            postedAt: new Date(),
           },
           {
             id: '3',
@@ -64,25 +72,25 @@ const Internships = () => {
             duration: '4 months',
             skills: ['React', 'Node.js', 'MongoDB'],
             applyUrl: 'https://example.com/apply',
-            postedAt: new Date()
-          }
+            postedAt: new Date(),
+          },
         ];
       }
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
-  
+
   // Apply AI matching when internships or skills change
   useEffect(() => {
     if (internships.length > 0) {
       const matched = AIService.matchInternships({
         userSkills,
-        internships
+        internships,
       });
       setSortedInternships(matched);
     }
   }, [internships, userSkills]);
-  
+
   const addSkill = () => {
     if (newSkill.trim() && !userSkills.includes(newSkill.trim())) {
       setUserSkills([...userSkills, newSkill.trim()]);
@@ -91,11 +99,11 @@ const Internships = () => {
       Toast.success('Skill added');
     }
   };
-  
+
   const removeSkill = (skillToRemove) => {
-    setUserSkills(userSkills.filter(skill => skill !== skillToRemove));
+    setUserSkills(userSkills.filter((skill) => skill !== skillToRemove));
   };
-  
+
   const handleApply = (internship) => {
     if (internship.applyUrl) {
       window.open(internship.applyUrl, '_blank');
@@ -103,7 +111,7 @@ const Internships = () => {
       Toast.info('Application link not available');
     }
   };
-  
+
   const handleBookmark = async (internshipId) => {
     if (!currentUser) {
       Toast.error('Please login to bookmark');
@@ -168,8 +176,8 @@ const Internships = () => {
             )}
           </div>
           <p className="text-sm text-gray-600">
-            {AIService.isConfigured() 
-              ? 'AI-powered matching based on your skills' 
+            {AIService.isConfigured()
+              ? 'AI-powered matching based on your skills'
               : 'Add your skills to see matching internships'}
           </p>
         </div>
@@ -196,7 +204,7 @@ const Internships = () => {
               const matchScore = internship.matchScore || 0;
               const isGoodMatch = matchScore >= 60;
               const isGreatMatch = matchScore >= 80;
-              
+
               return (
                 <div key={internship.id} className="card hover:shadow-card-hover transition-shadow">
                   <div className="card-body">
@@ -207,11 +215,15 @@ const Internships = () => {
                       </div>
                       {matchScore > 0 && (
                         <div className="text-right">
-                          <span className={`chip text-xs ${
-                            isGreatMatch ? 'bg-green-100 text-green-700' :
-                            isGoodMatch ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
+                          <span
+                            className={`chip text-xs ${
+                              isGreatMatch
+                                ? 'bg-green-100 text-green-700'
+                                : isGoodMatch
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-gray-100 text-gray-700'
+                            }`}
+                          >
                             {matchScore}% Match
                           </span>
                           {internship.aiEnhanced && (
@@ -240,15 +252,15 @@ const Internships = () => {
                       <p className="text-xs text-gray-500 mb-2">Required Skills:</p>
                       <div className="flex flex-wrap gap-1">
                         {(internship.skills || []).map((skill, index) => {
-                          const hasSkill = userSkills.some(s => 
-                            s.toLowerCase() === skill.toLowerCase()
+                          const hasSkill = userSkills.some(
+                            (s) => s.toLowerCase() === skill.toLowerCase()
                           );
                           return (
-                            <span 
-                              key={index} 
+                            <span
+                              key={index}
                               className={`text-xs px-2 py-1 rounded ${
-                                hasSkill 
-                                  ? 'bg-green-100 text-green-700 font-medium' 
+                                hasSkill
+                                  ? 'bg-green-100 text-green-700 font-medium'
                                   : 'bg-gray-100 text-gray-600'
                               }`}
                             >
@@ -260,19 +272,17 @@ const Internships = () => {
                     </div>
 
                     {internship.matchReason && (
-                      <p className="text-xs text-gray-600 mb-3 italic">
-                        {internship.matchReason}
-                      </p>
+                      <p className="text-xs text-gray-600 mb-3 italic">{internship.matchReason}</p>
                     )}
 
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => handleApply(internship)}
                         className="btn btn-primary btn-sm flex-1"
                       >
                         Apply Now
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleBookmark(internship.id)}
                         className="btn btn-secondary btn-sm"
                       >

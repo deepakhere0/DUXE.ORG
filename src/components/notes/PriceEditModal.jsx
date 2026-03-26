@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  XMarkIcon, 
+import {
+  XMarkIcon,
   CurrencyRupeeIcon,
   CheckCircleIcon,
-  ExclamationCircleIcon
+  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -22,7 +22,7 @@ const PriceEditModal = ({ isOpen, onClose, note, onSuccess }) => {
 
   const handleUpdatePrice = async (e) => {
     e.preventDefault();
-    
+
     // Validation
     const priceValue = parseFloat(price);
     if (isNaN(priceValue) || priceValue < 0) {
@@ -37,16 +37,16 @@ const PriceEditModal = ({ isOpen, onClose, note, onSuccess }) => {
       const noteRef = doc(db, 'notes', note.id);
       await updateDoc(noteRef, {
         price: priceValue,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       });
 
       toast.success(`Price updated to ₹${priceValue}`);
-      
+
       // Call success callback
       if (onSuccess) {
         onSuccess({ ...note, price: priceValue });
       }
-      
+
       // Close modal after short delay
       setTimeout(() => {
         handleClose();
@@ -67,9 +67,14 @@ const PriceEditModal = ({ isOpen, onClose, note, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="price-edit-modal" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto"
+      aria-labelledby="price-edit-modal"
+      role="dialog"
+      aria-modal="true"
+    >
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={handleClose}
       />
@@ -93,17 +98,13 @@ const PriceEditModal = ({ isOpen, onClose, note, onSuccess }) => {
               <CurrencyRupeeIcon className="h-8 w-8" />
               <h3 className="text-2xl font-bold">Edit Note Price</h3>
             </div>
-            <p className="text-orange-100 text-sm">
-              Update the pricing for this note
-            </p>
+            <p className="text-orange-100 text-sm">Update the pricing for this note</p>
           </div>
 
           {/* Note Details */}
           <div className="p-6 border-b border-gray-200">
             <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-semibold text-gray-900 mb-1">
-                {note.title}
-              </h4>
+              <h4 className="font-semibold text-gray-900 mb-1">{note.title}</h4>
               <p className="text-sm text-gray-600 mb-2">
                 {note.courseCode} • {note.semester && `Semester ${note.semester}`}
               </p>
@@ -135,7 +136,9 @@ const PriceEditModal = ({ isOpen, onClose, note, onSuccess }) => {
                 New Price (INR)
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg">₹</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg">
+                  ₹
+                </span>
                 <input
                   id="new-price"
                   type="number"
@@ -162,8 +165,8 @@ const PriceEditModal = ({ isOpen, onClose, note, onSuccess }) => {
                 <div className="text-sm text-yellow-800">
                   <p className="font-medium">Note:</p>
                   <p className="mt-1">
-                    This note has {note.purchaseCount} existing purchase{note.purchaseCount > 1 ? 's' : ''}. 
-                    Price changes only affect new purchases.
+                    This note has {note.purchaseCount} existing purchase
+                    {note.purchaseCount > 1 ? 's' : ''}. Price changes only affect new purchases.
                   </p>
                 </div>
               </div>
