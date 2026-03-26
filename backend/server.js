@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 dotenv.config();
@@ -13,7 +15,21 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Rate limiters
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,
+  message: { error: 'Too many AI requests, please try again later.' },
+});
+
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  message: { error: 'Too many payment requests, please try again later.' },
+});
+
 // Middleware
+app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
@@ -27,8 +43,8 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes
-app.use('/api/ai', aiRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use('/api/ai', aiLimiter, aiRoutes);
+app.use('/api/payments', paymentLimiter, paymentRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
