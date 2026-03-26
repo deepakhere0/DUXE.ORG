@@ -14,14 +14,14 @@ import {
   KeyIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import ToolCard from '../components/common/ToolCard';
-import { AIService } from '../services/aiService';
-import AISummarizer from '../components/ai/AISummarizer';
-import MCQGenerator from '../components/ai/MCQGenerator';
-import QuestionMaker from '../components/ai/QuestionMaker';
-import ConceptMap from '../components/ai/ConceptMap';
-import FlashcardGenerator from '../components/ai/FlashcardGenerator';
-import Toast from '../components/common/Toast';
+import ToolCard from '../../components/notes/ToolCard';
+import { AIService } from '../../services/aiService';
+import AISummarizer from '../../components/ai/AISummarizer';
+import MCQGenerator from '../../components/ai/MCQGenerator';
+import QuestionMaker from '../../components/ai/QuestionMaker';
+import ConceptMap from '../../components/ai/ConceptMap';
+import FlashcardGenerator from '../../components/ai/FlashcardGenerator';
+import Toast from '../../components/ui/Toast';
 
 const Tools = () => {
   // For now, we'll assume user is not logged in

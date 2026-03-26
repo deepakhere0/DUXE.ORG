@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Notes } from '../services/firestoreData';
+import { useAuth } from '../../contexts/AuthContext';
+import { Notes } from '../../services/firestoreData';
 import { Link } from 'react-router-dom';
 
 function Pending() {

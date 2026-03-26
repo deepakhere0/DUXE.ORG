@@ -2,44 +2,44 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './contexts/AuthContext';
-import Layout from './components/layout/Layout';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+import { AuthProvider } from '../contexts/AuthContext';
+import Layout from '../components/layout/Layout';
+import ProtectedRoute from '../components/auth/ProtectedRoute';
 
 // Pages
-import Home from './pages/Home';
-import NotesPortal from './pages/NotesPortal';
-import NoteDetail from './pages/NoteDetail';
-import Upload from './pages/Upload';
-import AdminReview from './pages/AdminReview';
-import PDFPreview from './pages/PdfPreview';
-import Pending from './pages/Pending';
-import Tools from './pages/Tools';
-import Videos from './pages/Videos';
-import Internships from './pages/Internships';
-import NotFound from './pages/NotFound';
-import HowItWorks from './pages/HowItWorks';
-import Pricing from './pages/Pricing';
-import FAQ from './pages/FAQ';
-import Blog from './pages/Blog';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import Privacy from './pages/Privacy';
-import Terms from './pages/Terms';
-import Cookies from './pages/Cookies';
-import Help from './pages/Help';
-import Guidelines from './pages/Guidelines';
-import Report from './pages/Report';
-import Feedback from './pages/Feedback';
-import DataConnectTest from './components/DataConnectTest';
-import Debug from './pages/Debug';
-import AdminDashboard from './pages/AdminDashboard';
-import PaymentAnalytics from './components/admin/PaymentAnalytics';
+import Home from '../pages/home/Home';
+import NotesPortal from '../pages/notes/NotesPortal';
+import NoteDetail from '../pages/notes/NoteDetail';
+import Upload from '../pages/upload/Upload';
+import AdminReview from '../pages/admin/AdminReview';
+import PDFPreview from '../pages/tools/PdfPreview';
+import Pending from '../pages/upload/Pending';
+import Tools from '../pages/tools/Tools';
+import Videos from '../pages/Videos';
+import Internships from '../pages/Internships';
+import NotFound from '../pages/NotFound';
+import HowItWorks from '../pages/static/HowItWorks';
+import Pricing from '../pages/tools/Pricing';
+import FAQ from '../pages/static/FAQ';
+import Blog from '../pages/static/Blog';
+import About from '../pages/static/About';
+import Contact from '../pages/static/Contact';
+import Privacy from '../pages/static/Privacy';
+import Terms from '../pages/static/Terms';
+import Cookies from '../pages/static/Cookies';
+import Help from '../pages/Help';
+import Guidelines from '../pages/static/Guidelines';
+import Report from '../pages/Report';
+import Feedback from '../pages/Feedback';
+import DataConnectTest from '../components/DataConnectTest';
+import Debug from '../pages/Debug';
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import PaymentAnalytics from '../components/admin/PaymentAnalytics';
 
 // Auth Pages
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Dashboard from './pages/Dashboard';
+import Login from '../pages/auth/Login';
+import Signup from '../pages/auth/Signup';
+import Dashboard from '../pages/dashboard/Dashboard';
 
 
 // Create a client

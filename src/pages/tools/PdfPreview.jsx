@@ -13,7 +13,7 @@ import {
   FiMaximize,
   FiMinimize
 } from 'react-icons/fi';
-import { getNoteById } from '../services/firestoreData';
+import { getNoteById } from '../../services/firestoreData';
 import toast from 'react-hot-toast';
 
 // Configure PDF.js worker

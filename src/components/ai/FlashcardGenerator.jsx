@@ -11,7 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { AIService } from '../../services/aiService';
 import FileUpload from './FileUpload';
-import Toast from '../common/Toast';
+import Toast from '../ui/Toast';
 
 
 const FlashcardGenerator = () => {

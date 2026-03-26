@@ -12,9 +12,9 @@ import {
   ShoppingCartIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
-import { adminNotesService } from '../services/adminNotesService';
-import { paymentService } from '../services/paymentService';
-import { useAuth } from '../hooks/useAuth';
+import { adminNotesService } from '../../services/adminNotesService';
+import { paymentService } from '../../services/paymentService';
+import { useAuth } from '../../hooks/useAuth';
 import { Navigate, useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
