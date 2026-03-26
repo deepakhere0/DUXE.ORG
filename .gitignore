@@ -65,6 +65,13 @@ node_modules/
 # dotenv environment variables file
 .env
 .env.local
+.env.production
+.env.*.local
+backend/.env
+dist/
+build/
+backend/node_modules/
+.DS_Store
 
 # dataconnect generated files
 .dataconnect

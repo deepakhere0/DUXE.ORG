@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(npm run:*)",
+      "Bash(git checkout:*)",
+      "Bash(npm install:*)",
+      "Bash(node -e \"require\\(''./server.js''\\); setTimeout\\(\\(\\) => process.exit\\(0\\), 2000\\);\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
