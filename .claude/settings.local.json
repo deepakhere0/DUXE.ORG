@@ -13,7 +13,10 @@
       "Bash(find /c/Users/Administrator/Desktop/student-platform/src -type d -empty -delete)",
       "Bash(grep -l '\"\"eslintConfig\"\"' /c/Users/Administrator/Desktop/student-platform/package.json)",
       "Bash(npx prettier:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(git push:*)",
+      "Bash(grep -rn @firebase/ /c/Users/Administrator/Desktop/student-platform/ --include=*.js --include=*.jsx --include=*.ts --include=*.json --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=functions)",
+      "Bash(grep -rn \"@firebase/storage\\\\|@firebase/auth\\\\|@firebase/firestore\\\\|@firebase/app\" /c/Users/Administrator/Desktop/student-platform/functions/ --include=*.ts --include=*.js)"
     ]
   }
 }
