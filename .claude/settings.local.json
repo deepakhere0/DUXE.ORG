@@ -12,7 +12,8 @@
       "Bash(ls:*)",
       "Bash(find /c/Users/Administrator/Desktop/student-platform/src -type d -empty -delete)",
       "Bash(grep -l '\"\"eslintConfig\"\"' /c/Users/Administrator/Desktop/student-platform/package.json)",
-      "Bash(npx prettier:*)"
+      "Bash(npx prettier:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
