@@ -1,6 +1,6 @@
 // Enhanced AI service - Secure backend API integration
 import { AIJobs } from './firestoreData';
-import Toast from '../components/common/Toast';
+import Toast from '../components/ui/Toast';
 
 // Backend API configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';

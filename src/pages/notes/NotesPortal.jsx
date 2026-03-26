@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import UniversityDropdown from '../components/notes/UniversityDropdown';
-import DepartmentDropdown from '../components/notes/DepartmentDropdown';
-import SemesterDropdown from '../components/notes/SemesterDropdown';
-import SearchBar from '../components/notes/SearchBar';
-import NoteCard from '../components/notes/NoteCard';
-import { notesService } from '../services/notesService';
-import NotePreviewModal from '../components/notes/NotePreviewModal';
+import UniversityDropdown from '../../components/notes/UniversityDropdown';
+import DepartmentDropdown from '../../components/notes/DepartmentDropdown';
+import SemesterDropdown from '../../components/notes/SemesterDropdown';
+import SearchBar from '../../components/notes/SearchBar';
+import NoteCard from '../../components/notes/NoteCard';
+import { notesService } from '../../services/notesService';
+import NotePreviewModal from '../../components/notes/NotePreviewModal';
 import { Link } from 'react-router-dom';
 import { FiEye, FiDownload } from 'react-icons/fi';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const NotesPage = () => {
   const { user } = useAuth();

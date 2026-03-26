@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import AdminStatusChecker from '../components/AdminStatusChecker';
+import { useAuth } from '../../contexts/AuthContext';
+import AdminStatusChecker from '../../components/AdminStatusChecker';
 import { 
   AcademicCapIcon,
   BookOpenIcon,

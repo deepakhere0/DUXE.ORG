@@ -7,7 +7,7 @@ import {
   ExclamationCircleIcon 
 } from '@heroicons/react/24/outline';
 import { validateFile, getFileMetadata, parseFile } from '../../utils/fileParser';
-import Toast from '../common/Toast';
+import Toast from '../ui/Toast';
 
 const FileUpload = ({ 
   onFileProcessed, 

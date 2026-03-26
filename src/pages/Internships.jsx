@@ -5,7 +5,7 @@ import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { Internships as InternshipsService } from '../services/firestoreData';
 import { AIService } from '../services/aiService';
-import Toast from '../components/common/Toast';
+import Toast from '../components/ui/Toast';
 
 const Internships = () => {
   const [userSkills, setUserSkills] = useState(['React', 'JavaScript', 'Node.js']);

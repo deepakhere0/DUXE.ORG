@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   CloudArrowUpIcon,
   DocumentTextIcon,
@@ -10,7 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { db, storage, isFirebaseConfigured } from '../services/firebase';
+import { db, storage, isFirebaseConfigured } from '../../services/firebase';
 import toast from 'react-hot-toast';
 
 const Upload = () => {

@@ -16,10 +16,10 @@ import {
   AcademicCapIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid, BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
-import { AIService } from '../services/aiService';
-import Toast from '../components/common/Toast';
-import AIResultModal from '../components/modals/AIResultModal';
-import { getNoteById } from '../services/firestoreData';
+import { AIService } from '../../services/aiService';
+import Toast from '../../components/ui/Toast';
+import AIResultModal from '../../components/modals/AIResultModal';
+import { getNoteById } from '../../services/firestoreData';
 
 const NoteDetail = () => {
   const { noteId } = useParams();

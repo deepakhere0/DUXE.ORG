@@ -12,7 +12,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon
 } from '@heroicons/react/24/outline';
-import { showToast } from '../common/Toast';
+import { showToast } from '../ui/Toast';
 import { testPDFUrl, suggestFix } from '../../utils/pdfDiagnostics';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
