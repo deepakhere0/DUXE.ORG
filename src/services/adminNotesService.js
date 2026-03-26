@@ -1,3 +1,4 @@
+import { NOTE_STATUS } from '../constants/status';
 import {
   collection,
   doc,
@@ -24,7 +25,7 @@ export class AdminNotesService {
     try {
       const notesQuery = query(
         collection(db, this.notesCollection),
-        where('status', '==', 'pending'),
+        where('status', '==', NOTE_STATUS.PENDING),
         orderBy('createdAt', 'desc')
       );
 
@@ -55,7 +56,7 @@ export class AdminNotesService {
       
       // Prepare update data
       const updateData = {
-        status: 'approved',
+        status: NOTE_STATUS.APPROVED,
         approvedAt: serverTimestamp(),
         reviewedBy: updatedData.reviewedBy || null,
         ...updatedData
@@ -88,7 +89,7 @@ export class AdminNotesService {
       if (reason) {
         // Log rejection reason before deletion
         await updateDoc(noteRef, {
-          status: 'rejected',
+          status: NOTE_STATUS.REJECTED,
           rejectedAt: serverTimestamp(),
           rejectionReason: reason
         });
@@ -213,9 +214,9 @@ export class AdminNotesService {
   async getNoteStats() {
     try {
       const [pendingQuery, approvedQuery, rejectedQuery] = await Promise.all([
-        getDocs(query(collection(db, this.notesCollection), where('status', '==', 'pending'))),
-        getDocs(query(collection(db, this.notesCollection), where('status', '==', 'approved'))),
-        getDocs(query(collection(db, this.notesCollection), where('status', '==', 'rejected')))
+        getDocs(query(collection(db, this.notesCollection), where('status', '==', NOTE_STATUS.PENDING))),
+        getDocs(query(collection(db, this.notesCollection), where('status', '==', NOTE_STATUS.APPROVED))),
+        getDocs(query(collection(db, this.notesCollection), where('status', '==', NOTE_STATUS.REJECTED)))
       ]);
 
       return {
