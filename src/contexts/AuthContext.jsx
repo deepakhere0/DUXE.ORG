@@ -254,8 +254,7 @@ export const AuthProvider = ({ children }) => {
     getUserData,
   };
 
-  // Show loading state or render children
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export default AuthContext;
