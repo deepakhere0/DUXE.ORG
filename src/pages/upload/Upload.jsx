@@ -6,7 +6,6 @@ import {
   DocumentTextIcon,
   CheckCircleIcon,
   InformationCircleIcon,
-  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -105,8 +104,7 @@ const Upload = () => {
             },
             (error) => {
               console.error('Upload error:', error);
-              // Don't reject, just continue without file URL
-              resolve('');
+              reject(error);
             },
             async () => {
               try {
@@ -136,11 +134,11 @@ const Upload = () => {
           .split(',')
           .map((tag) => tag.trim())
           .filter((tag) => tag),
-        status: 'approved', // Auto-approve for development
+        status: 'pending',
         createdBy: user.uid,
         authorName: user.displayName || user.email,
         authorEmail: user.email,
-        fileUrl: fileUrl || 'pending',
+        fileUrl: fileUrl || '',
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
@@ -174,7 +172,7 @@ const Upload = () => {
         <div className="text-center">
           <CheckCircleIcon className="h-24 w-24 text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Upload Successful!</h2>
-          <p className="text-gray-600 mb-6">Your note has been uploaded and is now available.</p>
+          <p className="text-gray-600 mb-6">Your note has been submitted and is pending admin review.</p>
           <div className="space-x-4">
             <button
               onClick={() => {
@@ -210,17 +208,6 @@ const Upload = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-3xl mx-auto px-4">
-        {/* Dev Mode Warning */}
-        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <div className="flex">
-            <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-yellow-800">
-              <p className="font-medium mb-1">Development Mode</p>
-              <p>Simplified upload without strict permission checking. For development only.</p>
-            </div>
-          </div>
-        </div>
-
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Upload Notes</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">

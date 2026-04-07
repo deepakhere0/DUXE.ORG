@@ -7,14 +7,14 @@ function Pending() {
   const [pendingNotes, setPendingNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchPendingNotes = async () => {
       // No need to check currentUser - ProtectedRoute already handles it
       try {
         setLoading(true);
-        const notes = await Notes.listPending(currentUser.uid);
+        const notes = await Notes.listPending(user.uid);
         setPendingNotes(notes);
         setError(null);
       } catch (err) {
@@ -25,7 +25,7 @@ function Pending() {
       }
     };
 
-    if (currentUser) {
+    if (user) {
       fetchPendingNotes();
     }
   }, [currentUser]);
